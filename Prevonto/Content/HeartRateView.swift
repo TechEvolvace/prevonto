@@ -6,6 +6,19 @@ struct HeartRateRecord {
     let heartRate: Int
 }
 
+extension Date {
+    static func from(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0) -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        components.second = second
+        return Calendar.current.date(from: components)!
+    }
+}
+
 enum HeartRateChartMode: String, CaseIterable, Identifiable {
     case day, week, month
     var id: String { rawValue }
@@ -16,9 +29,64 @@ struct HeartRateView: View {
     @State private var selectedDate: Date = Date()
     
     // Sample data
-    private let allHeartRateRecords: [HeartRateRecord] = generateSampleData()
+    private let allHeartRateRecords: [HeartRateRecord] = [
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 7, day: 31, hour: 9, minute: 15), heartRate: 90),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 7, day: 31, hour: 3, minute: 45), heartRate: 99),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 1, hour: 12, minute: 5), heartRate: 88),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 1, hour: 14, minute: 12), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 2, hour: 16, minute: 24), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 3, hour: 16, minute: 24), heartRate: 82),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 4, hour: 16, minute: 24), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 5, hour: 16, minute: 03), heartRate: 80),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 7, hour: 16, minute: 14), heartRate: 67),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 16, minute: 22), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 8, minute: 40), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 9, minute: 10), heartRate: 68),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 9, minute: 30), heartRate: 72),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 10, minute: 35), heartRate: 70),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 10, minute: 50), heartRate: 72),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 11, minute: 10), heartRate: 70),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 11, minute: 30), heartRate: 65),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 11, minute: 45), heartRate: 66),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 12, minute: 5), heartRate: 68),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 13, minute: 15), heartRate: 80),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 14, minute: 34), heartRate: 74),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 15, minute: 26), heartRate: 72),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 16, minute: 7), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 8, minute: 40), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 9, minute: 10), heartRate: 80),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 9, minute: 30), heartRate: 82),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 10, minute: 35), heartRate: 84),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 10, minute: 50), heartRate: 85),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 11, minute: 10), heartRate: 82),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 11, minute: 30), heartRate: 83),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 11, minute: 45), heartRate: 84),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 12, minute: 5), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 13, minute: 15), heartRate: 77),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 14, minute: 34), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 15, minute: 26), heartRate: 78),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 16, minute: 7), heartRate: 79),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 9, minute: 13), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 9, minute: 15), heartRate: 83),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 10, minute: 24), heartRate: 85),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 12, minute: 10), heartRate: 90),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 12, minute: 25), heartRate: 92),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 12, minute: 40), heartRate: 94),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 13, minute: 10), heartRate: 88),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 13, minute: 23), heartRate: 86),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 13, minute: 44), heartRate: 84),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 14, minute: 24), heartRate: 77),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 14, minute: 40), heartRate: 70),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 14, minute: 50), heartRate: 66),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 15, minute: 05), heartRate: 70),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 15, minute: 28), heartRate: 76),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 15, minute: 40), heartRate: 72),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 16, minute: 10), heartRate: 74),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 16, minute: 35), heartRate: 75),
+        HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 17, minute: 1), heartRate: 80),
+    ]
     
-    private var chartData: [(label: String, min: Int, max: Int)] {
+    private var chartData: [(label: String, min: Int?, max: Int?)] {
         aggregateHeartRate(for: allHeartRateRecords, mode: selectedMode, selectedDate: selectedDate)
     }
     
@@ -26,7 +94,7 @@ struct HeartRateView: View {
         NavigationStack {
             ScrollView {
                 VStack {
-                    // Heart Page Headline
+                    // Headline
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Heart Rate")
                             .font(.largeTitle)
@@ -48,17 +116,19 @@ struct HeartRateView: View {
                     .pickerStyle(.segmented)
                     .padding(.bottom, 10)
                     
-                    // === Chart Placement Below Heading ===
+                    // Chart
                     VStack {
                         Chart {
                             ForEach(chartData.indices, id: \.self) { idx in
                                 let data = chartData[idx]
-                                BarMark(
-                                    x: .value("Time", data.label),
-                                    yStart: .value("Min", data.min),
-                                    yEnd: .value("Max", data.max)
-                                )
-                                .foregroundStyle(.green.opacity(0.6))
+                                if let min = data.min, let max = data.max {
+                                    BarMark(
+                                        x: .value("Time", data.label),
+                                        yStart: .value("Min", min),
+                                        yEnd: .value("Max", max)
+                                    )
+                                    .foregroundStyle(.green.opacity(0.6))
+                                }
                             }
                         }
                         .frame(height: 300)
@@ -75,55 +145,86 @@ private extension Color {
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
 }
 
-// MARK: - Data Aggregation
+
+// MARK: - Data Aggregation with complete axis
 func aggregateHeartRate(for records: [HeartRateRecord],
                         mode: HeartRateChartMode,
-                        selectedDate: Date) -> [(label: String, min: Int, max: Int)] {
+                        selectedDate: Date) -> [(label: String, min: Int?, max: Int?)] {
+    let calendar = Calendar.current
+    let now = Date()
+    let todayStart = calendar.startOfDay(for: now)
+    
     switch mode {
     case .day:
-        let filtered = filterForSelectedDay(records, selectedDate: selectedDate)
+        let startOfDay = calendar.startOfDay(for: selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let filtered = records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay && $0.timestamp <= now }
         let grouped = groupByHour(records: filtered)
-        return grouped.sorted(by: { $0.key < $1.key }).map { key, records in
-            (String(format: "%02d:00", key),
-             records.map(\.heartRate).min() ?? 0,
-             records.map(\.heartRate).max() ?? 0)
+        
+        return (0..<24).map { hour in
+            let label = String(format: "%02d:00", hour)
+            // For current day, avoid future hours
+            if calendar.isDate(selectedDate, inSameDayAs: now),
+               hour > calendar.component(.hour, from: now) {
+                return (label, nil as Int?, nil as Int?)
+            }
+            if let data = grouped[hour], !data.isEmpty {
+                return (label, data.map(\.heartRate).min(), data.map(\.heartRate).max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
         }
+        
     case .week:
-        let filtered = filterForSelectedWeek(records, selectedDate: selectedDate)
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
+        let filtered = records.filter { weekInterval.contains($0.timestamp) && $0.timestamp <= now }
         let grouped = groupByWeekday(records: filtered)
-        let weekdaySymbols = Calendar.current.weekdaySymbols
-        return grouped.sorted(by: { $0.key < $1.key }).map { key, records in
-            (weekdaySymbols[key - 1],
-             records.map(\.heartRate).min() ?? 0,
-             records.map(\.heartRate).max() ?? 0)
+        let weekdaySymbols = calendar.weekdaySymbols
+
+        // Always show all 7 days
+        // .date(bySetting: .weekday...) expects Sunday-based index (1...7)
+        return (1...7).map { weekday in
+            let label = weekdaySymbols[weekday - 1]
+            
+            // For current week, avoid future days
+            if weekInterval.contains(todayStart),
+                let dayDate = calendar.nextDate(after: weekInterval.start, matching: DateComponents(weekday: weekday), matchingPolicy: .nextTime, direction: .forward),
+                dayDate > now {
+                    return (label, nil as Int?, nil as Int?)
+            }
+            if let data = grouped[weekday], !data.isEmpty {
+                return (label, data.map(\.heartRate).min(), data.map(\.heartRate).max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
         }
+        
     case .month:
-        let filtered = filterForSelectedMonth(records, selectedDate: selectedDate)
+        guard let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+              let dayRange = calendar.range(of: .day, in: .month, for: selectedDate)
+        else { return [] }
+
+        let filtered = records.filter { monthInterval.contains($0.timestamp) && $0.timestamp <= now }
         let grouped = groupByDayOfMonth(records: filtered)
-        return grouped.sorted(by: { $0.key < $1.key }).map { key, records in
-            ("\((key))",
-             records.map(\.heartRate).min() ?? 0,
-             records.map(\.heartRate).max() ?? 0)
+
+        return dayRange.map { day in
+            let label = "\(day)"
+            // For current month, avoid future days
+            if calendar.isDate(selectedDate, equalTo: now, toGranularity: .month) &&
+                day > calendar.component(.day, from: now) {
+                return (label, nil as Int?, nil as Int?)
+            }
+            if let data = grouped[day], !data.isEmpty {
+                return (label, data.map(\.heartRate).min(), data.map(\.heartRate).max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
         }
     }
 }
 
-// MARK: - Filtering Helpers
-func filterForSelectedDay(_ records: [HeartRateRecord], selectedDate: Date) -> [HeartRateRecord] {
-    let start = Calendar.current.startOfDay(for: selectedDate)
-    let end = Calendar.current.date(byAdding: .day, value: 1, to: start)!
-    return records.filter { $0.timestamp >= start && $0.timestamp < end }
-}
-func filterForSelectedWeek(_ records: [HeartRateRecord], selectedDate: Date) -> [HeartRateRecord] {
-    guard let interval = Calendar.current.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
-    return records.filter { interval.contains($0.timestamp) }
-}
-func filterForSelectedMonth(_ records: [HeartRateRecord], selectedDate: Date) -> [HeartRateRecord] {
-    guard let interval = Calendar.current.dateInterval(of: .month, for: selectedDate) else { return [] }
-    return records.filter { interval.contains($0.timestamp) }
-}
-
-// MARK: - Grouping Helpers
+// MARK: - Grouping
 func groupByHour(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
     Dictionary(grouping: records) { Calendar.current.component(.hour, from: $0.timestamp) }
 }
@@ -132,29 +233,6 @@ func groupByWeekday(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
 }
 func groupByDayOfMonth(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
     Dictionary(grouping: records) { Calendar.current.component(.day, from: $0.timestamp) }
-}
-
-// MARK: - Sample Data Generator
-func generateSampleData() -> [HeartRateRecord] {
-    var data: [HeartRateRecord] = []
-    let now = Date()
-    let calendar = Calendar.current
-    
-    // Create 3 days worth of random HR data
-    for dayOffset in -2...0 {
-        if let date = calendar.date(byAdding: .day, value: dayOffset, to: now) {
-            for hour in 0..<24 {
-                let sampleCount = Int.random(in: 1...4) // multiple readings per hour
-                for _ in 0..<sampleCount {
-                    if let timestamp = calendar.date(bySettingHour: hour, minute: Int.random(in: 0..<60), second: 0, of: date) {
-                        let hr = Int.random(in: 60...120)
-                        data.append(HeartRateRecord(timestamp: timestamp, heartRate: hr))
-                    }
-                }
-            }
-        }
-    }
-    return data
 }
 
 #Preview {
