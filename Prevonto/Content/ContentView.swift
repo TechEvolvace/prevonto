@@ -186,6 +186,11 @@ struct ContentView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         
+                        NavigationLink("Heart Rate") {
+                            HeartRateView()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        
                         NavigationLink("Blood Glucose") {
                             BloodGlucoseView()
                         }
