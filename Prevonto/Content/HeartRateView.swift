@@ -1,11 +1,13 @@
 import SwiftUI
 import Charts
 
+// Properties of Heart Rate data recorded from users
 struct HeartRateRecord {
     let timestamp: Date
     let heartRate: Int
 }
 
+// Properties defined for Date
 extension Date {
     static func from(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0) -> Date {
         var components = DateComponents()
@@ -19,16 +21,19 @@ extension Date {
     }
 }
 
+// Specify whether user selects "Day", "Week", or "Month" view mode
 enum HeartRateChartMode: String, CaseIterable, Identifiable {
     case day, week, month
     var id: String { rawValue }
 }
 
 struct HeartRateView: View {
+    // Default view mode selected is Day Mode
     @State private var selectedMode: HeartRateChartMode = .day
+    // Specify what date the user selected
     @State private var selectedDate: Date = Date()
     
-    // Sample data
+    // Sample Heart Rate data
     private let allHeartRateRecords: [HeartRateRecord] = [
         HeartRateRecord(timestamp: Date.from(year: 2025, month: 7, day: 31, hour: 9, minute: 15), heartRate: 90),
         HeartRateRecord(timestamp: Date.from(year: 2025, month: 7, day: 31, hour: 3, minute: 45), heartRate: 99),
@@ -86,6 +91,7 @@ struct HeartRateView: View {
         HeartRateRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 17, minute: 1), heartRate: 80),
     ]
     
+    // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(label: String, min: Int?, max: Int?)] {
         aggregateHeartRate(for: allHeartRateRecords, mode: selectedMode, selectedDate: selectedDate)
     }
@@ -107,7 +113,7 @@ struct HeartRateView: View {
                     }
                     .padding(.vertical, 15)
                     
-                    // Mode Picker
+                    // View Mode Picker
                     Picker("Mode", selection: $selectedMode) {
                         ForEach(HeartRateChartMode.allCases) { mode in
                             Text(mode.rawValue.capitalized).tag(mode)
@@ -116,7 +122,7 @@ struct HeartRateView: View {
                     .pickerStyle(.segmented)
                     .padding(.bottom, 10)
                     
-                    // Chart
+                    // Chart Area
                     VStack {
                         Chart {
                             ForEach(chartData.indices, id: \.self) { idx in
@@ -128,6 +134,14 @@ struct HeartRateView: View {
                                         yEnd: .value("Max", max)
                                     )
                                     .foregroundStyle(.green.opacity(0.6))
+                                    if min == max {
+                                        PointMark(
+                                            x: .value("Time", data.label),
+                                            y: .value("Measurement", min)
+                                        )
+                                        .foregroundStyle(.green)
+                                        .symbolSize(60)
+                                    }
                                 }
                             }
                         }
@@ -162,6 +176,12 @@ func aggregateHeartRate(for records: [HeartRateRecord],
         let filtered = records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay && $0.timestamp <= now }
         let grouped = groupByHour(records: filtered)
         
+        // Debugging Day Mode
+        for (hour, group) in grouped.sorted(by: { $0.key < $1.key }) {
+            let hrValues = group.map(\.heartRate)
+            print("Hour \(hour):", hrValues)
+        }
+        
         return (0..<24).map { hour in
             let label = String(format: "%02d:00", hour)
             // For current day, avoid future hours
@@ -181,6 +201,13 @@ func aggregateHeartRate(for records: [HeartRateRecord],
         let filtered = records.filter { weekInterval.contains($0.timestamp) && $0.timestamp <= now }
         let grouped = groupByWeekday(records: filtered)
         let weekdaySymbols = calendar.weekdaySymbols
+        
+        // Debug Week Mode
+        for (weekday, group) in grouped.sorted(by: { $0.key < $1.key }) {
+            let hrValues = group.map(\.heartRate)
+            let name = weekdaySymbols[weekday - 1]
+            print("\(name):", hrValues)
+        }
 
         // Always show all 7 days
         // .date(bySetting: .weekday...) expects Sunday-based index (1...7)
@@ -207,6 +234,11 @@ func aggregateHeartRate(for records: [HeartRateRecord],
 
         let filtered = records.filter { monthInterval.contains($0.timestamp) && $0.timestamp <= now }
         let grouped = groupByDayOfMonth(records: filtered)
+        
+        for (day, group) in grouped.sorted(by: { $0.key < $1.key }) {
+            let hrValues = group.map(\.heartRate)
+            print("Day \(day):", hrValues)
+        }
 
         return dayRange.map { day in
             let label = "\(day)"
