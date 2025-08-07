@@ -114,13 +114,27 @@ struct HeartRateView: View {
                     .padding(.vertical, 15)
                     
                     // View Mode Picker
-                    Picker("Mode", selection: $selectedMode) {
+                    HStack(spacing:20){
                         ForEach(HeartRateChartMode.allCases) { mode in
-                            Text(mode.rawValue.capitalized).tag(mode)
+                            Button(action: {
+                                selectedMode = mode
+                            }){
+                                Text(mode.rawValue.capitalized)
+                                    .font(.headline)
+                                    .foregroundStyle(selectedMode == mode ? .white : .primary)
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 34)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(selectedMode == mode ? Color.secondaryGreen : Color(.white))
+                                    )
+                                    .shadow(color: .gray.opacity(0.3), radius: 3, x: 0, y: 2)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .pickerStyle(.segmented)
                     .padding(.bottom, 10)
+                    .frame(width: 370)
                     
                     // Chart Area
                     VStack {
@@ -156,6 +170,7 @@ struct HeartRateView: View {
 
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
 }
 
