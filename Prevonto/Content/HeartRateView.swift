@@ -32,6 +32,8 @@ struct HeartRateView: View {
     @State private var selectedMode: HeartRateChartMode = .day
     // Specify what date the user selected
     @State private var selectedDate: Date = Date()
+    // Help identify which bar from chart is selecting
+    @State private var selectedBarIndex: Int? = nil
     
     // Sample Heart Rate data
     private let allHeartRateRecords: [HeartRateRecord] = [
@@ -92,8 +94,10 @@ struct HeartRateView: View {
     ]
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
-    private var chartData: [(label: String, min: Int?, max: Int?)] {
+    private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
         aggregateHeartRate(for: allHeartRateRecords, mode: selectedMode, selectedDate: selectedDate)
+            .enumerated()
+            .map { (idx, item) in (index: idx, label: item.label, min: item.min, max: item.max) }
     }
     
     var body: some View {
@@ -143,14 +147,14 @@ struct HeartRateView: View {
                                 let data = chartData[idx]
                                 if let min = data.min, let max = data.max {
                                     BarMark(
-                                        x: .value("Time", data.label),
+                                        x: .value("Index", data.index),
                                         yStart: .value("Min", min),
                                         yEnd: .value("Max", max)
                                     )
                                     .foregroundStyle(.green.opacity(0.6))
                                     if min == max {
                                         PointMark(
-                                            x: .value("Time", data.label),
+                                            x: .value("Index", data.index),
                                             y: .value("Measurement", min)
                                         )
                                         .foregroundStyle(.green)
@@ -160,6 +164,16 @@ struct HeartRateView: View {
                             }
                         }
                         .frame(height: 300)
+                        .chartXAxis {
+                            AxisMarks(values: chartData.map { $0.index }) { value in
+                                if let idx = value.as(Int.self), idx >= 0, idx < chartData.count && idx % 4 == 0 {
+                                    AxisValueLabel {
+                                        Text(chartData[idx].label)
+                                    }
+                                }
+                                AxisGridLine()
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 15)
