@@ -142,11 +142,13 @@ struct HeartRateView: View {
                     
                     // Chart Area
                     VStack {
-                        
+
+                        // Chart Title
                         Text("Beats Per Minute (BPM) over time")
                                 .foregroundColor(.grayText)
                                 .font(.headline)
                         
+                        // Heart Rate Chart
                         Chart {
                             ForEach(chartData.indices, id: \.self) { idx in
                                 let data = chartData[idx]
@@ -190,6 +192,7 @@ struct HeartRateView: View {
     }
 }
 
+// Colors used for the Heart Rate page
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
