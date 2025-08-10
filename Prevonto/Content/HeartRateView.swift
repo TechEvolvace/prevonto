@@ -168,10 +168,10 @@ struct HeartRateView: View {
                             AxisMarks(values: chartData.map { $0.index }) { value in
                                 if let idx = value.as(Int.self), idx >= 0, idx < chartData.count && idx % 4 == 0 {
                                     AxisValueLabel {
-                                        Text(chartData[idx].label)
+                                        Text(chartData[idx].label).offset(x: -10)
                                     }
+                                    AxisGridLine()
                                 }
-                                AxisGridLine()
                             }
                         }
                         .chartYAxis {
