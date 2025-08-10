@@ -174,6 +174,9 @@ struct HeartRateView: View {
                                 AxisGridLine()
                             }
                         }
+                        .chartYAxis {
+                            AxisMarks(position: .leading)
+                        }
                     }
                 }
                 .padding(.horizontal, 15)
