@@ -142,6 +142,11 @@ struct HeartRateView: View {
                     
                     // Chart Area
                     VStack {
+                        
+                        Text("Beats Per Minute (BPM) over time")
+                                .foregroundColor(.grayText)
+                                .font(.headline)
+                        
                         Chart {
                             ForEach(chartData.indices, id: \.self) { idx in
                                 let data = chartData[idx]
