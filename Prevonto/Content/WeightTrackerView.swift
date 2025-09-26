@@ -27,36 +27,24 @@ struct WeightChartView: View {
     }
 }
 
-// MARK: - WeightEntry + Manager
-
-struct WeightEntry: Identifiable {
-    let id = UUID()
-    let date: Date
-    let weightLb: Double
-
-    var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        return formatter.string(from: date)
-    }
-
-    func weight(in unit: String) -> Double {
-        unit == "Kg" ? weightLb * 0.453592 : weightLb
-    }
-}
 
 class WeightTrackerManager: ObservableObject {
     @Published var entries: [WeightEntry] = []
+    private var repository: WeightRepository
+
+    init(repository: WeightRepository = LocalWeightRepository()) {
+        self.repository = repository
+        self.entries = repository.fetchEntries()
+    }
 
     var averageWeightLb: Double {
         guard !entries.isEmpty else { return 0 }
-        let total = entries.map { $0.weightLb }.reduce(0, +)
-        return total / Double(entries.count)
+        return entries.map { $0.weightLb }.reduce(0, +) / Double(entries.count)
     }
 
     func addEntry(weight: Double) {
-        let newEntry = WeightEntry(date: Date(), weightLb: weight)
-        entries.insert(newEntry, at: 0)
+        repository.addEntry(weight: weight)
+        entries = repository.fetchEntries()
     }
 }
 

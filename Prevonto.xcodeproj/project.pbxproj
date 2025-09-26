@@ -35,7 +35,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A7E013182D507501007A58ED /* Prevonto */ = {
+		A761B3712E873CC000E5E94C /* Prevonto */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Prevonto;
 			sourceTree = "<group>";
@@ -89,7 +89,7 @@
 		A7E0130D2D507501007A58ED = {
 			isa = PBXGroup;
 			children = (
-				A7E013182D507501007A58ED /* Prevonto */,
+				A761B3712E873CC000E5E94C /* Prevonto */,
 				A7E013292D507503007A58ED /* PrevontoTests */,
 				A7E013332D507503007A58ED /* PrevontoUITests */,
 				A76404AF2D9F68220075AABB /* Frameworks */,
@@ -123,7 +123,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A7E013182D507501007A58ED /* Prevonto */,
+				A761B3712E873CC000E5E94C /* Prevonto */,
 			);
 			name = Prevonto;
 			packageProductDependencies = (
