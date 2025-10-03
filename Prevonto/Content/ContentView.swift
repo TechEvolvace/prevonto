@@ -432,27 +432,30 @@ struct ContentView: View {
                 .fontWeight(.bold)
                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Image(systemName: "pills.fill")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 12))
+                        .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
+                        .font(.system(size: 14))
                     Text("Medicine, 10:00 AM")
-                        .font(.custom("Noto Sans", size: 12))
+                        .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
                 
                 HStack {
                     Image(systemName: "clock.fill")
-                        .foregroundColor(.red)
-                        .font(.system(size: 12))
+                        .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
+                        .font(.system(size: 14))
                     Text("Medicine, 11:00 AM")
-                        .font(.custom("Noto Sans", size: 12))
+                        .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
             }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 120)
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
