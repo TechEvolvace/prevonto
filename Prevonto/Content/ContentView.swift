@@ -41,7 +41,7 @@ struct ContentView: View {
                     trackingPatternSection
                     Spacer(minLength: 100)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .navigationBarHidden(true)
@@ -61,7 +61,7 @@ struct ContentView: View {
                 Text("Welcome back!")
                     .font(.custom("Noto Sans", size: 28))
                     .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
             }
             
             Spacer()
@@ -75,7 +75,7 @@ struct ContentView: View {
                         .foregroundColor(.black)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
-                        .clipShape(Circle())
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
@@ -87,7 +87,7 @@ struct ContentView: View {
                         .foregroundColor(.black)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
-                        .clipShape(Circle())
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
             }
@@ -158,7 +158,7 @@ struct ContentView: View {
                 
                 Circle()
                     .trim(from: 0, to: standProgress)
-                    .stroke(Color(red: 0.14, green: 0.20, blue: 0.08), lineWidth: 12)
+                    .stroke(Color(red: 0.14, green: 0.20, blue: 0.08), style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .frame(width: 120, height: 120)
                     .rotationEffect(.degrees(-90))
                 
@@ -169,7 +169,7 @@ struct ContentView: View {
                 
                 Circle()
                     .trim(from: 0, to: exerciseProgress)
-                    .stroke(Color(red: 0.36, green: 0.51, blue: 0.36), lineWidth: 12)
+                    .stroke(Color(red: 0.36, green: 0.51, blue: 0.36), style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .frame(width: 90, height: 90)
                     .rotationEffect(.degrees(-90))
                 
@@ -180,7 +180,7 @@ struct ContentView: View {
                 
                 Circle()
                     .trim(from: 0, to: caloriesProgress)
-                    .stroke(Color(red: 0.51, green: 0.64, blue: 0.51), lineWidth: 12)
+                    .stroke(Color(red: 0.51, green: 0.64, blue: 0.51), style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .frame(width: 60, height: 60)
                     .rotationEffect(.degrees(-90))
             }
@@ -188,9 +188,12 @@ struct ContentView: View {
             Text("Almost there!")
                 .font(.custom("Noto Sans", size: 14))
                 .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .padding(.top, 4)
+                .padding(.bottom, 2)
         }
-        .frame(width: 160, height: 200)
-        .padding(20)
+        .frame(maxWidth: .infinity)
+        .frame(height: 160)
+        .padding(16)
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
@@ -198,39 +201,75 @@ struct ContentView: View {
     
     // MARK: - Heart Rate Card
     var heartRateCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("\(Int(heartRate))bpm")
-                    .font(.custom("Noto Sans", size: 24))
-                    .fontWeight(.bold)
-                    .foregroundColor(.black)
-                Spacer()
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("\(Int(heartRate))")
+                        .font(.custom("Noto Sans", size: 32))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
+                    Text("bpm")
+                        .font(.custom("Noto Sans", size: 18))
+                        .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
+                    Spacer()
+                }
+                
+                Text("Avg Heart Rate")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
-            
-            Text("Avg Heart Rate")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             
             // Heart rate chart with gradient
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.49, green: 0.62, blue: 0.42),
-                                Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 60)
+                // Background bars
+                HStack(spacing: 12) {
+                    ForEach(0..<12) { _ in
+                        Rectangle()
+                            .fill(Color(red: 0.74, green: 0.77, blue: 0.82).opacity(0.25))
+                            .frame(width: 1, height: 60)
+                    }
+                }
                 
-                // Simple line chart
+                // Area chart with gradient from line to bottom
                 Path { path in
-                    let width = 140.0
+                    let width = 120.0
                     let height = 60.0
-                    let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3]
+                    let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3, 0.5, 0.4, 0.6, 0.2]
+                    
+                    // Start from bottom left
+                    path.move(to: CGPoint(x: 0, y: height))
+                    
+                    // Draw to first point
+                    path.addLine(to: CGPoint(x: 0, y: height * (1 - points[0])))
+                    
+                    // Draw the line
+                    for i in 1..<points.count {
+                        let x = (width / Double(points.count - 1)) * Double(i)
+                        let y = height * (1 - points[i])
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    
+                    // Close the path to bottom
+                    path.addLine(to: CGPoint(x: width, y: height))
+                    path.addLine(to: CGPoint(x: 0, y: height))
+                }
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.49, green: 0.62, blue: 0.42).opacity(0.6),
+                            Color(red: 0.49, green: 0.62, blue: 0.42).opacity(0.1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: 60)
+                
+                // Line on top
+                Path { path in
+                    let width = 120.0
+                    let height = 60.0
+                    let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3, 0.5, 0.4, 0.6, 0.2]
                     
                     path.move(to: CGPoint(x: 0, y: height * (1 - points[0])))
                     for i in 1..<points.count {
@@ -242,9 +281,11 @@ struct ContentView: View {
                 .stroke(Color(red: 0.49, green: 0.62, blue: 0.42), lineWidth: 2)
                 .frame(height: 60)
             }
+            .cornerRadius(8)
         }
-        .frame(width: 160, height: 200)
-        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 160)
+        .padding(16)
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
