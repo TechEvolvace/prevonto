@@ -34,8 +34,10 @@ struct ContentView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
-                    headerSection
-                    quickHealthSection
+                    VStack(spacing: 16){
+                        headerSection
+                        quickHealthSection
+                    }
                     healthHighlightsSection
                     medicationSection
                     trackingPatternSection
@@ -59,7 +61,7 @@ struct ContentView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Welcome back!")
-                    .font(.custom("Noto Sans", size: 28))
+                    .font(.custom("Noto Sans", size: 32))
                     .fontWeight(.semibold)
                     .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
             }
@@ -99,8 +101,8 @@ struct ContentView: View {
     var quickHealthSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Quick Health")
-                    .font(.custom("Noto Sans", size: 22))
+                Text("Quick Health Snapshot")
+                    .font(.custom("Noto Sans", size: 18))
                     .fontWeight(.semibold)
                     .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
                 
@@ -115,7 +117,7 @@ struct ContentView: View {
                 } label: {
                     HStack {
                         Text(selectedTimePeriod.rawValue)
-                            .font(.custom("Noto Sans", size: 16))
+                            .font(.custom("Noto Sans", size: 14))
                             .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12))
@@ -303,21 +305,27 @@ struct ContentView: View {
                 ForEach(0..<3, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color(red: 0.96, green: 0.97, blue: 0.98))
-                        .frame(height: 120)
+                        .frame(width: 280, height: 120)
+                        .scaleEffect(index == healthHighlightsCurrentIndex ? 1.0 : 0.9)
+                        .animation(.easeInOut(duration: 0.3), value: healthHighlightsCurrentIndex)
                         .tag(index)
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 120)
+            .frame(height: 140)
             
             // Custom page indicators
-            HStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(index == healthHighlightsCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
-                        .frame(width: index == healthHighlightsCurrentIndex ? 24 : 8, height: 8)
-                        .animation(.easeInOut(duration: 0.3), value: healthHighlightsCurrentIndex)
+            HStack {
+                Spacer()
+                HStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(index == healthHighlightsCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
+                            .frame(width: index == healthHighlightsCurrentIndex ? 24 : 8, height: 8)
+                            .animation(.easeInOut(duration: 0.3), value: healthHighlightsCurrentIndex)
+                    }
                 }
+                Spacer()
             }
         }
     }
@@ -334,6 +342,7 @@ struct ContentView: View {
             TabView(selection: $medicationCurrentIndex) {
                 ForEach(medications.indices, id: \.self) { index in
                     medicationCard(medication: medications[index])
+                        .frame(width: 280) // Fixed: Set specific width
                         .tag(index)
                 }
             }
@@ -341,17 +350,21 @@ struct ContentView: View {
             .frame(height: 100)
             
             // Custom page indicators for medication
-            HStack(spacing: 8) {
-                ForEach(medications.indices, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(index == medicationCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
-                        .frame(width: index == medicationCurrentIndex ? 24 : 8, height: 8)
-                        .animation(.easeInOut(duration: 0.3), value: medicationCurrentIndex)
+            HStack {
+                Spacer()
+                HStack(spacing: 8) {
+                    ForEach(medications.indices, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(index == medicationCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
+                            .frame(width: index == medicationCurrentIndex ? 24 : 8, height: 8)
+                            .animation(.easeInOut(duration: 0.3), value: medicationCurrentIndex)
+                    }
                 }
+                Spacer()
             }
             
             // Reminders and Adherence section
-            HStack(spacing: 16) {
+            HStack(spacing: 12) { // Fixed: Reduced spacing
                 // Reminders card
                 remindersCard
                 
