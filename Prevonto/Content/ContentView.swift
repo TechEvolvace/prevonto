@@ -40,7 +40,7 @@ struct ContentView: View {
                     }
                     healthHighlightsSection
                     medicationSection
-                    trackingPatternSection
+                    moodTrackerSection
                     Spacer(minLength: 100)
                 }
                 .padding(.horizontal, 16)
@@ -417,7 +417,7 @@ struct ContentView: View {
                 .cornerRadius(8)
             }
         }
-        .frame(width: 320)
+        .frame(width: 325)
         .padding(20)
         .background(Color.white)
         .cornerRadius(16)
@@ -431,6 +431,7 @@ struct ContentView: View {
                 .font(.custom("Noto Sans", size: 20))
                 .fontWeight(.bold)
                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                .padding(.top, 10)
             
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
@@ -455,7 +456,7 @@ struct ContentView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 120)
+        .frame(height: 80)
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
@@ -464,40 +465,44 @@ struct ContentView: View {
     
     // MARK: - Adherence Card
     var adherenceCard: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 12) {
             ZStack {
                 Circle()
                     .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
-                    .frame(width: 50, height: 50)
+                    .frame(width: 52, height: 52)
                 
                 Circle()
                     .trim(from: 0, to: 0.73)
-                    .stroke(Color(red: 0.02, green: 0.33, blue: 0.18), lineWidth: 4)
-                    .frame(width: 50, height: 50)
+                    .stroke(Color(red: 0.368, green: 0.553, blue: 0.372), lineWidth: 4)
+                    .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(-90))
                 
                 Text("73%")
-                    .font(.custom("Noto Sans", size: 12))
+                    .font(.custom("Noto Sans", size: 14))
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
             }
             
-            VStack(spacing: 2) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Adherence")
-                    .font(.custom("Noto Sans", size: 12))
+                    .font(.custom("Noto Sans", size: 13))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
                 
                 Text("14 to 21")
-                    .font(.custom("Noto Sans", size: 10))
+                    .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 
                 Text("May 2025")
-                    .font(.custom("Noto Sans", size: 10))
+                    .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                
             }
+            
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 80)
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
@@ -505,17 +510,29 @@ struct ContentView: View {
     }
     
     // MARK: - Tracking Pattern Section
-    var trackingPatternSection: some View {
+    var moodTrackerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Your Tracking pattern")
-                .font(.custom("Noto Sans", size: 22))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+            HStack {
+                Text("Your Mood Tracker")
+                    .font(.custom("Noto Sans", size: 22))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    .background(Color.white)
+                    .cornerRadius(16)
+                
+                Spacer()
+            }
+            
+            
+            VStack(alignment: .leading, spacing: 4) {
+                // Add contents of mood tracker data here!
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 120)
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
         }
     }
     
