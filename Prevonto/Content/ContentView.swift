@@ -342,7 +342,7 @@ struct ContentView: View {
             TabView(selection: $medicationCurrentIndex) {
                 ForEach(medications.indices, id: \.self) { index in
                     medicationCard(medication: medications[index])
-                        .frame(width: 280) // Fixed: Set specific width
+                        .frame(width: 280)
                         .tag(index)
                 }
             }
@@ -364,7 +364,7 @@ struct ContentView: View {
             }
             
             // Reminders and Adherence section
-            HStack(spacing: 12) { // Fixed: Reduced spacing
+            HStack(spacing: 12) {
                 // Reminders card
                 remindersCard
                 
@@ -379,13 +379,13 @@ struct ContentView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(medication.name)
-                    .font(.custom("Noto Sans", size: 16))
-                    .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .font(.custom("Noto Sans", size: 20))
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                 
                 Text(medication.instructions)
                     .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
             }
             
             Spacer()
@@ -395,16 +395,21 @@ struct ContentView: View {
                     // Skip action
                 }
                 .font(.custom("Noto Sans", size: 14))
+                .frame(width: 60)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(red: 0.95, green: 0.95, blue: 0.95))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(red: 0.690, green: 0.698, blue: 0.764), lineWidth: 1)
+                )
+                .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
                 .cornerRadius(8)
                 
                 Button("Taken") {
                     // Taken action
                 }
                 .font(.custom("Noto Sans", size: 14))
+                .frame(width: 60)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(Color(red: 0.02, green: 0.33, blue: 0.18))
@@ -412,6 +417,7 @@ struct ContentView: View {
                 .cornerRadius(8)
             }
         }
+        .frame(width: 320)
         .padding(20)
         .background(Color.white)
         .cornerRadius(16)
@@ -422,9 +428,9 @@ struct ContentView: View {
     var remindersCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Reminders")
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.semibold)
-                .foregroundColor(.black)
+                .font(.custom("Noto Sans", size: 20))
+                .fontWeight(.bold)
+                .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
             
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
