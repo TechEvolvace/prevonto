@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var heartRate: Double = 60
     @State private var authorizationStatus: String = "Not Requested"
     @State private var showingQuickActions = false
+    @State private var showingAddModal = false
     
     // Time period selection
     @State private var selectedTimePeriod: TimePeriod = .thisMonth
@@ -26,29 +27,60 @@ struct ContentView: View {
     // Sample medication data
     private let medications = [
         Medication(name: "Medication", instructions: "Instructions for intake", time: "10:00 AM"),
-        Medication(name: "Medicine B", instructions: "Take with food", time: "6:00 PM"),
-        Medication(name: "Supplement", instructions: "Once daily", time: "8:00 AM")
+        Medication(name: "Ibuprofen", instructions: "Take one tablet with food 3 times a day", time: "6:00 PM"),
+        Medication(name: "Vitamin D2", instructions: "Take 1 capsule by mouth once weekly", time: "8:00 AM")
     ]
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 32) {
-                    VStack(spacing: 16){
-                        headerSection
-                        quickHealthSection
+            ZStack {
+                // All Dashboard Page Content that is not the floating + button
+                ScrollView {
+                    VStack(spacing: 32) {
+                        VStack(spacing: 16){
+                            headerSection
+                            quickHealthSection
+                        }
+                        healthHighlightsSection
+                        medicationSection
+                        moodTrackerSection
+                        Spacer(minLength: 100)
                     }
-                    healthHighlightsSection
-                    medicationSection
-                    moodTrackerSection
-                    Spacer(minLength: 100)
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
+                .background(Color.white)
+                .navigationBarHidden(true)
+                .sheet(isPresented: $showingQuickActions) {
+                    QuickActionsModal()
+                }
+                
+                // Floating + button, always visible in Dashboard page in same spot
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showingAddModal = true
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(Color(red: 0.02, green: 0.33, blue: 0.18)) // Prevonto dark green
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 34) // Account for safe area
+                    }
+                }
             }
-            .background(Color.white)
             .navigationBarHidden(true)
             .sheet(isPresented: $showingQuickActions) {
                 QuickActionsModal()
+            }
+            .sheet(isPresented: $showingAddModal) {
+                AddItemModal()
             }
         }
         .onAppear {
@@ -59,6 +91,7 @@ struct ContentView: View {
     // MARK: - Header Section
     var headerSection: some View {
         HStack {
+            // Welcome Back Message
             VStack(alignment: .leading, spacing: 4) {
                 Text("Welcome back!")
                     .font(.custom("Noto Sans", size: 32))
@@ -68,6 +101,7 @@ struct ContentView: View {
             
             Spacer()
             
+            // Search Button
             HStack(spacing: 16) {
                 Button(action: {
                     // Search functionality
@@ -81,6 +115,7 @@ struct ContentView: View {
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
+                // Paperclip-icon button
                 Button(action: {
                     // Paperclip functionality
                 }) {
@@ -101,6 +136,7 @@ struct ContentView: View {
     var quickHealthSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
+                // Quick Health Snapshot subheading
                 Text("Quick Health Snapshot")
                     .font(.custom("Noto Sans", size: 18))
                     .fontWeight(.semibold)
@@ -108,6 +144,8 @@ struct ContentView: View {
                 
                 Spacer()
                 
+                // Dropdown menu selection
+                // Following options to select: Today, This week, This month, This year
                 Menu {
                     ForEach(TimePeriod.allCases, id: \.self) { period in
                         Button(period.rawValue) {
@@ -134,13 +172,15 @@ struct ContentView: View {
             }
             
             HStack(spacing: 16) {
-                // Activity Rings Card
+                // Activity Rings Card with 3 Activity rings
+                // User can click on it to go to Steps & Activity Tracker page (handled primarily by StepsDetailsView file)
                 NavigationLink(destination: StepsDetailsView()) {
                     activityRingsCard
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Heart Rate Card
+                // Heart Rate Card with Heart Rate Line graph
+                // User can click on it to go to Heart Rate page (handled primarily by HeartRateView.swift file)
                 NavigationLink(destination: HeartRateView()) {
                     heartRateCard
                 }
@@ -221,7 +261,7 @@ struct ContentView: View {
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
             
-            // Heart rate chart with gradient
+            // Heart rate chart with gradient (May replace this entire ZStack with Chart and plug in data values to plot the Heart rate chart to display in Dashboard page)
             ZStack {
                 // Background bars
                 HStack(spacing: 12) {
@@ -296,11 +336,13 @@ struct ContentView: View {
     // MARK: - Health Highlights Section
     var healthHighlightsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Health Highlights subheading
             Text("Health highlights")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
                 .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
             
+            // Carousel of cards, where each card contains a specific health summary information for user
             TabView(selection: $healthHighlightsCurrentIndex) {
                 ForEach(0..<3, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 16)
@@ -314,7 +356,7 @@ struct ContentView: View {
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 140)
             
-            // Custom page indicators
+            // Carousel progress bar for the Health Highlights section
             HStack {
                 Spacer()
                 HStack(spacing: 8) {
@@ -333,12 +375,13 @@ struct ContentView: View {
     // MARK: - Medication Section
     var medicationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Your Medication subheading
             Text("Your medication")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
                 .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
             
-            // Medication card carousel
+            // Medication card carousel, where each card display each medicine and status of either taking or skipping that medicine
             TabView(selection: $medicationCurrentIndex) {
                 ForEach(medications.indices, id: \.self) { index in
                     medicationCard(medication: medications[index])
@@ -349,7 +392,7 @@ struct ContentView: View {
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 100)
             
-            // Custom page indicators for medication
+            // Carousel progress bar for the Medication section
             HStack {
                 Spacer()
                 HStack(spacing: 8) {
@@ -363,12 +406,12 @@ struct ContentView: View {
                 Spacer()
             }
             
-            // Reminders and Adherence section
+            // Medication Reminders and Adherence section
             HStack(spacing: 12) {
-                // Reminders card
+                // Medication Reminders card
                 remindersCard
                 
-                // Adherence card
+                // Medication Adherence card
                 adherenceCard
             }
         }
@@ -377,6 +420,7 @@ struct ContentView: View {
     // MARK: - Medication Card
     func medicationCard(medication: Medication) -> some View {
         HStack {
+            // Medication name and instructions to take the medicine
             VStack(alignment: .leading, spacing: 4) {
                 Text(medication.name)
                     .font(.custom("Noto Sans", size: 20))
@@ -390,6 +434,7 @@ struct ContentView: View {
             
             Spacer()
             
+            // Medication Skipped and Medication Taken buttons
             HStack(spacing: 8) {
                 Button("Skipped") {
                     // Skip action
@@ -427,12 +472,14 @@ struct ContentView: View {
     // MARK: - Reminders Card
     var remindersCard: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Reminders Card subheading
             Text("Reminders")
                 .font(.custom("Noto Sans", size: 20))
                 .fontWeight(.bold)
                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                 .padding(.top, 10)
             
+            // Display each medicine user wants a reminder for
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Image(systemName: "pills.fill")
@@ -465,6 +512,7 @@ struct ContentView: View {
     
     // MARK: - Adherence Card
     var adherenceCard: some View {
+        // Progress ring for display user's medication adherence percentage
         HStack(spacing: 12) {
             ZStack {
                 Circle()
@@ -489,11 +537,13 @@ struct ContentView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
                 
-                Text("14 to 21")
+                // Days of the Week
+                Text("21 to 28")
                     .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 
-                Text("May 2025")
+                // Display Selected Month
+                Text("September 2025")
                     .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 
@@ -509,9 +559,10 @@ struct ContentView: View {
         .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
     }
     
-    // MARK: - Tracking Pattern Section
+    // MARK: - Mood Tracker Section
     var moodTrackerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Your Mood Tracker subheading
             HStack {
                 Text("Your Mood Tracker")
                     .font(.custom("Noto Sans", size: 22))
@@ -523,7 +574,7 @@ struct ContentView: View {
                 Spacer()
             }
             
-            
+            // Showcase the user's mood data
             VStack(alignment: .leading, spacing: 4) {
                 // Add contents of mood tracker data here!
             }
@@ -582,6 +633,124 @@ struct ContentView: View {
                 }
             }
         }
+    }
+}
+
+// Modal and its contents that gets loaded when the user clicks on the floating + button
+struct AddItemModal: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 32) {
+                // Header
+                HStack {
+                    Text("Quick Actions")
+                        .font(.custom("Noto Sans", size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                            .frame(width: 30, height: 30)
+                            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.top, 20)
+                .padding(.horizontal, 24)
+                
+                // 2x2 Grid of options
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 20) {
+                    
+                    NavigationLink(destination: WeightTrackerView()) {
+                        AddItemButtonView(
+                            icon: "scalemass.fill",
+                            title: "Input Weight",
+                            color: Color.blue
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    NavigationLink(destination: MoodTrackerView()) {
+                        AddItemButtonView(
+                            icon: "face.smiling.fill",
+                            title: "Input Mood",
+                            color: Color.green
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        // Add medication action
+                        dismiss()
+                    }) {
+                        AddItemButtonView(
+                            icon: "pills.fill",
+                            title: "Add Medication",
+                            color: Color.orange
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        // Custom action
+                        dismiss()
+                    }) {
+                        AddItemButtonView(
+                            icon: "plus.circle.fill",
+                            title: "Custom",
+                            color: Color(red: 0.36, green: 0.55, blue: 0.37)
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.horizontal, 32)
+                
+                Spacer()
+            }
+            .background(Color.white)
+        }
+    }
+}
+
+// MARK: - Add Item Button Component (the floating + button in Dashboard page)
+struct AddItemButtonView: View {
+    let icon: String
+    let title: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 32))
+                .foregroundColor(.white)
+                .frame(width: 70, height: 70)
+                .background(color)
+                .clipShape(Circle())
+                .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+            
+            Text(title)
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.medium)
+                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 130)
+        .padding(.vertical, 20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
 
