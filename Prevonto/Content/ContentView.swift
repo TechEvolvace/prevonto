@@ -115,11 +115,11 @@ struct ContentView: View {
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
-                // Paperclip-icon button
+                // New Settings Button
                 Button(action: {
-                    // Paperclip functionality
+                    // Insert functionality that when user clicks on Settings button, will take the user to the Settings page (handled primarily by SettingsView.swift file)
                 }) {
-                    Image(systemName: "paperclip")
+                    Image(systemName: "gearshape")
                         .font(.system(size: 20))
                         .foregroundColor(.black)
                         .frame(width: 40, height: 40)
