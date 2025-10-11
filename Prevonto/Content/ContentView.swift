@@ -116,9 +116,7 @@ struct ContentView: View {
                 }
                 
                 // New Settings Button
-                Button(action: {
-                    // Insert functionality that when user clicks on Settings button, will take the user to the Settings page (handled primarily by SettingsView.swift file)
-                }) {
+                NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 20))
                         .foregroundColor(.black)
@@ -127,6 +125,7 @@ struct ContentView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.top, 20)
