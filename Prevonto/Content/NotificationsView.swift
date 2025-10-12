@@ -74,20 +74,19 @@ struct NotificationsView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
                 Spacer()
                 
                 Text("Notifications")
-                    .font(.custom("Noto Sans", size: 24))
-                    .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .font(.custom("Noto Sans", size: 28))
+                    .fontWeight(.black)
+                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                 
                 Spacer()
                 
@@ -98,7 +97,7 @@ struct NotificationsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 20)
-            .padding(.bottom, 16)
+            .padding(.bottom, 0)
             .background(Color.white)
         }
     }
@@ -106,12 +105,6 @@ struct NotificationsView: View {
     // MARK: - Push Notifications Section
     var pushNotificationsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Push Notifications")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
             VStack(spacing: 0) {
                 NotificationToggleRow(
                     title: "Push Notifications",
@@ -141,7 +134,7 @@ struct NotificationsView: View {
                     isEnabled: false
                 )
                 
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "Blood Glucose",
@@ -245,7 +238,7 @@ struct NotificationToggleRow: View {
                 .toggleStyle(CustomToggleStyle(isEnabled: isEnabled))
                 .disabled(!isEnabled)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
         .padding(.horizontal, 16)
         .background(isEnabled ? Color.white : Color(red: 0.96, green: 0.96, blue: 0.96))
     }
