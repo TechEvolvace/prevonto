@@ -218,11 +218,6 @@ struct ContentView: View {
                     .cornerRadius(16)
                     .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
                 }
-                
-                // If only one metric is shown, make it take full width
-                if (showStepsActivity && !showHeartRate) || (!showStepsActivity && showHeartRate) {
-                    Spacer()
-                }
             }
         }
     }
@@ -803,7 +798,7 @@ struct Medication {
     let time: String
 }
 
-// MARK: - Quick Actions Modal (unchanged from original)
+// MARK: - Quick Actions Modal
 struct QuickActionsModal: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -874,7 +869,7 @@ struct QuickActionsModal: View {
     }
 }
 
-// MARK: - Quick Action Button Components (unchanged from original)
+// MARK: - Quick Action Button Components
 struct QuickActionButton: View {
     let icon: String
     let title: String
