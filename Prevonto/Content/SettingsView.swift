@@ -57,7 +57,9 @@ struct SettingsView: View {
             Text("This action cannot be undone. All of your data will be permanently deleted.")
         }
         .navigationDestination(isPresented: $navigateToSignUp) {
+            // Go back to the Sign Up page but have no way to navigate directly back to the Settings page once in the Sign Up page
             SignUpView()
+                    .navigationBarBackButtonHidden(true)
         }
     }
     
