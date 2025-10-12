@@ -3,9 +3,15 @@ import SwiftUI
 
 // Shared state manager for notification settings
 class NotificationSettings: ObservableObject {
-    @Published var pushNotifications: Bool = true
-    @Published var heartRate: Bool = true
-    @Published var stepsAndActivity: Bool = true
+    @Published var pushNotifications: Bool = true {
+        didSet { UserDefaults.standard.set(pushNotifications, forKey: "pushNotifications") }
+    }
+    @Published var heartRate: Bool = true {
+        didSet { UserDefaults.standard.set(heartRate, forKey: "showHeartRate") }
+    }
+    @Published var stepsAndActivity: Bool = true {
+        didSet { UserDefaults.standard.set(stepsAndActivity, forKey: "showStepsActivity") }
+    }
     
     // Read-only toggles (grayed out)
     let bodyMetrics: Bool = false
@@ -15,6 +21,13 @@ class NotificationSettings: ObservableObject {
     let weight: Bool = false
     let trackers: Bool = false
     let medication: Bool = false
+    
+    init() {
+        // Load saved settings
+        pushNotifications = UserDefaults.standard.object(forKey: "pushNotifications") as? Bool ?? true
+        heartRate = UserDefaults.standard.object(forKey: "showHeartRate") as? Bool ?? true
+        stepsAndActivity = UserDefaults.standard.object(forKey: "showStepsActivity") as? Bool ?? true
+    }
 }
 
 struct NotificationsView: View {
@@ -231,25 +244,10 @@ struct NotificationToggleRow: View {
             Toggle("", isOn: $isOn)
                 .toggleStyle(CustomToggleStyle(isEnabled: isEnabled))
                 .disabled(!isEnabled)
-                .onChange(of: isOn) { oldValue, newValue in
-                    handleToggleChange(title: title, newValue: newValue)
-                }
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 16)
-    }
-    
-    private func handleToggleChange(title: String, newValue: Bool) {
-        if title == "Heart Rate" {
-            // Update dashboard heart rate visibility
-            UserDefaults.standard.set(newValue, forKey: "showHeartRate")
-        } else if title == "Steps & Activity" {
-            // Update dashboard activity rings visibility
-            UserDefaults.standard.set(newValue, forKey: "showStepsActivity")
-        } else if title == "Push Notifications" {
-            // Handle push notifications toggle
-            // Placeholder for future push notification implementation
-        }
+        .background(isEnabled ? Color.white : Color(red: 0.96, green: 0.96, blue: 0.96))
     }
 }
 
