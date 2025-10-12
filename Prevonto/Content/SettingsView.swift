@@ -144,6 +144,7 @@ struct SettingsView: View {
     
     // MARK: - Personal Account Settings Section
     var personalAccountSection: some View {
+        
         VStack(alignment: .leading, spacing: 16) {
             Text("Personal Account Settings")
                 .font(.custom("Noto Sans", size: 18))
