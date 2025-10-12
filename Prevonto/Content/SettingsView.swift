@@ -69,20 +69,19 @@ struct SettingsView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
                 Spacer()
                 
                 Text("Settings")
-                    .font(.custom("Noto Sans", size: 24))
-                    .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .font(.custom("Noto Sans", size: 28))
+                    .fontWeight(.black)
+                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                 
                 Spacer()
                 
@@ -93,7 +92,7 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 20)
-            .padding(.bottom, 16)
+            .padding(.bottom, 0)
             .background(Color.white)
         }
     }
@@ -101,47 +100,46 @@ struct SettingsView: View {
     // MARK: - Profile Section
     var profileSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Your Name")
-                    .font(.custom("Noto Sans", size: 18))
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                Spacer()
-            }
-            
             NavigationLink(destination: ProfileView()) {
                 HStack {
                     // Profile Picture Placeholder
                     Circle()
-                        .fill(Color(red: 0.85, green: 0.85, blue: 0.85))
+                        .fill(Color(Color(red: 0.86, green: 0.93, blue: 0.86)))
                         .frame(width: 50, height: 50)
                         .overlay(
                             Image(systemName: "person.fill")
                                 .font(.system(size: 20))
                                 .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
                         )
+                        .padding(.trailing, 4)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("My Profile")
+                        Text("Your Name")
                             .font(.custom("Noto Sans", size: 16))
                             .fontWeight(.medium)
                             .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                         
-                        Text("Set name")
+                        Text("yourname@example.com")
                             .font(.custom("Noto Sans", size: 14))
-                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                            .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14))
+                        .fontWeight(.medium)
                         .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
                 }
                 .padding(.vertical, 8)
             }
             .buttonStyle(PlainButtonStyle())
         }
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Personal Account Settings Section
@@ -157,23 +155,62 @@ struct SettingsView: View {
                     SettingsRowView(
                         icon: "iphone",
                         title: "Devices",
-                        subtitle: nil
+                        subtitle: nil,
+                        showChevron: true
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
-                
-                Divider()
-                    .padding(.leading, 44)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 6,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 6
+                    )
+                )
                 
                 NavigationLink(destination: LanguageView()) {
                     SettingsRowView(
                         icon: "globe",
-                        title: "Languages",
+                        title: "Language",
                         subtitle: "English"
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    showingLogoutAlert = true
+                }) {
+                    SettingsRowView(
+                        icon: "rectangle.portrait.and.arrow.right",
+                        title: "Logout",
+                        subtitle: nil,
+                        showChevron: true
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    showingDeleteAlert = true
+                }) {
+                    SettingsRowView(
+                        icon: "trash",
+                        title: "Delete Account",
+                        subtitle: nil,
+                        showChevron: true
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 6,
+                        bottomTrailingRadius: 6,
+                        topTrailingRadius: 6
+                    )
+                )
             }
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -194,7 +231,9 @@ struct SettingsView: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -208,33 +247,19 @@ struct SettingsView: View {
             
             VStack(spacing: 0) {
                 Button(action: {
-                    showingLogoutAlert = true
+                    // Insert Help functionality here
                 }) {
                     SettingsRowView(
-                        icon: "rectangle.portrait.and.arrow.right",
-                        title: "Logout",
+                        icon: "questionmark.circle",
+                        title: "Help",
                         subtitle: nil,
-                        showChevron: false
+                        showChevron: true
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
-                
-                Divider()
-                    .padding(.leading, 44)
-                
-                Button(action: {
-                    showingDeleteAlert = true
-                }) {
-                    SettingsRowView(
-                        icon: "trash",
-                        title: "Delete Account",
-                        subtitle: nil,
-                        showChevron: false,
-                        isDestructive: true
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
     }
 }
@@ -245,20 +270,19 @@ struct SettingsRowView: View {
     let title: String
     let subtitle: String?
     var showChevron: Bool = true
-    var isDestructive: Bool = false
     
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundColor(isDestructive ? .red : Color(red: 0.60, green: 0.60, blue: 0.60))
+                .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
                 .frame(width: 20, height: 20)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.custom("Noto Sans", size: 16))
-                    .fontWeight(.medium)
-                    .foregroundColor(isDestructive ? .red : Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                 
                 if let subtitle = subtitle {
                     Text(subtitle)
@@ -272,6 +296,7 @@ struct SettingsRowView: View {
             if showChevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14))
+                    .fontWeight(.medium)
                     .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
             }
         }
