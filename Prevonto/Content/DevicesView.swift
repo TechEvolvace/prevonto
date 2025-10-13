@@ -1,13 +1,17 @@
+// Devices page for the Prevonto app
 import SwiftUI
 
 struct DevicesView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var showingPairModal = false
     @State private var isSearching = false
     
-    // Mock paired devices
+    // Mock paired devices (When successfully implement paired devices tracking, replace this section of code)
     @State private var pairedDevices = [
-        Device(name: "Your Name's Apple Watch", type: .appleWatch, isConnected: true),
+        Device(name: "Your Name's Apple Watch", type: .appleWatch, isConnected: true)
+    ]
+    
+    // Mock nearby devices (When successfully implement nearby devices tracking, replace this section of code)
+    @State private var nearbyDevices = [
         Device(name: "User's Apple Watch", type: .appleWatch, isConnected: false),
         Device(name: "Speaker", type: .other, isConnected: false)
     ]
@@ -24,11 +28,17 @@ struct DevicesView: View {
                     // Devices Content
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Pair New Device Button
-                            pairNewDeviceButton
+                            if isSearching {
+                                searchProgressView
+                            } else {
+                                pairNewDeviceButton
+                            }
                             
                             // History Section
                             historySection
+                            
+                            // Nearby Devices Section
+                            nearbyDevicesSection
                             
                             Spacer(minLength: 30)
                         }
@@ -38,9 +48,6 @@ struct DevicesView: View {
                 }
                 .navigationBarHidden(true)
             }
-        }
-        .sheet(isPresented: $showingPairModal) {
-            PairDeviceModal(isSearching: $isSearching)
         }
     }
     
@@ -52,20 +59,19 @@ struct DevicesView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
                 Spacer()
                 
                 Text("Devices")
-                    .font(.custom("Noto Sans", size: 24))
-                    .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .font(.custom("Noto Sans", size: 28))
+                    .fontWeight(.black)
+                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                 
                 Spacer()
                 
@@ -76,7 +82,7 @@ struct DevicesView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 20)
-            .padding(.bottom, 16)
+            .padding(.bottom, 0)
             .background(Color.white)
         }
     }
@@ -84,35 +90,80 @@ struct DevicesView: View {
     // MARK: - Pair New Device Button
     var pairNewDeviceButton: some View {
         Button(action: {
-            showingPairModal = true
+            startSearch()
         }) {
             HStack(spacing: 16) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-                    .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-                    .clipShape(Circle())
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pair New Device")
-                        .font(.custom("Noto Sans", size: 16))
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
-                    
-                    Text("Connect a new health device")
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
-                }
-                
+                Spacer()
+                Text("Pair New Device")
+                    .font(.custom("Noto Sans", size: 20))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.white)
                 Spacer()
             }
             .padding(20)
-            .background(Color.white)
+            .background(Color(red: 0.01, green: 0.33, blue: 0.18))
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Search Progress View
+    @State private var searchProgress: Double = 0.0
+    @State private var progressTimer: Timer?
+
+    var searchProgressView: some View {
+        VStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
+                    .frame(width: 100, height: 100)
+
+                Circle()
+                    .trim(from: 0, to: searchProgress)
+                    .stroke(Color(red: 0.36, green: 0.55, blue: 0.37), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .frame(width: 100, height: 100)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.1), value: searchProgress)
+            }
+
+            Text("Searching for Devices...")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.medium)
+                .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+
+            Text("Make sure your device is ready to connect")
+                .font(.custom("Noto Sans", size: 14))
+                .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                .multilineTextAlignment(.center)
+        }
+        .onAppear { startSearchAnimation() }
+        .onDisappear { stopSearchAnimation() }
+    }
+    
+    private func startSearch() {
+        isSearching = true
+        searchProgress = 0.0
+        startSearchAnimation()
+        // Simulate 8-second search
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            stopSearchAnimation()
+            isSearching = false
+        }
+    }
+
+    private func startSearchAnimation() {
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            let increment = 0.0125
+            if searchProgress < 1.0 {
+                searchProgress += increment
+            }
+        }
+    }
+
+    private func stopSearchAnimation() {
+        progressTimer?.invalidate()
+        progressTimer = nil
     }
     
     // MARK: - History Section
@@ -126,6 +177,28 @@ struct DevicesView: View {
             
             VStack(spacing: 12) {
                 ForEach(pairedDevices) { device in
+                    DeviceRowView(device: device)
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    
+    // MARK: - Nearby Devices Section
+    var nearbyDevicesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Nearby Devices")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            VStack(spacing: 12) {
+                ForEach(nearbyDevices) { device in
                     DeviceRowView(device: device)
                 }
             }
@@ -169,93 +242,6 @@ struct DeviceRowView: View {
                 .frame(width: 12, height: 12)
         }
         .padding(.vertical, 8)
-    }
-}
-
-// MARK: - Pair Device Modal
-struct PairDeviceModal: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var isSearching: Bool
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 32) {
-                // Header
-                HStack {
-                    Text("Pair New Device")
-                        .font(.custom("Noto Sans", size: 24))
-                        .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                            .frame(width: 30, height: 30)
-                            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.top, 20)
-                .padding(.horizontal, 24)
-                
-                // Searching UI
-                if isSearching {
-                    VStack(spacing: 24) {
-                        // Search Animation
-                        ZStack {
-                            Circle()
-                                .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
-                                .frame(width: 100, height: 100)
-                            
-                            Circle()
-                                .trim(from: 0, to: 0.7)
-                                .stroke(Color(red: 0.36, green: 0.55, blue: 0.37), lineWidth: 4)
-                                .frame(width: 100, height: 100)
-                                .rotationEffect(.degrees(-90))
-                                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isSearching)
-                        }
-                        
-                        Text("Searching for Devices...")
-                            .font(.custom("Noto Sans", size: 18))
-                            .fontWeight(.medium)
-                            .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
-                        
-                        Text("Make sure your device is ready to connect")
-                            .font(.custom("Noto Sans", size: 14))
-                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
-                            .multilineTextAlignment(.center)
-                    }
-                } else {
-                    // Start Search Button
-                    Button(action: {
-                        isSearching = true
-                        // Simulate search completion after 3 seconds
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            isSearching = false
-                            dismiss()
-                        }
-                    }) {
-                        Text("Start Search")
-                            .font(.custom("Noto Sans", size: 16))
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal, 32)
-                }
-                
-                Spacer()
-            }
-            .background(Color.white)
-        }
     }
 }
 
