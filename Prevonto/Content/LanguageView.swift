@@ -895,7 +895,7 @@ struct LanguageView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 20)
-            .padding(.bottom, 16)
+            .padding(.bottom, 0)
             .background(Color.white)
         }
     }

@@ -46,6 +46,8 @@ struct SettingsView: View {
                 // Navigate to SignUpView
                 navigateToSignUp = true
             }
+        } message: {
+            Text("Your data will be saved.")
         }
         .alert("Are you sure you want to Delete Your Account?", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
@@ -106,7 +108,7 @@ struct SettingsView: View {
                 HStack {
                     // Profile Picture Placeholder
                     Circle()
-                        .fill(Color(Color(red: 0.86, green: 0.93, blue: 0.86)))
+                        .fill(Color(red: 0.86, green: 0.93, blue: 0.86))
                         .frame(width: 50, height: 50)
                         .overlay(
                             Image(systemName: "person.fill")
