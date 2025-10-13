@@ -116,26 +116,30 @@ struct DevicesView: View {
         VStack(spacing: 24) {
             ZStack {
                 Circle()
-                    .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
-                    .frame(width: 100, height: 100)
+                    .stroke(Color(red: 0.36, green: 0.55, blue: 0.37).opacity(0.25), lineWidth: 40)
+                    .frame(width: 200, height: 200)
 
                 Circle()
                     .trim(from: 0, to: searchProgress)
-                    .stroke(Color(red: 0.36, green: 0.55, blue: 0.37), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 100, height: 100)
+                    .stroke(Color(red: 0.36, green: 0.55, blue: 0.37), style: StrokeStyle(lineWidth: 40, lineCap: .round))
+                    .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
                     .animation(.easeInOut(duration: 0.1), value: searchProgress)
             }
+            .padding(.bottom, 12)
 
-            Text("Searching for Devices...")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.medium)
-                .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+            VStack(spacing: 8) {
+                Text("Searching for Devices...")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
 
-            Text("Make sure your device is ready to connect")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
-                .multilineTextAlignment(.center)
+                Text("Make sure your device is ready to connect")
+                    .font(.custom("Noto Sans", size: 14))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                    .multilineTextAlignment(.center)
+            }
         }
         .onAppear { startSearchAnimation() }
         .onDisappear { stopSearchAnimation() }
