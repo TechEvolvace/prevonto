@@ -3,8 +3,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var showingLogoutAlert = false
-    @State private var showingDeleteAlert = false
+    @State private var showLogoutSheet = false
+    @State private var showDeleteSheet = false
     @State private var navigateToSignUp = false
     
     var body: some View {
@@ -40,28 +40,122 @@ struct SettingsView: View {
                 .navigationBarHidden(true)
             }
         }
-        .alert("Are you sure you want to Log Out?", isPresented: $showingLogoutAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Log Out", role: .destructive) {
-                // Navigate to SignUpView
-                navigateToSignUp = true
+        // Logout Confirmation Sheet
+        .sheet(isPresented: $showLogoutSheet) {
+            VStack(spacing: 24) {
+                // Logout Warning Message Messages
+                VStack(spacing: 8) {
+                    Text("Are you sure you want to Log out?")
+                        .font(.custom("Noto Sans", size: 20))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                    Text("Your data will be saved.")
+                        .font(.custom("Noto Sans", size: 16))
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455).opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                
+                VStack(spacing: 12) {
+                    // Cancel button in Log out modal sheet
+                    Button("Cancel") {
+                        showLogoutSheet = false
+                    }
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 24)
+                    
+                    // Log out button in Log out modal sheet
+                    Button(action: {
+                        showLogoutSheet = false
+                        navigateToSignUp = true
+                    }) {
+                        Text("Log Out")
+                            .font(.custom("Noto Sans", size: 18))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color(red: 0.13, green: 0.54, blue: 0.24))
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 24)
+                }
             }
-        } message: {
-            Text("Your data will be saved.")
+            .presentationDetents([.height(250)])
+            .background(Color.white)
+            .cornerRadius(24)
         }
-        .alert("Are you sure you want to Delete Your Account?", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete Account", role: .destructive) {
-                // Navigate to SignUpView
-                navigateToSignUp = true
+        // Delete Account Confirmation Sheet
+        .sheet(isPresented: $showDeleteSheet) {
+            VStack(spacing: 20) {
+                // Delete Account Warning Messages
+                VStack(spacing: 8) {
+                    Text("Are you sure you want to Delete Your Account?")
+                        .font(.custom("Noto Sans", size: 20))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                    Text("This will delete all your existing data.")
+                        .font(.custom("Noto Sans", size: 16))
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455).opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                
+                VStack(spacing: 12) {
+                    // Cancel button in Delete Account modal sheet
+                    Button("Cancel") {
+                        showDeleteSheet = false
+                    }
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 24)
+                    
+                    // Delete Account button in Delete Account modal sheet
+                    Button(action: {
+                        showDeleteSheet = false
+                        navigateToSignUp = true
+                    }) {
+                        Text("Delete Account")
+                            .font(.custom("Noto Sans", size: 18))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.red)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 24)
+                }
             }
-        } message: {
-            Text("This action cannot be undone. All of your data will be permanently deleted.")
+            .presentationDetents([.height(250)])
+            .background(Color.white)
+            .cornerRadius(18)
         }
+        // Navigate to SignUp without back button
         .navigationDestination(isPresented: $navigateToSignUp) {
-            // Go back to the Sign Up page but have no way to navigate directly back to the Settings page once in the Sign Up page
             SignUpView()
-                    .navigationBarBackButtonHidden(true)
+                .navigationBarBackButtonHidden(true)
         }
     }
     
@@ -184,7 +278,7 @@ struct SettingsView: View {
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
-                    showingLogoutAlert = true
+                    showLogoutSheet = true
                 }) {
                     SettingsRowView(
                         icon: "rectangle.portrait.and.arrow.right",
@@ -196,7 +290,7 @@ struct SettingsView: View {
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
-                    showingDeleteAlert = true
+                    showDeleteSheet = true
                 }) {
                     SettingsRowView(
                         icon: "trash",
