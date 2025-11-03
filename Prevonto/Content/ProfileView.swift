@@ -1,3 +1,5 @@
+// Profile page for the user in Prevonto app
+// User can change their full name, date of birth, profile picture (if any), mobile number, and email here, but not stored in any database yet.
 import SwiftUI
 
 struct ProfileView: View {

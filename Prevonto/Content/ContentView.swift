@@ -94,7 +94,7 @@ struct ContentView: View {
         }
     }
     
-    // MARK: - Header Section
+    // MARK: - Dashboard Header Section
     var headerSection: some View {
         HStack {
             // Welcome Back Message
@@ -753,7 +753,7 @@ struct AddItemModal: View {
     }
 }
 
-// MARK: - Add Item Button Component (the floating + button in Dashboard page)
+// Add Item Button Component (the floating + button in Dashboard page)
 struct AddItemButtonView: View {
     let icon: String
     let title: String
@@ -918,7 +918,7 @@ struct QuickActionButtonView: View {
     }
 }
 
-// MARK: - Preview
+// Preview
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()

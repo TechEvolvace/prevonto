@@ -1,4 +1,4 @@
-// This is the Steps and Activity Page!
+// This is the Steps and Activity Page, which shows the user's calories burned, minutes moving, hours standing, and numbers of steps taken.
 import SwiftUI
 import Charts
 
@@ -63,7 +63,6 @@ struct StepsDetailsView: View {
     }
     
     // MARK: - Trend Section
-    
     private var trendSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("✨ Motivation & Trends")
@@ -112,7 +111,6 @@ struct StepsDetailsView: View {
     }
     
     // MARK: - View Components
-    
     private var titleSection: some View { /* ... unchanged ... */ VStack(alignment: .leading, spacing: 12) {
         HStack {
             VStack(alignment: .leading, spacing: 8) {

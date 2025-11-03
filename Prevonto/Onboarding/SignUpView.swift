@@ -43,6 +43,8 @@ struct SignUpView: View {
                     .padding(.bottom, 24)
 
                 // A place for user to enter their credentials to create their new account
+                // User enters their full name, email, and password to create their new account.
+                // User also confirms their password too.
                 Group {
                     TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
@@ -56,7 +58,7 @@ struct SignUpView: View {
                 .overlay(Rectangle().frame(height: 1).padding(.top, 43), alignment: .top)
                 .foregroundColor(.gray)
 
-                // Checkbox user must check to accept Prevonto's Privacy Policy and Term of Use
+                // Checkbox that user must check to accept Prevonto's Privacy Policy and Term of Use before proceeding
                 Toggle(isOn: $acceptedTerms) {
                     Text("By continuing you accept our Privacy Policy and Term of Use")
                         .font(.footnote)
@@ -74,11 +76,13 @@ struct SignUpView: View {
                         .padding(.horizontal)
                 }
 
+                // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
                 NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToGender) {
                     EmptyView()
                 }
 
-                // Button to check all entered credentials are valid before then proceed to the next page!
+                // Join button to check all entered credentials are valid before then proceed to the next page!
+                // User clicks on the Join button after entering their credentials to successfully create their new acocunt!
                 Button(action: {
                     if testMode {
                         navigateToGender = true
@@ -116,7 +120,7 @@ struct SignUpView: View {
                 }
 
                 HStack(spacing: 20) {
-                    // Placeholder for Google/Facebook auth buttons
+                    // Placeholder for extra buttons
                 }
 
                 Spacer()

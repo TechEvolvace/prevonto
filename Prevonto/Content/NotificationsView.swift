@@ -1,4 +1,5 @@
 // Notifications Page for Prevonto app
+// Users can change what gets displayed in the Dashboard page with these toggle buttons here.
 import SwiftUI
 
 // Shared state manager for notification settings

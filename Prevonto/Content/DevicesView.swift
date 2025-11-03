@@ -51,10 +51,11 @@ struct DevicesView: View {
         }
     }
     
-    // MARK: - Header Section
+    // Devices Header Section
     var headerSection: some View {
         VStack(spacing: 0) {
             HStack {
+                // Back Button to return to the Dashboard page
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
                 }) {
@@ -87,9 +88,10 @@ struct DevicesView: View {
         }
     }
     
-    // MARK: - Pair New Device Button
+    // Pair New Device Button
     var pairNewDeviceButton: some View {
         Button(action: {
+            // If Pair New Device button is clicked on, it is supposed to look for nearby devices to pair with the app. Front end works, but currently doesn't recognize any nearby devices yet.
             startSearch()
         }) {
             HStack(spacing: 16) {
@@ -108,7 +110,7 @@ struct DevicesView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Search Progress View
+    // Search Progress View
     @State private var searchProgress: Double = 0.0
     @State private var progressTimer: Timer?
 
@@ -170,7 +172,7 @@ struct DevicesView: View {
         progressTimer = nil
     }
     
-    // MARK: - History Section
+    // History Section
     var historySection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("History")
@@ -192,7 +194,7 @@ struct DevicesView: View {
     }
     
     
-    // MARK: - Nearby Devices Section
+    // Nearby Devices Section
     var nearbyDevicesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Nearby Devices")
@@ -271,7 +273,7 @@ enum DeviceType {
     case other
 }
 
-// MARK: - Preview
+// Preview
 struct DevicesView_Previews: PreviewProvider {
     static var previews: some View {
         DevicesView()

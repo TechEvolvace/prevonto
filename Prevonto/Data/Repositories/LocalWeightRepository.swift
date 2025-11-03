@@ -1,11 +1,4 @@
-//
-//  LocalWeightRepository.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 9/26/25.
-//
-
-
+// Local storing of weight data
 import Foundation
 
 class LocalWeightRepository: WeightRepository {

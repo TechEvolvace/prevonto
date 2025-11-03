@@ -1,3 +1,4 @@
+// Onboarding page 2 out of 9 prompts user for their weight
 import SwiftUI
 
 struct WeightSelectionView: View {
@@ -11,6 +12,7 @@ struct WeightSelectionView: View {
     let back: () -> Void
     let step: Int
 
+    // Keep track of current selected weight unit
     var currentRange: [Int] {
         selectedUnit == "lbs" ? lbRange : kgRange
     }
@@ -18,7 +20,7 @@ struct WeightSelectionView: View {
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your weight?") {
             VStack(spacing: 24) {
-                // Unit selection
+                // Weight unit conversion between the 2 weight unit types
                 HStack(spacing: 32) {
                     UnitButton(title: "lbs", selected: $selectedUnit) {
                         selectedWeight = Int(Double(selectedWeight) * 2.20462)
@@ -28,17 +30,17 @@ struct WeightSelectionView: View {
                     }
                 }
 
-                // Big number display
+                // Display weight amount in current unit
                 HStack(spacing: 4) {
                     Text("\(selectedWeight)")
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38)) // Match design
+                        .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
                     Text(selectedUnit)
                         .foregroundColor(.gray)
                         .font(.title3)
                 }
 
-                // Picker
+                // Picker for user to swipe or drag to correct weight
                 WeightPickerView(values: currentRange, selected: $selectedWeight)
 
                 // Next button
@@ -57,7 +59,7 @@ struct WeightSelectionView: View {
     }
 }
 
-
+// Picker for user to swipe or drag to correct weight
 struct WeightPickerView: View {
     let values: [Int]
     @Binding var selected: Int
@@ -140,7 +142,7 @@ struct WeightPickerView: View {
 }
 
 
-
+// Weight Unit toggle selection buttons
 struct UnitButton: View {
     let title: String
     @Binding var selected: String

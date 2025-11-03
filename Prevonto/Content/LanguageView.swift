@@ -1,3 +1,4 @@
+// Language page is where the user can select their desired langauge
 import SwiftUI
 
 // Localization Manager
@@ -803,6 +804,7 @@ class LocalizationManager: ObservableObject {
     }
 }
 
+// Currently, localization is only applied to within the Langauges page.
 struct LanguageView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var localizationManager = LocalizationManager()

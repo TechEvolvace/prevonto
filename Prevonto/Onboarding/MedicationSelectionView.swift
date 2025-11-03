@@ -1,3 +1,4 @@
+// Onboarding page 8 out of 9 prompts user for any and all medication they currently take
 import SwiftUI
 
 struct MedicationSelectionView: View {

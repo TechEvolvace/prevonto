@@ -1,3 +1,4 @@
+// SpO2 page displays the user's SpO2 levels across days, weeks or months.
 import SwiftUI
 import Charts
 
@@ -8,6 +9,7 @@ struct SpO2View: View {
     @State private var avgHeartRate = 60.0
     @State private var lowestSpO2 = 95.0
     
+    // Obviously hardcoded data right now is used.
     let timelineData: [(String, Double)] = [
         ("Mon", 94), ("Tue", 95), ("Wed", 96), ("Thu", 95),
         ("Fri", 93), ("Sat", 92), ("Sun", 94)

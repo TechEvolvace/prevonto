@@ -1,3 +1,4 @@
+// Onboarding page 1 out of 9 prompts user for their gender
 import SwiftUI
 
 struct SelectGenderView: View {
@@ -11,6 +12,7 @@ struct SelectGenderView: View {
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your gender?") {
             VStack(spacing: 16) {
+                // Option buttons for user to select their gender
                 ForEach(genderOptions, id: \.self) { gender in
                     Button(action: {
                         selectedGender = gender
@@ -45,6 +47,7 @@ struct SelectGenderView: View {
                 }
             }
 
+            // Next button
             Button {
                 if selectedGender != nil {
                     next()

@@ -1,10 +1,5 @@
-//
-//  PrevontoApp.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 2/2/25.
-//
-
+// Prevonto App starts with the Welcome page displayed,
+// which the Welcome page is handled by WelcomeView.swift file.
 import SwiftUI
 
 @main
