@@ -50,24 +50,6 @@ struct ProfileView: View {
         } message: {
             Text("Your profile information has been saved successfully.")
         }
-        .sheet(isPresented: $showingDatePicker) {
-            VStack {
-                DatePicker(
-                    "Select Date of Birth",
-                    selection: $dateOfBirth,
-                    in: ...Date(),
-                    displayedComponents: .date
-                )
-                .datePickerStyle(GraphicalDatePickerStyle())
-                .padding()
-                
-                Button("Done") {
-                    showingDatePicker = false
-                }
-                .font(.custom("Noto Sans", size: 16))
-                .padding()
-            }
-        }
     }
     
     // MARK: - Header Section
@@ -153,14 +135,16 @@ struct ProfileView: View {
                         .fontWeight(.medium)
                         .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                     Button(action: {
-                        showingDatePicker = true
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingDatePicker.toggle()
+                        }
                     }) {
                         HStack {
                             Text(dateFormatter.string(from: dateOfBirth))
                                 .font(.custom("Noto Sans", size: 16))
                                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                             Spacer()
-                            Image(systemName: "chevron.down")
+                            Image(systemName: showingDatePicker ? "chevron.up" : "chevron.down")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                         }
@@ -175,6 +159,46 @@ struct ProfileView: View {
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
+                    
+                    // Inline Date Picker
+                    if showingDatePicker {
+                        VStack(spacing: 12) {
+                            DatePicker(
+                                "",
+                                selection: $dateOfBirth,
+                                in: ...Date(),
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(GraphicalDatePickerStyle())
+                            .padding(.horizontal, 8)
+                            .padding(.top, 8)
+                            
+                            Button(action: {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showingDatePicker = false
+                                }
+                            }) {
+                                Text("Done")
+                                    .font(.custom("Noto Sans", size: 16))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(Color(red: 0.02, green: 0.33, blue: 0.18))
+                                    .cornerRadius(10)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 8)
+                        }
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.95).combined(with: .opacity),
+                            removal: .scale(scale: 0.95).combined(with: .opacity)
+                        ))
+                    }
                 }
             }
         }
