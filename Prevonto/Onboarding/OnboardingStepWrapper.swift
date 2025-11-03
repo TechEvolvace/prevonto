@@ -1,11 +1,5 @@
-//
-//  OnboardingStepWrapper.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 5/22/25.
-//
-
-
+// Component for displaying the horizontal progress tracker and subtext below for the 9 onboarding pages for Prevonto app
+// shown to the user after signing up for an account
 import SwiftUI
 
 struct OnboardingStepWrapper<Content: View>: View {

@@ -1,9 +1,4 @@
-//
-//  MoodTrackerView.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 6/14/25.
-//
+// Mood Tracker page displays user's mood across week or month.
 import SwiftUI
 import Charts
 

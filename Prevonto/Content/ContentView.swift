@@ -1,3 +1,4 @@
+// Dashboard page for the Prevonto app
 import SwiftUI
 import Charts
 
@@ -21,6 +22,10 @@ struct ContentView: View {
     @State private var caloriesProgress: Double = 0.6
     @State private var exerciseProgress: Double = 0.8
     @State private var standProgress: Double = 0.4
+    
+    // Notification settings state
+    @State private var showHeartRate: Bool = true
+    @State private var showStepsActivity: Bool = true
     
     let healthKitManager = HealthKitManager()
     
@@ -82,13 +87,14 @@ struct ContentView: View {
             .sheet(isPresented: $showingAddModal) {
                 AddItemModal()
             }
-        }
-        .onAppear {
-            loadHealthData()
+            .onAppear {
+                loadHealthData()
+                loadNotificationSettings()
+            }
         }
     }
     
-    // MARK: - Header Section
+    // MARK: - Dashboard Header Section
     var headerSection: some View {
         HStack {
             // Welcome Back Message
@@ -115,11 +121,9 @@ struct ContentView: View {
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
                 
-                // Paperclip-icon button
-                Button(action: {
-                    // Paperclip functionality
-                }) {
-                    Image(systemName: "paperclip")
+                // New Settings Button
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
                         .font(.system(size: 20))
                         .foregroundColor(.black)
                         .frame(width: 40, height: 40)
@@ -127,6 +131,7 @@ struct ContentView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.top, 20)
@@ -141,7 +146,6 @@ struct ContentView: View {
                     .font(.custom("Noto Sans", size: 18))
                     .fontWeight(.semibold)
                     .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                
                 Spacer()
                 
                 // Dropdown menu selection
@@ -171,20 +175,49 @@ struct ContentView: View {
                 }
             }
             
+            // Conditional Health Metrics Display
             HStack(spacing: 16) {
-                // Activity Rings Card with 3 Activity rings
-                // User can click on it to go to Steps & Activity Tracker page (handled primarily by StepsDetailsView file)
-                NavigationLink(destination: StepsDetailsView()) {
-                    activityRingsCard
+                // Only show activity rings if Steps & Activity is enabled in notifications
+                if showStepsActivity {
+                    NavigationLink(destination: StepsDetailsView()) {
+                        activityRingsCard
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
                 
-                // Heart Rate Card with Heart Rate Line graph
-                // User can click on it to go to Heart Rate page (handled primarily by HeartRateView.swift file)
-                NavigationLink(destination: HeartRateView()) {
-                    heartRateCard
+                // Only show heart rate if Heart Rate is enabled in notifications
+                if showHeartRate {
+                    NavigationLink(destination: HeartRateView()) {
+                        heartRateCard
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
+                
+                // If both are disabled, show a placeholder
+                if !showStepsActivity && !showHeartRate {
+                    VStack(spacing: 16) {
+                        Image(systemName: "heart.slash")
+                            .font(.system(size: 40))
+                            .foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70))
+                        
+                        Text("No health metrics enabled")
+                            .font(.custom("Noto Sans", size: 16))
+                            .fontWeight(.medium)
+                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Enable metrics in Notifications settings")
+                            .font(.custom("Noto Sans", size: 14))
+                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 160)
+                    .padding(16)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+                }
             }
         }
     }
@@ -197,7 +230,6 @@ struct ContentView: View {
                 Circle()
                     .stroke(Color(red: 0.14, green: 0.20, blue: 0.08).opacity(0.2), lineWidth: 12)
                     .frame(width: 120, height: 120)
-                
                 Circle()
                     .trim(from: 0, to: standProgress)
                     .stroke(Color(red: 0.14, green: 0.20, blue: 0.08), style: StrokeStyle(lineWidth: 12, lineCap: .round))
@@ -208,7 +240,6 @@ struct ContentView: View {
                 Circle()
                     .stroke(Color(red: 0.36, green: 0.51, blue: 0.36).opacity(0.2), lineWidth: 12)
                     .frame(width: 90, height: 90)
-                
                 Circle()
                     .trim(from: 0, to: exerciseProgress)
                     .stroke(Color(red: 0.36, green: 0.51, blue: 0.36), style: StrokeStyle(lineWidth: 12, lineCap: .round))
@@ -219,7 +250,6 @@ struct ContentView: View {
                 Circle()
                     .stroke(Color(red: 0.51, green: 0.64, blue: 0.51).opacity(0.2), lineWidth: 12)
                     .frame(width: 60, height: 60)
-                
                 Circle()
                     .trim(from: 0, to: caloriesProgress)
                     .stroke(Color(red: 0.51, green: 0.64, blue: 0.51), style: StrokeStyle(lineWidth: 12, lineCap: .round))
@@ -261,7 +291,7 @@ struct ContentView: View {
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
             
-            // Heart rate chart with gradient (May replace this entire ZStack with Chart and plug in data values to plot the Heart rate chart to display in Dashboard page)
+            // Heart rate chart with gradient
             ZStack {
                 // Background bars
                 HStack(spacing: 12) {
@@ -280,32 +310,31 @@ struct ContentView: View {
                     
                     // Start from bottom left
                     path.move(to: CGPoint(x: 0, y: height))
-                    
                     // Draw to first point
                     path.addLine(to: CGPoint(x: 0, y: height * (1 - points[0])))
                     
                     // Draw the line
                     for i in 1..<points.count {
-                        let x = (width / Double(points.count - 1)) * Double(i)
+                        let x = width * Double(i) / Double(points.count - 1)
                         let y = height * (1 - points[i])
                         path.addLine(to: CGPoint(x: x, y: y))
                     }
                     
-                    // Close the path to bottom
+                    // Close the path to bottom right
                     path.addLine(to: CGPoint(x: width, y: height))
-                    path.addLine(to: CGPoint(x: 0, y: height))
+                    path.closeSubpath()
                 }
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.49, green: 0.62, blue: 0.42).opacity(0.6),
-                            Color(red: 0.49, green: 0.62, blue: 0.42).opacity(0.1)
+                            Color(red: 0.368, green: 0.553, blue: 0.372).opacity(0.3),
+                            Color(red: 0.368, green: 0.553, blue: 0.372).opacity(0.05)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(height: 60)
+                .frame(width: 120, height: 60)
                 
                 // Line on top
                 Path { path in
@@ -314,18 +343,18 @@ struct ContentView: View {
                     let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3, 0.5, 0.4, 0.6, 0.2]
                     
                     path.move(to: CGPoint(x: 0, y: height * (1 - points[0])))
+                    
                     for i in 1..<points.count {
-                        let x = (width / Double(points.count - 1)) * Double(i)
+                        let x = width * Double(i) / Double(points.count - 1)
                         let y = height * (1 - points[i])
                         path.addLine(to: CGPoint(x: x, y: y))
                     }
                 }
-                .stroke(Color(red: 0.49, green: 0.62, blue: 0.42), lineWidth: 2)
-                .frame(height: 60)
+                .stroke(Color(red: 0.368, green: 0.553, blue: 0.372), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                .frame(width: 120, height: 60)
             }
-            .cornerRadius(8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .frame(height: 160)
         .padding(16)
         .background(Color.white)
@@ -336,7 +365,6 @@ struct ContentView: View {
     // MARK: - Health Highlights Section
     var healthHighlightsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Health Highlights subheading
             Text("Health highlights")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
@@ -375,7 +403,6 @@ struct ContentView: View {
     // MARK: - Medication Section
     var medicationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Your Medication subheading
             Text("Your medication")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
@@ -426,7 +453,6 @@ struct ContentView: View {
                     .font(.custom("Noto Sans", size: 20))
                     .fontWeight(.bold)
                     .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
-                
                 Text(medication.instructions)
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
@@ -499,7 +525,6 @@ struct ContentView: View {
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
             }
-            
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -518,13 +543,11 @@ struct ContentView: View {
                 Circle()
                     .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
                     .frame(width: 52, height: 52)
-                
                 Circle()
                     .trim(from: 0, to: 0.73)
                     .stroke(Color(red: 0.368, green: 0.553, blue: 0.372), lineWidth: 4)
                     .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(-90))
-                
                 Text("73%")
                     .font(.custom("Noto Sans", size: 14))
                     .fontWeight(.bold)
@@ -536,19 +559,15 @@ struct ContentView: View {
                     .font(.custom("Noto Sans", size: 13))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
-                
                 // Days of the Week
                 Text("21 to 28")
                     .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                
                 // Display Selected Month
                 Text("September 2025")
                     .font(.custom("Noto Sans", size: 12))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                
             }
-            
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -570,7 +589,6 @@ struct ContentView: View {
                     .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
                     .background(Color.white)
                     .cornerRadius(16)
-                
                 Spacer()
             }
             
@@ -634,6 +652,21 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func loadNotificationSettings() {
+        // Load notification settings from UserDefaults
+        // Set defaults if not set
+        if UserDefaults.standard.object(forKey: "showHeartRate") == nil {
+            UserDefaults.standard.set(true, forKey: "showHeartRate")
+        }
+        if UserDefaults.standard.object(forKey: "showStepsActivity") == nil {
+            UserDefaults.standard.set(true, forKey: "showStepsActivity")
+        }
+        
+        // Update state variables
+        showHeartRate = UserDefaults.standard.bool(forKey: "showHeartRate")
+        showStepsActivity = UserDefaults.standard.bool(forKey: "showStepsActivity")
+    }
 }
 
 // Modal and its contents that gets loaded when the user clicks on the floating + button
@@ -649,9 +682,7 @@ struct AddItemModal: View {
                         .font(.custom("Noto Sans", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                    
                     Spacer()
-                    
                     Button(action: {
                         dismiss()
                     }) {
@@ -671,7 +702,6 @@ struct AddItemModal: View {
                     GridItem(.flexible()),
                     GridItem(.flexible())
                 ], spacing: 20) {
-                    
                     NavigationLink(destination: WeightTrackerView()) {
                         AddItemButtonView(
                             icon: "scalemass.fill",
@@ -723,7 +753,7 @@ struct AddItemModal: View {
     }
 }
 
-// MARK: - Add Item Button Component (the floating + button in Dashboard page)
+// Add Item Button Component (the floating + button in Dashboard page)
 struct AddItemButtonView: View {
     let icon: String
     let title: String
@@ -768,7 +798,7 @@ struct Medication {
     let time: String
 }
 
-// MARK: - Quick Actions Modal (unchanged from original)
+// MARK: - Quick Actions Modal
 struct QuickActionsModal: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -827,16 +857,19 @@ struct QuickActionsModal: View {
                 .padding(.horizontal, 30)
                 .padding(.bottom, 30)
             }
-            .navigationBarItems(
-                trailing: Button("Done") {
-                    dismiss()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
                 }
-            )
+            }
         }
     }
 }
 
-// MARK: - Quick Action Button Components (unchanged from original)
+// MARK: - Quick Action Button Components
 struct QuickActionButton: View {
     let icon: String
     let title: String
@@ -870,7 +903,7 @@ struct QuickActionButtonView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
+            Image(systemName: "icon")
                 .font(.title2)
                 .foregroundColor(.white)
                 .frame(width: 50, height: 50)
@@ -885,7 +918,7 @@ struct QuickActionButtonView: View {
     }
 }
 
-// MARK: - Preview
+// Preview
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()

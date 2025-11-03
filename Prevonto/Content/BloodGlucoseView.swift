@@ -1,3 +1,4 @@
+// Blood Glucose page allows user to see their blood glucose levels by day, week, or month. 
 import SwiftUI
 import Charts
 
@@ -186,7 +187,6 @@ struct BloodGlucoseView: View {
     }
     
     // MARK: - Charts
-    
     private var dayChart: some View {
         Chart {
             ForEach(glucoseData.indices, id: \.self) { i in
@@ -257,8 +257,7 @@ struct BloodGlucoseView: View {
     }
 }
 
-// MARK: - Extensions
-
+// MARK: - Color Extensions
 private extension Color {
     static let proPrimary = Color(red: 0.01, green: 0.33, blue: 0.18)
 }

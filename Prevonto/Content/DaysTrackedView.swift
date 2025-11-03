@@ -1,11 +1,4 @@
-//
-//  DaysTrackedView.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 7/20/25.
-//
-
-
+// Days tracked page shows what days the user have tracked their metrics on
 import SwiftUI
 
 struct DaysTrackedView: View {
@@ -87,7 +80,7 @@ struct DaysTrackedView: View {
         }
     }
 
-    // MARK: - Calendar Mockup
+    // Calendar Mockup
     private var calendarView: some View {
         VStack(spacing: 12) {
             // Header

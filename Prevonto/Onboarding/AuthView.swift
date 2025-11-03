@@ -1,10 +1,4 @@
-//
-//  AuthView.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 4/3/25.
-//
-
+// AuthView currently shows the Sign Up page only.
 import SwiftUI
 
 struct AuthView: View {

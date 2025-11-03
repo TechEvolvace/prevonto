@@ -1,11 +1,4 @@
-//
-//  WeightEntry.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 9/26/25.
-//
-
-
+// Weight data structure
 import Foundation
 
 struct WeightEntry: Identifiable, Codable {

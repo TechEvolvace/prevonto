@@ -1,3 +1,4 @@
+// Weight Tracker page shows the user's weight across week or month.
 import Foundation
 import SwiftUI
 import Charts

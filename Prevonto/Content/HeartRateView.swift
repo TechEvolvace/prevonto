@@ -1,3 +1,4 @@
+// Heart Rate page displays user's heart rate by day, week, or month.
 import SwiftUI
 import Charts
 

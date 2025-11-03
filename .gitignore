@@ -1,3 +1,7 @@
 # Have Git not track user-specific data and workspace data from Xcode
 xcuserdata/
 *.xcuserstate
+
+# Have Git not track user-specific DS_Store data
+.DS_Store
+Prevonto/.DS_Store

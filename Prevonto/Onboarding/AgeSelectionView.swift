@@ -1,10 +1,4 @@
-//
-//  AgeSelectionView.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 4/3/25.
-//
-
+// Onboarding page 3 out of 9 prompts user for their age
 import SwiftUI
 
 struct AgeSelectionView: View {
@@ -18,7 +12,7 @@ struct AgeSelectionView: View {
     var body: some View {
         OnboardingStepWrapper(step: step, title: "How old are you?") {
             VStack(spacing: 24) {
-                // Picker
+                // Picker for user to swipe or drag vertically to specific age user choose
                 CenteredVerticalAgePicker(ages: ageRange, selectedAge: $selectedAge)
 
                 // Next Button
@@ -37,6 +31,7 @@ struct AgeSelectionView: View {
     }
 }
 
+// Picker for user to swipe or drag vertically to specific age user choose
 struct CenteredVerticalAgePicker: View {
     let ages: [Int]
     @Binding var selectedAge: Int
@@ -74,6 +69,7 @@ struct CenteredVerticalAgePicker: View {
     }
 }
 
+// Display each age number for user to can select
 struct AgeRow: View {
     let age: Int
     @Binding var selectedAge: Int

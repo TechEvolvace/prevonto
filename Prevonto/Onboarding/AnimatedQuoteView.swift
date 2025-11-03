@@ -1,10 +1,4 @@
-//
-//  AnimatedQuoteView.swift
-//  Prevonto
-//
-//  Created by Phuc Dinh on 4/24/25.
-//
-
+// Controlling the animation shown for displaying the quote in the Sign Up page
 import SwiftUI
 import Combine
 

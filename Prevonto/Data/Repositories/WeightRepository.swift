@@ -1,11 +1,4 @@
-//
-//  WeightRepository.swift
-//  Prevonto
-//
-//  Created by Yehjune Heo on 9/26/25.
-//
-
-
+// Fetches locally stored weight data to display in the Weight Tracker page
 import Foundation
 
 protocol WeightRepository {
