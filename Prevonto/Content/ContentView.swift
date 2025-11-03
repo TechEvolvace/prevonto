@@ -8,7 +8,6 @@ struct ContentView: View {
     @State private var distance: Double = 0
     @State private var heartRate: Double = 60
     @State private var authorizationStatus: String = "Not Requested"
-    @State private var showingQuickActions = false
     @State private var showingAddModal = false
     
     // Time period selection
@@ -108,9 +107,6 @@ struct ContentView: View {
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showingQuickActions) {
-                QuickActionsModal()
-            }
             .onAppear {
                 loadHealthData()
                 loadNotificationSettings()
@@ -704,7 +700,7 @@ struct FloatingActionMenu: View {
     let actionTapped: (FloatingActionType) -> Void
     let closeTapped: () -> Void
     
-    private let buttonWidth: CGFloat = 170
+    private let buttonWidth: CGFloat = 150
     
     var body: some View {
         VStack(alignment: .trailing, spacing: 18) {
@@ -795,126 +791,6 @@ struct Medication {
     let name: String
     let instructions: String
     let time: String
-}
-
-// MARK: - Quick Actions Modal
-struct QuickActionsModal: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Text("Quick Actions")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .padding(.top, 20)
-                
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 20) {
-                    NavigationLink(destination: WeightTrackerView()) {
-                        QuickActionButtonView(
-                            icon: "scalemass.fill",
-                            title: "Input Weight",
-                            color: .blue
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    NavigationLink(destination: MoodTrackerView()) {
-                        QuickActionButtonView(
-                            icon: "face.smiling.fill",
-                            title: "Input Mood",
-                            color: .green
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    NavigationLink(destination: BloodGlucoseView()) {
-                        QuickActionButtonView(
-                            icon: "drop.fill",
-                            title: "Blood Glucose",
-                            color: .red
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .padding(.horizontal, 30)
-                .padding(.top, 30)
-                
-                Spacer()
-                
-                // Navigation buttons for other features
-                VStack(spacing: 12) {
-                    NavigationLink("SpO2 Display", destination: SpO2View())
-                        .buttonStyle(.borderedProminent)
-                    NavigationLink("Steps Details", destination: StepsDetailsView())
-                        .buttonStyle(.borderedProminent)
-                    NavigationLink("Heart Rate", destination: HeartRateView())
-                        .buttonStyle(.borderedProminent)
-                    NavigationLink("Days Tracked", destination: DaysTrackedView())
-                        .buttonStyle(.borderedProminent)
-                }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 30)
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Quick Action Button Components
-struct QuickActionButton: View {
-    let icon: String
-    let title: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-                    .background(color)
-                    .cornerRadius(12)
-                
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
-
-struct QuickActionButtonView: View {
-    let icon: String
-    let title: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "icon")
-                .font(.title2)
-                .foregroundColor(.white)
-                .frame(width: 50, height: 50)
-                .background(color)
-                .cornerRadius(12)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.center)
-        }
-    }
 }
 
 // Preview
