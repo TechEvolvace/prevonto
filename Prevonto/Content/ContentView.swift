@@ -700,7 +700,7 @@ struct FloatingActionMenu: View {
     let actionTapped: (FloatingActionType) -> Void
     let closeTapped: () -> Void
     
-    private let buttonWidth: CGFloat = 150
+    private let buttonWidth: CGFloat = 100
     
     var body: some View {
         VStack(alignment: .trailing, spacing: 18) {
@@ -737,10 +737,18 @@ struct FloatingActionMenuButton: View {
                 .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18))
                 .frame(width: 32, height: 32)
             
-            Text(action.title)
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.19, green: 0.21, blue: 0.24))
+            let words = action.title.split(separator: " ").map(String.init)
+            VStack(spacing: 2) {
+                ForEach(words, id: \.self) { word in
+                    Text(word)
+                        .font(.custom("Noto Sans", size: 18))
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color(red: 0.19, green: 0.21, blue: 0.24))
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
         }
         .padding(.vertical, 18)
         .padding(.horizontal, 0)
