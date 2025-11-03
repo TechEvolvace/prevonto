@@ -55,17 +55,16 @@ struct ContentView: View {
                 }
                 .background(Color.white)
                 .navigationBarHidden(true)
-                .sheet(isPresented: $showingQuickActions) {
-                    QuickActionsModal()
-                }
-                
+                                
                 // Floating + button, always visible in Dashboard page in same spot
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
                         Button(action: {
-                            showingAddModal = true
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                showingAddModal.toggle()
+                            }
                         }) {
                             Image(systemName: "plus")
                                 .font(.system(size: 24, weight: .medium))
@@ -76,16 +75,41 @@ struct ContentView: View {
                                 .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
                         }
                         .padding(.trailing, 20)
-                        .padding(.bottom, 34) // Account for safe area
+                        .padding(.bottom, 34)
                     }
+                }
+                
+                if showingAddModal {
+                    // Dimmed backdrop + floating action stack
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            hideFloatingMenu()
+                        }
+                        .transition(.opacity)
+                    
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            FloatingActionMenu(
+                                actionTapped: { _ in
+                                    hideFloatingMenu()
+                                },
+                                closeTapped: {
+                                    hideFloatingMenu()
+                                }
+                            )
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 34)
+                    }
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
             .navigationBarHidden(true)
             .sheet(isPresented: $showingQuickActions) {
                 QuickActionsModal()
-            }
-            .sheet(isPresented: $showingAddModal) {
-                AddItemModal()
             }
             .onAppear {
                 loadHealthData()
@@ -667,120 +691,95 @@ struct ContentView: View {
         showHeartRate = UserDefaults.standard.bool(forKey: "showHeartRate")
         showStepsActivity = UserDefaults.standard.bool(forKey: "showStepsActivity")
     }
-}
-
-// Modal and its contents that gets loaded when the user clicks on the floating + button
-struct AddItemModal: View {
-    @Environment(\.dismiss) private var dismiss
     
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 32) {
-                // Header
-                HStack {
-                    Text("Quick Actions")
-                        .font(.custom("Noto Sans", size: 24))
-                        .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-                    Spacer()
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                            .frame(width: 30, height: 30)
-                            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.top, 20)
-                .padding(.horizontal, 24)
-                
-                // 2x2 Grid of options
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 20) {
-                    NavigationLink(destination: WeightTrackerView()) {
-                        AddItemButtonView(
-                            icon: "scalemass.fill",
-                            title: "Input Weight",
-                            color: Color.blue
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    NavigationLink(destination: MoodTrackerView()) {
-                        AddItemButtonView(
-                            icon: "face.smiling.fill",
-                            title: "Input Mood",
-                            color: Color.green
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Button(action: {
-                        // Add medication action
-                        dismiss()
-                    }) {
-                        AddItemButtonView(
-                            icon: "pills.fill",
-                            title: "Add Medication",
-                            color: Color.orange
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Button(action: {
-                        // Custom action
-                        dismiss()
-                    }) {
-                        AddItemButtonView(
-                            icon: "plus.circle.fill",
-                            title: "Custom",
-                            color: Color(red: 0.36, green: 0.55, blue: 0.37)
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .padding(.horizontal, 32)
-                
-                Spacer()
-            }
-            .background(Color.white)
+    private func hideFloatingMenu() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+            showingAddModal = false
         }
     }
 }
 
-// Add Item Button Component (the floating + button in Dashboard page)
-struct AddItemButtonView: View {
-    let icon: String
-    let title: String
-    let color: Color
+// Floating action menu
+struct FloatingActionMenu: View {
+    let actionTapped: (FloatingActionType) -> Void
+    let closeTapped: () -> Void
+    
+    private let buttonWidth: CGFloat = 170
     
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 32))
-                .foregroundColor(.white)
-                .frame(width: 70, height: 70)
-                .background(color)
-                .clipShape(Circle())
-                .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+        VStack(alignment: .trailing, spacing: 18) {
+            ForEach(FloatingActionType.allCases, id: \.self) { action in
+                Button {
+                    actionTapped(action)
+                } label: {
+                    FloatingActionMenuButton(action: action, width: buttonWidth)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
             
-            Text(title)
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.medium)
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                .multilineTextAlignment(.center)
+            Button(action: closeTapped) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18))
+                    .frame(width: 60, height: 60)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 6)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 130)
-        .padding(.vertical, 20)
+    }
+}
+
+struct FloatingActionMenuButton: View {
+    let action: FloatingActionType
+    let width: CGFloat
+    
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: action.iconName)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18))
+                .frame(width: 32, height: 32)
+            
+            Text(action.title)
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.19, green: 0.21, blue: 0.24))
+        }
+        .padding(.vertical, 18)
+        .padding(.horizontal, 0)
+        .frame(width: width, alignment: .center)
         .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .cornerRadius(26)
+        .shadow(color: Color.black.opacity(0.18), radius: 16, x: 0, y: 8)
+    }
+}
+
+enum FloatingActionType: CaseIterable {
+    case inputWeight
+    case inputMood
+    case addMedication
+    
+    var title: String {
+        switch self {
+        case .inputWeight:
+            return "Input Weight"
+        case .inputMood:
+            return "Input Mood"
+        case .addMedication:
+            return "Add Medication"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .inputWeight:
+            return "scalemass.fill"
+        case .inputMood:
+            return "face.smiling.fill"
+        case .addMedication:
+            return "pills.fill"
+        }
     }
 }
 
