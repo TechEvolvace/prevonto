@@ -69,9 +69,9 @@ struct ContentView: View {
                         }) {
                             Image(systemName: "plus")
                                 .font(.system(size: 24, weight: .medium))
-                                .foregroundColor(.white)
+                                .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18)) // Prevonto dark green
                                 .frame(width: 56, height: 56)
-                                .background(Color(red: 0.02, green: 0.33, blue: 0.18)) // Prevonto dark green
+                                .background(.white)
                                 .clipShape(Circle())
                                 .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
                         }
