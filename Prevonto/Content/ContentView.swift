@@ -732,10 +732,11 @@ struct FloatingActionMenuButton: View {
     
     var body: some View {
         VStack(spacing: 14) {
-            Image(systemName: action.iconName)
-                .font(.system(size: 24, weight: .medium))
-                .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18))
+            Image(action.iconName)
+                .resizable()
+                .scaledToFit()
                 .frame(width: 32, height: 32)
+                .foregroundColor(Color(red: 0.02, green: 0.33, blue: 0.18))
             
             let words = action.title.split(separator: " ").map(String.init)
             VStack(spacing: 2) {
@@ -778,11 +779,11 @@ enum FloatingActionType: CaseIterable {
     var iconName: String {
         switch self {
         case .inputWeight:
-            return "scalemass.fill"
+            return "Input Weight"
         case .inputMood:
-            return "face.smiling.fill"
+            return "Input Mood"
         case .addMedication:
-            return "pills.fill"
+            return "Input Medication icon"
         }
     }
 }
