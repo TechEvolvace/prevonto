@@ -168,14 +168,21 @@ struct HeartRateView: View {
     
     // MARK: - Chart Section
     var chartSection: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 12) {
             // Chart Title
             Text("Beats Per Minute (BPM) over time")
                 .foregroundColor(.grayText)
                 .font(.headline)
+                .padding(.horizontal, 16)
             
-            // Heart Rate Chart
-            heartRateChart
+            // Heart Rate Chart in rounded card
+            VStack {
+                heartRateChart
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .padding(.bottom, 20)
     }
@@ -325,7 +332,8 @@ struct HeartRateView: View {
         let calendar = Calendar.current
         let day = calendar.component(.day, from: date)
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        let weekdaySymbol = calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
+        // Use 3-letter abbreviation (Mon, Tue, Wed, etc.)
+        let weekdaySymbol = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
         
         return Button(action: {
             selectedDate = date
@@ -400,6 +408,11 @@ struct HeartRateView: View {
             if showingStartDatePicker {
                 weekDatePicker(for: $weekStartDate, title: "Select Start Date") {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        // Auto-update end date to be 6 days after start date
+                        let calendar = Calendar.current
+                        if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                            weekEndDate = newEndDate
+                        }
                         showingStartDatePicker = false
                         updateSelectedDateFromWeek()
                     }
@@ -409,6 +422,11 @@ struct HeartRateView: View {
             if showingEndDatePicker {
                 weekDatePicker(for: $weekEndDate, title: "Select End Date") {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        // Auto-update start date to be 6 days before end date
+                        let calendar = Calendar.current
+                        if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                            weekStartDate = newStartDate
+                        }
                         showingEndDatePicker = false
                         updateSelectedDateFromWeek()
                     }
@@ -494,6 +512,10 @@ struct HeartRateView: View {
                 HighlightRow(number: 1, text: "Stable heart rate for 5 hours")
                 HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am")
             }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 20)
@@ -511,6 +533,10 @@ struct HeartRateView: View {
                 InsightRow(number: 1, text: "Try to complete one Breath Training every day")
                 InsightRow(number: 2, text: "Don't smoke!")
             }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 30)
