@@ -35,6 +35,8 @@ struct HeartRateView: View {
     @State private var selectedDate: Date = Date()
     // Help identify which bar from chart is selecting
     @State private var selectedBarIndex: Int? = nil
+    // Show/hide inline date picker
+    @State private var showingDatePicker: Bool = false
     
     // Sample Heart Rate data
     private let allHeartRateRecords: [HeartRateRecord] = [
@@ -145,51 +147,7 @@ struct HeartRateView: View {
                     dateNavigationSection
                     
                     // Chart Area
-                    VStack {
-
-                        // Chart Title
-                        Text("Beats Per Minute (BPM) over time")
-                                .foregroundColor(.grayText)
-                                .font(.headline)
-                        
-                        // Heart Rate Chart
-                        Chart {
-                            ForEach(chartData.indices, id: \.self) { idx in
-                                let data = chartData[idx]
-                                if let min = data.min, let max = data.max {
-                                    BarMark(
-                                        x: .value("Index", data.index),
-                                        yStart: .value("Min", min),
-                                        yEnd: .value("Max", max)
-                                    )
-                                    .foregroundStyle(.green.opacity(0.6))
-                                    if min == max {
-                                        PointMark(
-                                            x: .value("Index", data.index),
-                                            y: .value("Measurement", min)
-                                        )
-                                        .foregroundStyle(.green)
-                                        .symbolSize(60)
-                                    }
-                                }
-                            }
-                        }
-                        .frame(height: 300)
-                        .chartXAxis {
-                            AxisMarks(values: chartData.map { $0.index }) { value in
-                                if let idx = value.as(Int.self), idx >= 0, idx < chartData.count && idx % 4 == 0 {
-                                    AxisValueLabel {
-                                        Text(chartData[idx].label).offset(x: -10)
-                                    }
-                                    AxisGridLine()
-                                }
-                            }
-                        }
-                        .chartYAxis {
-                            AxisMarks(position: .leading)
-                        }
-                    }
-                    .padding(.bottom, 20)
+                    chartSection
                     
                     // Highlights Section
                     highlightsSection
@@ -202,8 +160,112 @@ struct HeartRateView: View {
         }
     }
     
+    // MARK: - Chart Section
+    var chartSection: some View {
+        VStack {
+            // Chart Title
+            Text("Beats Per Minute (BPM) over time")
+                .foregroundColor(.grayText)
+                .font(.headline)
+            
+            // Heart Rate Chart
+            heartRateChart
+        }
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Heart Rate Chart
+    var heartRateChart: some View {
+        Chart {
+            ForEach(chartData.indices, id: \.self) { idx in
+                let data = chartData[idx]
+                if let min = data.min, let max = data.max {
+                    chartBarMark(for: data, min: min, max: max)
+                } else {
+                    emptyBarMark(for: data)
+                }
+            }
+        }
+        .frame(height: 300)
+        .chartXAxis {
+            chartXAxisMarks
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartYScale(domain: 0...200)
+    }
+    
+    // MARK: - Chart Components
+    @ChartContentBuilder
+    private func chartBarMark(for data: (index: Int, label: String, min: Int?, max: Int?), min: Int, max: Int) -> some ChartContent {
+        BarMark(
+            x: .value("Index", data.index),
+            yStart: .value("Min", min),
+            yEnd: .value("Max", max)
+        )
+        .foregroundStyle(.green.opacity(0.6))
+        
+        if min == max {
+            PointMark(
+                x: .value("Index", data.index),
+                y: .value("Measurement", min)
+            )
+            .foregroundStyle(.green)
+            .symbolSize(60)
+        }
+    }
+    
+    @ChartContentBuilder
+    private func emptyBarMark(for data: (index: Int, label: String, min: Int?, max: Int?)) -> some ChartContent {
+        BarMark(
+            x: .value("Index", data.index),
+            yStart: .value("Min", 0),
+            yEnd: .value("Max", 0)
+        )
+        .foregroundStyle(.clear)
+    }
+    
+    @AxisContentBuilder
+    private var chartXAxisMarks: some AxisContent {
+        AxisMarks(values: chartData.map { $0.index }) { value in
+            if let idx = value.as(Int.self), idx >= 0, idx < chartData.count {
+                let shouldShow = shouldShowAxisLabel(at: idx)
+                
+                if shouldShow {
+                    AxisValueLabel {
+                        Text(chartData[idx].label)
+                            .font(.system(size: selectedMode == .week ? 11 : 12))
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+    }
+    
+    private func shouldShowAxisLabel(at index: Int) -> Bool {
+        switch selectedMode {
+        case .day:
+            return index % 4 == 0
+        case .week:
+            return true // Show all 7 days
+        case .month:
+            return index % 4 == 0
+        }
+    }
+    
     // MARK: - Date Navigation Section
     var dateNavigationSection: some View {
+        VStack(spacing: 8) {
+            dateNavigationButtons
+            
+            if showingDatePicker {
+                inlineDatePicker
+            }
+        }
+    }
+    
+    private var dateNavigationButtons: some View {
         HStack {
             Button(action: {
                 navigateDate(forward: false)
@@ -215,10 +277,7 @@ struct HeartRateView: View {
             
             Spacer()
             
-            Text(dateRangeText)
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(.grayText)
+            dateRangeButton
             
             Spacer()
             
@@ -232,6 +291,69 @@ struct HeartRateView: View {
         }
         .padding(.horizontal, 40)
         .padding(.vertical, 12)
+    }
+    
+    private var dateRangeButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                showingDatePicker.toggle()
+            }
+        }) {
+            HStack(spacing: 6) {
+                Text(dateRangeText)
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.grayText)
+                
+                Image(systemName: showingDatePicker ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.grayText)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var inlineDatePicker: some View {
+        VStack(spacing: 12) {
+            DatePicker(
+                "",
+                selection: $selectedDate,
+                displayedComponents: .date
+            )
+            .datePickerStyle(GraphicalDatePickerStyle())
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+            
+            datePickerDoneButton
+        }
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .padding(.horizontal, 16)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
+    }
+    
+    private var datePickerDoneButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                showingDatePicker = false
+            }
+        }) {
+            Text("Done")
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Color(red: 0.02, green: 0.33, blue: 0.18))
+                .cornerRadius(10)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
     }
     
     // MARK: - Highlights Section
@@ -361,7 +483,8 @@ func aggregateHeartRate(for records: [HeartRateRecord],
         guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
         let filtered = records.filter { weekInterval.contains($0.timestamp) && $0.timestamp <= now }
         let grouped = groupByWeekday(records: filtered)
-        let weekdaySymbols = calendar.weekdaySymbols
+        // Use short weekday symbols (Sun, Mon, Tue, etc.)
+        let weekdaySymbols = calendar.shortWeekdaySymbols
         
         // Debug Week Mode
         for (weekday, group) in grouped.sorted(by: { $0.key < $1.key }) {
