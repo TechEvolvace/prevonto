@@ -141,6 +141,9 @@ struct HeartRateView: View {
                     .padding(.bottom, 10)
                     .frame(width: 370)
                     
+                    // Date Navigation
+                    dateNavigationSection
+                    
                     // Chart Area
                     VStack {
 
@@ -186,9 +189,126 @@ struct HeartRateView: View {
                             AxisMarks(position: .leading)
                         }
                     }
+                    .padding(.bottom, 20)
+                    
+                    // Highlights Section
+                    highlightsSection
+                    
+                    // Insights Section
+                    insightsSection
                 }
                 .padding(.horizontal, 15)
             }
+        }
+    }
+    
+    // MARK: - Date Navigation Section
+    var dateNavigationSection: some View {
+        HStack {
+            Button(action: {
+                navigateDate(forward: false)
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+            
+            Spacer()
+            
+            Text(dateRangeText)
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(.grayText)
+            
+            Spacer()
+            
+            Button(action: {
+                navigateDate(forward: true)
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+        }
+        .padding(.horizontal, 40)
+        .padding(.vertical, 12)
+    }
+    
+    // MARK: - Highlights Section
+    var highlightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Highlights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                HighlightRow(number: 1, text: "Stable heart rate for 5 hours")
+                HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Insights Section
+    var insightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Insights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                InsightRow(number: 1, text: "Try to complete one Breath Training every day")
+                InsightRow(number: 2, text: "Don't smoke!")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 30)
+    }
+    
+    // MARK: - Helper Functions
+    private var dateRangeText: String {
+        let formatter = DateFormatter()
+        let calendar = Calendar.current
+        
+        switch selectedMode {
+        case .day:
+            formatter.dateFormat = "MMMM d, yyyy"
+            return formatter.string(from: selectedDate)
+        case .week:
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else {
+                return ""
+            }
+            formatter.dateFormat = "MMM d"
+            let start = formatter.string(from: weekInterval.start)
+            let end = formatter.string(from: calendar.date(byAdding: .day, value: -1, to: weekInterval.end)!)
+            formatter.dateFormat = "yyyy"
+            let year = formatter.string(from: selectedDate)
+            return "\(start) - \(end), \(year)"
+        case .month:
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: selectedDate)
+        }
+    }
+    
+    private func navigateDate(forward: Bool) {
+        let calendar = Calendar.current
+        let component: Calendar.Component
+        let value = forward ? 1 : -1
+        
+        switch selectedMode {
+        case .day:
+            component = .day
+        case .week:
+            component = .weekOfYear
+        case .month:
+            component = .month
+        }
+        
+        if let newDate = calendar.date(byAdding: component, value: value, to: selectedDate) {
+            selectedDate = newDate
         }
     }
 }
@@ -306,6 +426,56 @@ func groupByWeekday(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
 }
 func groupByDayOfMonth(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
     Dictionary(grouping: records) { Calendar.current.component(.day, from: $0.timestamp) }
+}
+
+// MARK: - Highlight Row Component
+struct HighlightRow: View {
+    let number: Int
+    let text: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                .frame(width: 24, height: 24)
+                .background(Color(red: 0.39, green: 0.59, blue: 0.38).opacity(0.15))
+                .clipShape(Circle())
+            
+            Text(text)
+                .font(.custom("Noto Sans", size: 16))
+                .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Insight Row Component
+struct InsightRow: View {
+    let number: Int
+    let text: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                .frame(width: 24, height: 24)
+                .background(Color(red: 0.39, green: 0.59, blue: 0.38).opacity(0.15))
+                .clipShape(Circle())
+            
+            Text(text)
+                .font(.custom("Noto Sans", size: 16))
+                .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
+        }
+    }
 }
 
 #Preview {
