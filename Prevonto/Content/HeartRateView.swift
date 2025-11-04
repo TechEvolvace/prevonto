@@ -35,8 +35,11 @@ struct HeartRateView: View {
     @State private var selectedDate: Date = Date()
     // Help identify which bar from chart is selecting
     @State private var selectedBarIndex: Int? = nil
-    // Show/hide inline date picker
-    @State private var showingDatePicker: Bool = false
+    // Week mode start and end date pickers
+    @State private var showingStartDatePicker: Bool = false
+    @State private var showingEndDatePicker: Bool = false
+    @State private var weekStartDate: Date = Date()
+    @State private var weekEndDate: Date = Date()
     
     // Sample Heart Rate data
     private let allHeartRateRecords: [HeartRateRecord] = [
@@ -158,6 +161,9 @@ struct HeartRateView: View {
                 .padding(.horizontal, 15)
             }
         }
+        .onAppear {
+            updateWeekDates()
+        }
     }
     
     // MARK: - Chart Section
@@ -256,19 +262,26 @@ struct HeartRateView: View {
     
     // MARK: - Date Navigation Section
     var dateNavigationSection: some View {
-        VStack(spacing: 8) {
-            dateNavigationButtons
+        VStack(spacing: 12) {
+            // Month navigation (< May 2025 >)
+            monthNavigationButtons
             
-            if showingDatePicker {
-                inlineDatePicker
+            // Mode-specific date selectors
+            switch selectedMode {
+            case .day:
+                daySelector
+            case .week:
+                weekSelector
+            case .month:
+                EmptyView()
             }
         }
     }
     
-    private var dateNavigationButtons: some View {
+    private var monthNavigationButtons: some View {
         HStack {
             Button(action: {
-                navigateDate(forward: false)
+                navigateMonth(forward: false)
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .medium))
@@ -277,12 +290,15 @@ struct HeartRateView: View {
             
             Spacer()
             
-            dateRangeButton
+            Text(monthYearText)
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(.grayText)
             
             Spacer()
             
             Button(action: {
-                navigateDate(forward: true)
+                navigateMonth(forward: true)
             }) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18, weight: .medium))
@@ -293,38 +309,168 @@ struct HeartRateView: View {
         .padding(.vertical, 12)
     }
     
-    private var dateRangeButton: some View {
-        Button(action: {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                showingDatePicker.toggle()
+    // MARK: - Day Selector
+    private var daySelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(daysInCurrentMonth, id: \.self) { date in
+                    dayButton(for: date)
+                }
             }
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    private func dayButton(for date: Date) -> some View {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let weekdaySymbol = calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
+        
+        return Button(action: {
+            selectedDate = date
         }) {
-            HStack(spacing: 6) {
-                Text(dateRangeText)
-                    .font(.custom("Noto Sans", size: 18))
-                    .fontWeight(.semibold)
-                    .foregroundColor(.grayText)
+            VStack(spacing: 4) {
+                Text(weekdaySymbol)
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? .white : .grayText)
                 
-                Image(systemName: showingDatePicker ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.grayText)
+                Text("\(day)")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : .primaryGreen)
             }
+            .frame(width: 50, height: 60)
+            .background(isSelected ? Color.secondaryGreen : Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
     
-    private var inlineDatePicker: some View {
+    private var daysInCurrentMonth: [Date] {
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+              let dayRange = calendar.range(of: .day, in: .month, for: selectedDate) else {
+            return []
+        }
+        
+        return dayRange.compactMap { day in
+            calendar.date(bySetting: .day, value: day, of: monthInterval.start)
+        }
+    }
+    
+    // MARK: - Week Selector
+    private var weekSelector: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                weekDateButton(
+                    title: "start date",
+                    date: weekStartDate,
+                    isShowing: showingStartDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingStartDatePicker.toggle()
+                            if showingStartDatePicker {
+                                showingEndDatePicker = false
+                            }
+                        }
+                    }
+                )
+                
+                Text("to")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(.grayText)
+                
+                weekDateButton(
+                    title: "end date",
+                    date: weekEndDate,
+                    isShowing: showingEndDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingEndDatePicker.toggle()
+                            if showingEndDatePicker {
+                                showingStartDatePicker = false
+                            }
+                        }
+                    }
+                )
+            }
+            .padding(.horizontal, 16)
+            
+            if showingStartDatePicker {
+                weekDatePicker(for: $weekStartDate, title: "Select Start Date") {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showingStartDatePicker = false
+                        updateSelectedDateFromWeek()
+                    }
+                }
+            }
+            
+            if showingEndDatePicker {
+                weekDatePicker(for: $weekEndDate, title: "Select End Date") {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showingEndDatePicker = false
+                        updateSelectedDateFromWeek()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func weekDateButton(title: String, date: Date, isShowing: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "calendar")
+                    .font(.system(size: 14))
+                    .foregroundColor(.grayText)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .foregroundColor(.grayText)
+                    Text(weekDateFormatter.string(from: date))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primaryGreen)
+                }
+                
+                Image(systemName: isShowing ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 12))
+                    .foregroundColor(.grayText)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func weekDatePicker(for binding: Binding<Date>, title: String, onDone: @escaping () -> Void) -> some View {
         VStack(spacing: 12) {
             DatePicker(
                 "",
-                selection: $selectedDate,
+                selection: binding,
                 displayedComponents: .date
             )
             .datePickerStyle(GraphicalDatePickerStyle())
             .padding(.horizontal, 8)
             .padding(.top, 8)
             
-            datePickerDoneButton
+            Button(action: onDone) {
+                Text("Done")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color(red: 0.02, green: 0.33, blue: 0.18))
+                    .cornerRadius(10)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
         }
         .background(Color.white)
         .cornerRadius(12)
@@ -334,26 +480,6 @@ struct HeartRateView: View {
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)
         ))
-    }
-    
-    private var datePickerDoneButton: some View {
-        Button(action: {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                showingDatePicker = false
-            }
-        }) {
-            Text("Done")
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-                .cornerRadius(10)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
     }
     
     // MARK: - Highlights Section
@@ -391,47 +517,43 @@ struct HeartRateView: View {
     }
     
     // MARK: - Helper Functions
-    private var dateRangeText: String {
+    private var monthYearText: String {
         let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+    
+    private var weekDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }
+    
+    private func navigateMonth(forward: Bool) {
         let calendar = Calendar.current
+        let value = forward ? 1 : -1
         
-        switch selectedMode {
-        case .day:
-            formatter.dateFormat = "MMMM d, yyyy"
-            return formatter.string(from: selectedDate)
-        case .week:
-            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else {
-                return ""
+        if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+            selectedDate = newDate
+            
+            // Update week dates if in week mode
+            if selectedMode == .week {
+                updateWeekDates()
             }
-            formatter.dateFormat = "MMM d"
-            let start = formatter.string(from: weekInterval.start)
-            let end = formatter.string(from: calendar.date(byAdding: .day, value: -1, to: weekInterval.end)!)
-            formatter.dateFormat = "yyyy"
-            let year = formatter.string(from: selectedDate)
-            return "\(start) - \(end), \(year)"
-        case .month:
-            formatter.dateFormat = "MMMM yyyy"
-            return formatter.string(from: selectedDate)
         }
     }
     
-    private func navigateDate(forward: Bool) {
+    private func updateWeekDates() {
         let calendar = Calendar.current
-        let component: Calendar.Component
-        let value = forward ? 1 : -1
-        
-        switch selectedMode {
-        case .day:
-            component = .day
-        case .week:
-            component = .weekOfYear
-        case .month:
-            component = .month
+        if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) {
+            weekStartDate = weekInterval.start
+            weekEndDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
         }
-        
-        if let newDate = calendar.date(byAdding: component, value: value, to: selectedDate) {
-            selectedDate = newDate
-        }
+    }
+    
+    private func updateSelectedDateFromWeek() {
+        // Update selectedDate to be within the selected week range
+        selectedDate = weekStartDate
     }
 }
 
