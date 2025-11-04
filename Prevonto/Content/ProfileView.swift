@@ -216,7 +216,8 @@ struct ProfileView: View {
                                 isSelected: selectedGender == gender,
                                 action: {
                                     withAnimation(.easeInOut(duration: 0.2)) {
-                                        selectedGender = gender
+                                        // Toggle: unselect if already selected, select if not
+                                        selectedGender = selectedGender == gender ? nil : gender
                                     }
                                 }
                             )
