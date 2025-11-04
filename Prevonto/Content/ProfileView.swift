@@ -11,6 +11,7 @@ struct ProfileView: View {
     @State private var showingSaveAlert = false
     
     @State private var showingDatePicker = false
+    @State private var selectedGender: Gender? = nil
     
     var body: some View {
         NavigationStack {
@@ -200,6 +201,28 @@ struct ProfileView: View {
                         ))
                     }
                 }
+                
+                // Gender Selection
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Gender")
+                        .font(.custom("Noto Sans", size: 14))
+                        .fontWeight(.medium)
+                        .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
+                    
+                    HStack(spacing: 12) {
+                        ForEach(Gender.allCases, id: \.self) { gender in
+                            GenderButton(
+                                gender: gender,
+                                isSelected: selectedGender == gender,
+                                action: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedGender = gender
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -284,6 +307,39 @@ struct ProfileInputField: View {
                 )
         }
     }
+}
+
+// MARK: - Gender Button Component
+struct GenderButton: View {
+    let gender: Gender
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(gender.rawValue)
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : Color(red: 0.404, green: 0.420, blue: 0.455))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                .cornerRadius(8)
+                .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.clear : Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Gender Enum
+enum Gender: String, CaseIterable {
+    case male = "Male"
+    case female = "Female"
+    case other = "Other"
 }
 
 // MARK: - Preview
