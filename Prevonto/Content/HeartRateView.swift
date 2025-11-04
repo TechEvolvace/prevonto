@@ -169,14 +169,12 @@ struct HeartRateView: View {
     // MARK: - Chart Section
     var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Chart Title
-            Text("Beats Per Minute (BPM) over time")
-                .foregroundColor(.grayText)
-                .font(.headline)
-                .padding(.horizontal, 16)
-            
-            // Heart Rate Chart in rounded card
-            VStack {
+            // Heart Rate Chart in rounded card with title inside
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Beats Per Minute (BPM) over time")
+                    .foregroundColor(.grayText)
+                    .font(.headline)
+                
                 heartRateChart
             }
             .padding(16)
@@ -199,7 +197,7 @@ struct HeartRateView: View {
                 }
             }
         }
-        .frame(height: 300)
+        .frame(height: 250)
         .chartXAxis {
             chartXAxisMarks
         }
@@ -406,32 +404,48 @@ struct HeartRateView: View {
             .padding(.horizontal, 16)
             
             if showingStartDatePicker {
-                weekDatePicker(for: $weekStartDate, title: "Select Start Date") {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        // Auto-update end date to be 6 days after start date
-                        let calendar = Calendar.current
-                        if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
-                            weekEndDate = newEndDate
-                        }
-                        showingStartDatePicker = false
-                        updateSelectedDateFromWeek()
-                    }
-                }
+                weekDatePickerView(for: $weekStartDate)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissStartDatePicker()
+                            }
+                    )
             }
             
             if showingEndDatePicker {
-                weekDatePicker(for: $weekEndDate, title: "Select End Date") {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        // Auto-update start date to be 6 days before end date
-                        let calendar = Calendar.current
-                        if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
-                            weekStartDate = newStartDate
-                        }
-                        showingEndDatePicker = false
-                        updateSelectedDateFromWeek()
-                    }
-                }
+                weekDatePickerView(for: $weekEndDate)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissEndDatePicker()
+                            }
+                    )
             }
+        }
+    }
+    
+    private func dismissStartDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            // Update end date to be 6 days after start date
+            let calendar = Calendar.current
+            if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                weekEndDate = newEndDate
+            }
+            showingStartDatePicker = false
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    private func dismissEndDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            // Update start date to be 6 days before end date
+            let calendar = Calendar.current
+            if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                weekStartDate = newStartDate
+            }
+            showingEndDatePicker = false
+            updateSelectedDateFromWeek()
         }
     }
     
@@ -450,10 +464,6 @@ struct HeartRateView: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primaryGreen)
                 }
-                
-                Image(systemName: isShowing ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 12))
-                    .foregroundColor(.grayText)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
@@ -465,31 +475,16 @@ struct HeartRateView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    private func weekDatePicker(for binding: Binding<Date>, title: String, onDone: @escaping () -> Void) -> some View {
-        VStack(spacing: 12) {
-            DatePicker(
-                "",
-                selection: binding,
-                displayedComponents: .date
-            )
-            .datePickerStyle(GraphicalDatePickerStyle())
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            
-            Button(action: onDone) {
-                Text("Done")
-                    .font(.custom("Noto Sans", size: 16))
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-                    .cornerRadius(10)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .padding(.horizontal, 8)
-            .padding(.bottom, 8)
-        }
+    private func weekDatePickerView(for binding: Binding<Date>) -> some View {
+        let isStartDate = binding.wrappedValue == weekStartDate
+        
+        return DatePicker(
+            "",
+            selection: binding,
+            displayedComponents: .date
+        )
+        .datePickerStyle(GraphicalDatePickerStyle())
+        .padding(16)
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
@@ -498,6 +493,22 @@ struct HeartRateView: View {
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)
         ))
+        .onChange(of: binding.wrappedValue) { newDate in
+            // Update opposite date in real-time while calendar is open
+            let calendar = Calendar.current
+            if isStartDate {
+                // Update end date to be 6 days after start date
+                if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
+                    weekEndDate = newEndDate
+                }
+            } else {
+                // Update start date to be 6 days before end date
+                if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
+                    weekStartDate = newStartDate
+                }
+            }
+            updateSelectedDateFromWeek()
+        }
     }
     
     // MARK: - Highlights Section
@@ -508,14 +519,17 @@ struct HeartRateView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.primaryGreen)
             
-            VStack(alignment: .leading, spacing: 12) {
-                HighlightRow(number: 1, text: "Stable heart rate for 5 hours")
-                HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am")
+            if hasHighlightsData {
+                VStack(alignment: .leading, spacing: 0) {
+                    HighlightRow(number: 1, text: "Stable heart rate for 5 hours", isLast: false)
+                    HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am", isLast: true)
+                }
+            } else {
+                Text("No highlights available for this period")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.grayText)
+                    .padding(.vertical, 12)
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 20)
@@ -529,17 +543,30 @@ struct HeartRateView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.primaryGreen)
             
-            VStack(alignment: .leading, spacing: 12) {
-                InsightRow(number: 1, text: "Try to complete one Breath Training every day")
-                InsightRow(number: 2, text: "Don't smoke!")
+            if hasInsightsData {
+                VStack(alignment: .leading, spacing: 0) {
+                    InsightRow(number: 1, text: "Try to complete one Breath Training every day", isLast: false)
+                    InsightRow(number: 2, text: "Don't smoke!", isLast: true)
+                }
+            } else {
+                Text("No insights available for this period")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.grayText)
+                    .padding(.vertical, 12)
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 30)
+    }
+    
+    private var hasHighlightsData: Bool {
+        // Check if there's data - for now always true, but can be updated based on actual data
+        return true
+    }
+    
+    private var hasInsightsData: Bool {
+        // Check if there's data - for now always true, but can be updated based on actual data
+        return true
     }
     
     // MARK: - Helper Functions
@@ -703,23 +730,40 @@ func groupByDayOfMonth(records: [HeartRateRecord]) -> [Int: [HeartRateRecord]] {
 struct HighlightRow: View {
     let number: Int
     let text: String
+    let isLast: Bool
+    
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255) - only for the circle
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    // Same color as "Heart Rate" title
+    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
-                .frame(width: 24, height: 24)
-                .background(Color(red: 0.39, green: 0.59, blue: 0.38).opacity(0.15))
-                .clipShape(Circle())
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // Numbered circle bullet point
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                // Highlight text
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
             
-            Text(text)
-                .font(.custom("Noto Sans", size: 16))
-                .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer()
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
         }
     }
 }
@@ -728,23 +772,40 @@ struct HighlightRow: View {
 struct InsightRow: View {
     let number: Int
     let text: String
+    let isLast: Bool
+    
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255) - only for the circle
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    // Same color as "Heart Rate" title
+    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.custom("Noto Sans", size: 16))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
-                .frame(width: 24, height: 24)
-                .background(Color(red: 0.39, green: 0.59, blue: 0.38).opacity(0.15))
-                .clipShape(Circle())
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // Numbered circle bullet point
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                // Insight text
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
             
-            Text(text)
-                .font(.custom("Noto Sans", size: 16))
-                .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer()
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
         }
     }
 }
