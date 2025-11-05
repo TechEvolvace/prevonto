@@ -1,269 +1,1029 @@
-// Blood Glucose page allows user to see their blood glucose levels by day, week, or month. 
+// Blood Glucose page allows user to see their blood glucose levels by day, week, or month.
 import SwiftUI
 import Charts
+
+// Properties of Blood Glucose data recorded from users
+struct BloodGlucoseRecord {
+    let timestamp: Date
+    let glucoseLevel: Int // in mg/dl
+}
+
+// Specify whether user selects "Day", "Week", or "Month" view mode
+enum BloodGlucoseChartMode: String, CaseIterable, Identifiable {
+    case day, week, month
+    var id: String { rawValue }
+}
 
 struct BloodGlucoseView: View {
     @Environment(\.dismiss) private var dismiss
     
-    private enum GlucoseTimeFrame: String, CaseIterable {
-        case day = "Day"
-        case week = "Week"
-        case month = "Month"
+    // Default view mode selected is Day Mode
+    @State private var selectedMode: BloodGlucoseChartMode = .day
+    // Specify what date the user selected
+    @State private var selectedDate: Date = Date()
+    // Help identify which data point from chart is selected
+    @State private var selectedDataIndex: Int? = nil
+    // Week mode start and end date pickers
+    @State private var showingStartDatePicker: Bool = false
+    @State private var showingEndDatePicker: Bool = false
+    @State private var weekStartDate: Date = Date()
+    @State private var weekEndDate: Date = Date()
+    
+    // Sample Blood Glucose data
+    private let allGlucoseRecords: [BloodGlucoseRecord] = [
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 12, hour: 7, minute: 30), glucoseLevel: 95),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 12, hour: 12, minute: 15), glucoseLevel: 120),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 12, hour: 18, minute: 45), glucoseLevel: 110),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 13, hour: 8, minute: 0), glucoseLevel: 98),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 13, hour: 13, minute: 30), glucoseLevel: 135),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 14, hour: 7, minute: 15), glucoseLevel: 92),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 14, hour: 9, minute: 30), glucoseLevel: 145),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 14, hour: 12, minute: 0), glucoseLevel: 130),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 14, hour: 15, minute: 45), glucoseLevel: 115),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 14, hour: 19, minute: 0), glucoseLevel: 105),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 15, hour: 7, minute: 45), glucoseLevel: 88),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 15, hour: 12, minute: 30), glucoseLevel: 140),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 16, hour: 8, minute: 15), glucoseLevel: 94),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 16, hour: 14, minute: 0), glucoseLevel: 128),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 17, hour: 7, minute: 30), glucoseLevel: 90),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 17, hour: 13, minute: 15), glucoseLevel: 132),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 18, hour: 8, minute: 0), glucoseLevel: 96),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 5, day: 18, hour: 12, minute: 45), glucoseLevel: 125),
+        // Additional data for different months
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 3, hour: 8, minute: 0), glucoseLevel: 102),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 3, hour: 12, minute: 30), glucoseLevel: 138),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 4, hour: 7, minute: 45), glucoseLevel: 95),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 5, hour: 9, minute: 15), glucoseLevel: 112),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 6, hour: 8, minute: 30), glucoseLevel: 99),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 7, hour: 7, minute: 0), glucoseLevel: 88),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 8, minute: 45), glucoseLevel: 105),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 12, minute: 15), glucoseLevel: 142),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 8, hour: 18, minute: 30), glucoseLevel: 118),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 9, hour: 7, minute: 30), glucoseLevel: 92),
+        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 8, day: 10, hour: 9, minute: 0), glucoseLevel: 108),
+    ]
+    
+    // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
+    private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
+        aggregateGlucose(
+            for: allGlucoseRecords,
+            mode: selectedMode,
+            selectedDate: selectedDate,
+            weekStartDate: weekStartDate,
+            weekEndDate: weekEndDate
+        )
+        .enumerated()
+        .map { (idx, item) in (index: idx, label: item.label, min: item.min, max: item.max) }
     }
-
-    @State private var selectedTimeFrame: GlucoseTimeFrame = .day
-    @State private var selectedDate: Date = Calendar.current.date(from: DateComponents(year: 2025, month: 5, day: 14)) ?? Date()
     
-    private let glucoseData: [Double] = [95, 90, 100, 120, 130, 145, 125]
-    private let hourlyLabels = ["12a", "3a", "6a", "9a", "12p", "3p", "6p", "9p"]
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                // Title
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Blood glucose")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.proPrimary)
-                    Text("Your blood glucose levels must be recorded by you on a bi-weekly basis.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.top, 12)
-                
-                // Current Reading
-                VStack(spacing: 4) {
-                    Text("108")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.proPrimary)
-                    + Text(" mg/dl")
-                        .font(.title2)
-                        .foregroundColor(.gray)
-                    Text("Weekly Average")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: .gray.opacity(0.1), radius: 6)
-                .padding(.horizontal, 24)
-                
-                // Timeframe Buttons
-                HStack(spacing: 12) {
-                    ForEach(GlucoseTimeFrame.allCases, id: \.self) { tf in
-                        Button(action: {
-                            selectedTimeFrame = tf
-                        }) {
-                            Text(tf.rawValue)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(selectedTimeFrame == tf ? .white : .gray)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 20)
-                                .background(selectedTimeFrame == tf ? Color.proPrimary : Color.white)
-                                .cornerRadius(8)
-                                .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
-                        }
-                    }
-                }
-                .padding(.horizontal, 24)
-                
-                // Date Selector (shown in all modes)
-                dateSelectorBar
-                
-                // Dynamic Chart Section
-                chartSection
-                
-                // Highlights Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Highlights")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                    
-                    ForEach(1...2, id: \.self) { index in
-                        HStack {
-                            Circle()
-                                .fill(Color.proPrimary.opacity(0.2))
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Text("\(index)")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.proPrimary)
-                                )
-                            Text("xyz")
-                                .font(.subheadline)
-                                .foregroundColor(.proPrimary)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(Color.white)
-                        .cornerRadius(10)
-                    }
-                }
-                .padding(.horizontal, 24)
-                
-                Spacer(minLength: 50)
-            }
-            .background(Color(UIColor.systemGroupedBackground))
+    // For day mode line chart, we need individual readings
+    private var dayChartData: [(index: Int, hour: Int, value: Int)] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let filtered = allGlucoseRecords.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
+        
+        return filtered.enumerated().map { (idx, record) in
+            let hour = calendar.component(.hour, from: record.timestamp)
+            return (index: idx, hour: hour, value: record.glucoseLevel)
         }
     }
     
-    // MARK: - Date Selector Bar
-    private var dateSelectorBar: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Button(action: { }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.gray)
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack {
+                    // Headline
+                    headerSection
+                    
+                    // Average Blood Glucose Card
+                    averageGlucoseCard
+                        .onTapGesture {
+                            unselectChartData()
+                        }
+                    
+                    // View Mode Picker
+                    modePicker
+                    
+                    // Date Navigation
+                    dateNavigationSection
+                    
+                    // Chart Area
+                    chartSection
+                    
+                    // Highlights Section
+                    highlightsSection
+                        .onTapGesture {
+                            unselectChartData()
+                        }
+                    
+                    // Insights Section
+                    insightsSection
+                        .onTapGesture {
+                            unselectChartData()
+                        }
                 }
-                Spacer()
-                Text("May 2025")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                Spacer()
-                Button(action: { }) {
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray)
+                .padding(.horizontal, 15)
+            }
+            .background(Color(UIColor.systemGroupedBackground))
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.grayText)
+                    }
                 }
             }
-            .padding(.horizontal, 24)
+        }
+        .onAppear {
+            updateWeekDates()
+        }
+    }
+    
+    // MARK: - Header Section
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Blood glucose")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(.primaryGreen)
             
-            HStack(spacing: 6) {
-                let formatter = DateFormatter()
-                let calendar = Calendar.current
-                let weekRange = (12...18).compactMap {
-                    calendar.date(from: DateComponents(year: 2025, month: 5, day: $0))
+            Text("Your blood glucose levels must be recorded by you on a bi-weekly basis.")
+                .font(.subheadline)
+                .foregroundColor(.grayText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 15)
+        .onTapGesture {
+            unselectChartData()
+        }
+    }
+    
+    // MARK: - Average Glucose Card
+    private var averageGlucoseCard: some View {
+        VStack(spacing: 8) {
+            Text("\(averageGlucose)")
+                .font(.system(size: 48, weight: .semibold))
+                .foregroundColor(.primaryGreen)
+            + Text(" mg/dl")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(.primaryGreen)
+            
+            Text(averageLabel)
+                .font(.custom("Noto Sans", size: 16))
+                .foregroundColor(.grayText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(.bottom, 16)
+    }
+    
+    private var averageGlucose: Int {
+        let dataWithValues = chartData.filter { $0.min != nil && $0.max != nil }
+        guard !dataWithValues.isEmpty else { return 0 }
+        
+        let sum = dataWithValues.reduce(0) { total, data in
+            let avg = (data.min! + data.max!) / 2
+            return total + avg
+        }
+        return sum / dataWithValues.count
+    }
+    
+    private var averageLabel: String {
+        switch selectedMode {
+        case .day:
+            return "Daily Average"
+        case .week:
+            return "Weekly Average"
+        case .month:
+            return "Monthly Average"
+        }
+    }
+    
+    // MARK: - Mode Picker
+    private var modePicker: some View {
+        HStack(spacing: 20) {
+            ForEach(BloodGlucoseChartMode.allCases) { mode in
+                Button(action: {
+                    selectedMode = mode
+                    selectedDataIndex = nil
+                }) {
+                    Text(mode.rawValue.capitalized)
+                        .font(.headline)
+                        .foregroundStyle(selectedMode == mode ? .white : .primary)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedMode == mode ? Color.secondaryGreen : Color(.white))
+                        )
+                        .shadow(color: .gray.opacity(0.3), radius: 3, x: 0, y: 2)
                 }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.bottom, 10)
+        .frame(width: 370)
+    }
+    
+    // MARK: - Chart Section
+    private var chartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Blood Glucose (mg/dl) over time")
+                    .foregroundColor(.grayText)
+                    .font(.headline)
                 
-                ForEach(weekRange, id: \.self) { date in
-                    let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-                    let label = formatter.string(from: date)
-                    let dayNum = calendar.component(.day, from: date)
+                if selectedMode == .day {
+                    dayLineChart
+                } else {
+                    barChart
+                }
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        }
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Day Line Chart
+    private var dayLineChart: some View {
+        Chart {
+            ForEach(dayChartData, id: \.index) { data in
+                LineMark(
+                    x: .value("Hour", data.hour),
+                    y: .value("mg/dl", data.value)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(Color.primaryGreen.opacity(0.8))
+                
+                PointMark(
+                    x: .value("Hour", data.hour),
+                    y: .value("mg/dl", data.value)
+                )
+                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.primaryGreen)
+                .symbolSize(selectedDataIndex == data.index ? 100 : 60)
+                
+                if selectedDataIndex == data.index {
+                    RuleMark(x: .value("Hour", data.hour))
+                        .foregroundStyle(Color.selectionGreen)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .annotation(position: .top, alignment: .center, spacing: 0) {
+                            dayTooltip(for: data)
+                                .offset(y: 20)
+                        }
+                }
+            }
+        }
+        .frame(height: 250)
+        .chartXAxis {
+            AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
+                if let hour = value.as(Int.self) {
+                    AxisValueLabel {
+                        Text(hourLabel(for: hour))
+                            .font(.system(size: 11))
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartYScale(domain: 0...200)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleDayChartTap(at: location, proxy: proxy, geometry: geometry)
+                    }
+            }
+        }
+    }
+    
+    private func hourLabel(for hour: Int) -> String {
+        if hour == 0 { return "12a" }
+        else if hour < 12 { return "\(hour)a" }
+        else if hour == 12 { return "12p" }
+        else { return "\(hour - 12)p" }
+    }
+    
+    private func dayTooltip(for data: (index: Int, hour: Int, value: Int)) -> some View {
+        VStack(spacing: 2) {
+            Text(hourLabel(for: data.hour))
+                .font(.system(size: 12, weight: .semibold))
+            Text("\(data.value) mg/dl")
+                .font(.system(size: 11))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.selectionGreen)
+        .cornerRadius(6)
+    }
+    
+    private func handleDayChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        guard !dayChartData.isEmpty else { return }
+        
+        let xPosition = location.x
+        
+        // Find closest data point
+        var closestIndex: Int? = nil
+        var closestDistance: CGFloat = .infinity
+        
+        for data in dayChartData {
+            if let xPos = proxy.position(forX: data.hour) {
+                let distance = abs(xPos - xPosition)
+                if distance < closestDistance && distance < 30 {
+                    closestDistance = distance
+                    closestIndex = data.index
+                }
+            }
+        }
+        
+        if let index = closestIndex {
+            if selectedDataIndex == index {
+                selectedDataIndex = nil
+            } else {
+                selectedDataIndex = index
+            }
+        } else {
+            selectedDataIndex = nil
+        }
+    }
+    
+    // MARK: - Bar Chart (for Week or Month mode)
+    private var barChart: some View {
+        Chart {
+            ForEach(chartData.indices, id: \.self) { idx in
+                let data = chartData[idx]
+                let isSelected = selectedDataIndex == idx
+                
+                if let min = data.min, let max = data.max {
+                    BarMark(
+                        x: .value("Index", data.index),
+                        yStart: .value("Min", min),
+                        yEnd: .value("Max", max)
+                    )
+                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.4))
                     
-                    VStack(spacing: 2) {
-                        Text(label)
-                            .font(.caption2)
-                            .foregroundColor(isSelected ? .white : .gray)
-                        Text("\(dayNum)")
-                            .font(.caption)
-                            .foregroundColor(isSelected ? .white : .gray)
+                    if min == max {
+                        PointMark(
+                            x: .value("Index", data.index),
+                            y: .value("Measurement", min)
+                        )
+                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.6))
+                        .symbolSize(60)
                     }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(isSelected ? Color.proPrimary : Color.white)
-                    .cornerRadius(6)
-                    .onTapGesture {
-                        selectedDate = date
+                    
+                    if isSelected {
+                        RuleMark(x: .value("Index", data.index))
+                            .foregroundStyle(Color.selectionGreen)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .annotation(position: .top, alignment: .center, spacing: 0) {
+                                barTooltip(for: data, min: min, max: max)
+                                    .offset(y: 20)
+                            }
                     }
+                } else {
+                    // When there's no data
+                    BarMark(
+                        x: .value("Index", data.index),
+                        yStart: .value("Min", 0),
+                        yEnd: .value("Max", 0)
+                    )
+                    .foregroundStyle(.clear)
+                }
+            }
+        }
+        .frame(height: 250)
+        .chartXAxis {
+            barChartXAxisMarks
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartYScale(domain: 0...200)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleBarChartTap(at: location, proxy: proxy, geometry: geometry)
+                    }
+            }
+        }
+    }
+    
+    private func barTooltip(for data: (index: Int, label: String, min: Int?, max: Int?), min: Int, max: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(tooltipTimeLabel(for: data))
+                .font(.system(size: 12, weight: .semibold))
+            Text("min: \(min) | max: \(max)")
+                .font(.system(size: 11))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.selectionGreen)
+        .cornerRadius(6)
+    }
+    
+    private func tooltipTimeLabel(for data: (index: Int, label: String, min: Int?, max: Int?)) -> String {
+        switch selectedMode {
+        case .day:
+            return data.label
+        case .week:
+            // Show abbreviated day of week
+            return data.label
+        case .month:
+            // Format as abbreviated month, day, year
+            let calendar = Calendar.current
+            if let date = calendar.date(bySetting: .day, value: data.index + 1, of: selectedDate) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMM d, yyyy"
+                return formatter.string(from: date)
+            }
+            return data.label
+        }
+    }
+    
+    @AxisContentBuilder
+    private var barChartXAxisMarks: some AxisContent {
+        AxisMarks(values: chartData.map { $0.index }) { value in
+            if let idx = value.as(Int.self), idx >= 0, idx < chartData.count {
+                let shouldShow = shouldShowAxisLabel(at: idx)
+                
+                if shouldShow {
+                    AxisValueLabel {
+                        Text(chartData[idx].label)
+                            .font(.system(size: selectedMode == .week ? 11 : 12))
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+    }
+    
+    private func shouldShowAxisLabel(at index: Int) -> Bool {
+        switch selectedMode {
+        case .day:
+            return index % 4 == 0
+        case .week:
+            return true // Show all 7 days
+        case .month:
+            return index % 4 == 0
+        }
+    }
+    
+    private func handleBarChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        let xPosition = location.x
+        let chartWidth = geometry.size.width
+        let dataCount = CGFloat(chartData.count)
+        
+        let barWidth = chartWidth / dataCount
+        let tappedIndex = Int(xPosition / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
+            selectedDataIndex = nil
+            return
+        }
+        
+        if selectedDataIndex == tappedIndex {
+            selectedDataIndex = nil
+        } else {
+            let data = chartData[tappedIndex]
+            if data.min != nil && data.max != nil {
+                selectedDataIndex = tappedIndex
+            }
+        }
+    }
+    
+    private func unselectChartData() {
+        selectedDataIndex = nil
+    }
+    
+    // MARK: - Date Navigation Section
+    private var dateNavigationSection: some View {
+        VStack(spacing: 12) {
+            // Month navigation buttons, looks like (< May 2025 >)
+            monthNavigationButtons
+            
+            // Mode-specific date selectors
+            switch selectedMode {
+            case .day:
+                daySelector
+            case .week:
+                weekSelector
+            case .month:
+                EmptyView()
+            }
+        }
+    }
+    
+    private var monthNavigationButtons: some View {
+        HStack {
+            Button(action: {
+                navigateMonth(forward: false)
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+            
+            Spacer()
+            
+            Text(monthYearText)
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(.grayText)
+            
+            Spacer()
+            
+            Button(action: {
+                navigateMonth(forward: true)
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+        }
+        .padding(.horizontal, 40)
+        .padding(.vertical, 12)
+    }
+    
+    // MARK: - Day Selector
+    private var daySelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(daysInCurrentMonth, id: \.self) { date in
+                    dayButton(for: date)
                 }
             }
             .padding(.horizontal, 16)
         }
     }
     
-    // MARK: - Chart Section
-    private var chartSection: some View {
+    private func dayButton(for date: Date) -> some View {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        // Use 3-letter abbreviated day names (Mon, Tue, etc.)
+        let weekdaySymbol = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
+        
+        return Button(action: {
+            selectedDate = date
+            selectedDataIndex = nil
+        }) {
+            VStack(spacing: 4) {
+                Text(weekdaySymbol)
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? .white : .grayText)
+                
+                Text("\(day)")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : .primaryGreen)
+            }
+            .frame(width: 50, height: 60)
+            .background(isSelected ? Color.secondaryGreen : Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var daysInCurrentMonth: [Date] {
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+              let dayRange = calendar.range(of: .day, in: .month, for: selectedDate) else {
+            return []
+        }
+        
+        return dayRange.compactMap { day in
+            calendar.date(bySetting: .day, value: day, of: monthInterval.start)
+        }
+    }
+    
+    // MARK: - Week Selector
+    private var weekSelector: some View {
         VStack(spacing: 12) {
-            switch selectedTimeFrame {
-            case .day:
-                dayChart
-            case .week:
-                weekChart
-            case .month:
-                monthChart
+            HStack(spacing: 12) {
+                weekDateButton(
+                    title: "start date",
+                    date: weekStartDate,
+                    isShowing: showingStartDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingStartDatePicker.toggle()
+                            if showingStartDatePicker {
+                                showingEndDatePicker = false
+                            }
+                        }
+                    }
+                )
+                
+                Text("to")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(.grayText)
+                
+                weekDateButton(
+                    title: "end date",
+                    date: weekEndDate,
+                    isShowing: showingEndDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingEndDatePicker.toggle()
+                            if showingEndDatePicker {
+                                showingStartDatePicker = false
+                            }
+                        }
+                    }
+                )
+            }
+            .padding(.horizontal, 16)
+            
+            if showingStartDatePicker {
+                weekDatePickerView(for: $weekStartDate, isStartDate: true)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissStartDatePicker()
+                            }
+                    )
+            }
+            
+            if showingEndDatePicker {
+                weekDatePickerView(for: $weekEndDate, isStartDate: false)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissEndDatePicker()
+                            }
+                    )
             }
         }
-        .padding()
+    }
+    
+    private func dismissStartDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                weekEndDate = newEndDate
+            }
+            showingStartDatePicker = false
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    private func dismissEndDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                weekStartDate = newStartDate
+            }
+            showingEndDatePicker = false
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    private func weekDateButton(title: String, date: Date, isShowing: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "calendar")
+                    .font(.system(size: 14))
+                    .foregroundColor(.grayText)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .foregroundColor(.grayText)
+                    Text(weekDateFormatter.string(from: date))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primaryGreen)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func weekDatePickerView(for binding: Binding<Date>, isStartDate: Bool) -> some View {
+        DatePicker(
+            "",
+            selection: binding,
+            displayedComponents: .date
+        )
+        .datePickerStyle(GraphicalDatePickerStyle())
+        .padding(16)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: .gray.opacity(0.1), radius: 4)
-        .padding(.horizontal, 24)
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .padding(.horizontal, 16)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
+        .onChange(of: binding.wrappedValue) { newDate in
+            let calendar = Calendar.current
+            if isStartDate {
+                if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
+                    weekEndDate = newEndDate
+                }
+            } else {
+                if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
+                    weekStartDate = newStartDate
+                }
+            }
+            updateSelectedDateFromWeek()
+        }
     }
     
-    // MARK: - Charts
-    private var dayChart: some View {
-        Chart {
-            ForEach(glucoseData.indices, id: \.self) { i in
-                LineMark(
-                    x: .value("Hour", hourlyLabels[i]),
-                    y: .value("mg/dl", glucoseData[i])
-                )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.proPrimary)
+    // MARK: - Highlights Section
+    private var highlightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Highlights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            if hasData {
+                VStack(alignment: .leading, spacing: 0) {
+                    GlucoseHighlightRow(number: 1, text: "Your glucose levels are within normal range", isLast: false)
+                    GlucoseHighlightRow(number: 2, text: "Post-meal spikes observed between 12pm-2pm", isLast: true)
+                }
+            } else {
+                Text("No data available to generate highlights")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.grayText)
+                    .padding(.vertical, 12)
             }
         }
-        .frame(height: 160)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 20)
     }
     
-    private var weekChart: some View {
-        let days = ["Su", "M", "T", "W", "Th", "F", "Sa"]
-        let values: [(min: Double, max: Double)] = [
-            (60, 150), (70, 140), (80, 160),
-            (50, 145), (55, 130), (65, 135), (75, 125)
-        ]
+    // MARK: - Insights Section
+    private var insightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Insights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            if hasData {
+                VStack(alignment: .leading, spacing: 0) {
+                    GlucoseInsightRow(number: 1, text: "Consider reducing carbohydrate intake at lunch", isLast: false)
+                    GlucoseInsightRow(number: 2, text: "Maintain your current breakfast routine", isLast: true)
+                }
+            } else {
+                Text("No data available to generate insights")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.grayText)
+                    .padding(.vertical, 12)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 30)
+    }
+    
+    private var hasData: Bool {
+        if selectedMode == .day {
+            return !dayChartData.isEmpty
+        } else {
+            return chartData.contains { $0.min != nil && $0.max != nil }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private var monthYearText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+    
+    private var weekDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }
+    
+    private func navigateMonth(forward: Bool) {
+        let calendar = Calendar.current
+        let value = forward ? 1 : -1
         
-        return Chart {
-            ForEach(values.indices, id: \.self) { i in
-                BarMark(
-                    x: .value("Day", days[i]),
-                    yStart: .value("Min", values[i].min),
-                    yEnd: .value("Max", values[i].max)
-                )
-                .foregroundStyle(i == 3 ? Color.proPrimary : Color.gray.opacity(0.4))
+        if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+            selectedDate = newDate
+            selectedDataIndex = nil
+            
+            if selectedMode == .week {
+                updateWeekDates()
             }
-            PointMark(x: .value("Day", "W"), y: .value("Max", 145))
-                .annotation {
-                    Text("145 mg/dl").font(.caption2).foregroundColor(.proPrimary)
-                }
-            PointMark(x: .value("Day", "W"), y: .value("Min", 50))
-                .annotation(position: .bottom) {
-                    Text("50 mg/dl").font(.caption2).foregroundColor(.proPrimary)
-                }
         }
-        .frame(height: 160)
     }
     
-    private var monthChart: some View {
-        let weekLabels = ["1", "7", "14", "21", "28"]
-        let values: [(min: Double, max: Double)] = [
-            (65, 155), (60, 140), (75, 160), (50, 145), (70, 135)
-        ]
-        
-        return Chart {
-            ForEach(values.indices, id: \.self) { i in
-                BarMark(
-                    x: .value("Week", weekLabels[i]),
-                    yStart: .value("Min", values[i].min),
-                    yEnd: .value("Max", values[i].max)
-                )
-                .foregroundStyle(i == 3 ? Color.proPrimary : Color.gray.opacity(0.4))
-            }
-            PointMark(x: .value("Week", "21"), y: .value("Max", 145))
-                .annotation {
-                    Text("145 mg/dl").font(.caption2).foregroundColor(.proPrimary)
-                }
-            PointMark(x: .value("Week", "21"), y: .value("Min", 50))
-                .annotation(position: .bottom) {
-                    Text("50 mg/dl").font(.caption2).foregroundColor(.proPrimary)
-                }
+    private func updateWeekDates() {
+        let calendar = Calendar.current
+        if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) {
+            weekStartDate = weekInterval.start
+            weekEndDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
         }
-        .frame(height: 160)
+    }
+    
+    private func updateSelectedDateFromWeek() {
+        selectedDate = weekStartDate
     }
 }
 
-// MARK: - Color Extensions
+// MARK: - Colors used for the Blood Glucose page
 private extension Color {
-    static let proPrimary = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    // #608E61 for selection highlight
+    static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
 
-struct BloodGlucoseView_Previews: PreviewProvider {
-    static var previews: some View {
-        BloodGlucoseView()
+// MARK: - Data Aggregation
+func aggregateGlucose(for records: [BloodGlucoseRecord],
+                      mode: BloodGlucoseChartMode,
+                      selectedDate: Date,
+                      weekStartDate: Date,
+                      weekEndDate: Date) -> [(label: String, min: Int?, max: Int?)] {
+    let calendar = Calendar.current
+    let now = Date()
+    
+    switch mode {
+    case .day:
+        let startOfDay = calendar.startOfDay(for: selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let filtered = records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
+        let grouped = Dictionary(grouping: filtered) { calendar.component(.hour, from: $0.timestamp) }
+        
+        return (0..<24).map { hour in
+            let label = String(format: "%02d:00", hour)
+            if calendar.isDate(selectedDate, inSameDayAs: now),
+               hour > calendar.component(.hour, from: now) {
+                return (label, nil as Int?, nil as Int?)
+            }
+            if let data = grouped[hour], !data.isEmpty {
+                return (label, data.map(\.glucoseLevel).min(), data.map(\.glucoseLevel).max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
+        }
+        
+    case .week:
+        let startOfWeek = calendar.startOfDay(for: weekStartDate)
+        let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
+        
+        let filtered = records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek && $0.timestamp <= now }
+        
+        let groupedByDate = Dictionary(grouping: filtered) { record -> Date in
+            calendar.startOfDay(for: record.timestamp)
+        }
+        
+        return (0..<7).map { dayOffset in
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) else {
+                return ("", nil as Int?, nil as Int?)
+            }
+            
+            let weekdayIndex = calendar.component(.weekday, from: currentDate) - 1
+            let label = calendar.shortWeekdaySymbols[weekdayIndex]
+            
+            if currentDate > now {
+                return (label, nil as Int?, nil as Int?)
+            }
+            
+            if let data = groupedByDate[currentDate], !data.isEmpty {
+                let values = data.map(\.glucoseLevel)
+                return (label, values.min(), values.max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
+        }
+        
+    case .month:
+        guard let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+              let dayRange = calendar.range(of: .day, in: .month, for: selectedDate)
+        else { return [] }
+        
+        let filtered = records.filter { monthInterval.contains($0.timestamp) && $0.timestamp <= now }
+        let grouped = Dictionary(grouping: filtered) { calendar.component(.day, from: $0.timestamp) }
+        
+        return dayRange.map { day in
+            let label = "\(day)"
+            if calendar.isDate(selectedDate, equalTo: now, toGranularity: .month) &&
+                day > calendar.component(.day, from: now) {
+                return (label, nil as Int?, nil as Int?)
+            }
+            if let data = grouped[day], !data.isEmpty {
+                return (label, data.map(\.glucoseLevel).min(), data.map(\.glucoseLevel).max())
+            } else {
+                return (label, nil as Int?, nil as Int?)
+            }
+        }
     }
+}
+
+// MARK: - Highlight Row Component
+struct GlucoseHighlightRow: View {
+    let number: Int
+    let text: String
+    let isLast: Bool
+    
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    // Same color as "Blood glucose" title
+    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // Numbered circle bullet point
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                // Highlight text
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
+        }
+    }
+}
+
+// MARK: - Insight Row Component
+struct GlucoseInsightRow: View {
+    let number: Int
+    let text: String
+    let isLast: Bool
+    
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    // Same color as "Blood glucose" title
+    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // Numbered circle bullet point
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                // Insight text
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
+        }
+    }
+}
+
+#Preview {
+    BloodGlucoseView()
 }
