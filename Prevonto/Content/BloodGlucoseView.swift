@@ -255,6 +255,16 @@ struct BloodGlucoseView: View {
     // MARK: - Day Line Chart
     private var dayLineChart: some View {
         Chart {
+            // Always show placeholder points to ensure x-axis is visible even with no data
+            ForEach([0, 6, 12, 18], id: \.self) { hour in
+                PointMark(
+                    x: .value("Hour", hour),
+                    y: .value("mg/dl", 0)
+                )
+                .foregroundStyle(.clear)
+            }
+            
+            // Actual data points
             ForEach(dayChartData, id: \.index) { data in
                 LineMark(
                     x: .value("Hour", data.hour),
@@ -269,15 +279,16 @@ struct BloodGlucoseView: View {
                 )
                 .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.primaryGreen)
                 .symbolSize(selectedDataIndex == data.index ? 100 : 60)
+                .annotation(position: .top, alignment: .center, spacing: 4) {
+                    if selectedDataIndex == data.index {
+                        dayTooltip(for: data)
+                    }
+                }
                 
                 if selectedDataIndex == data.index {
                     RuleMark(x: .value("Hour", data.hour))
-                        .foregroundStyle(Color.selectionGreen)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .annotation(position: .top, alignment: .center, spacing: 0) {
-                            dayTooltip(for: data)
-                                .offset(y: 20)
-                        }
+                        .foregroundStyle(Color.primaryGreen.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
                 }
             }
         }
@@ -296,6 +307,7 @@ struct BloodGlucoseView: View {
         .chartYAxis {
             AxisMarks(position: .leading)
         }
+        .chartXScale(domain: 0...23)
         .chartYScale(domain: 0...200)
         .chartOverlay { proxy in
             GeometryReader { geometry in
@@ -316,18 +328,30 @@ struct BloodGlucoseView: View {
         else { return "\(hour - 12)p" }
     }
     
+    // White popover tooltip for day mode (with pointing arrow)
     private func dayTooltip(for data: (index: Int, hour: Int, value: Int)) -> some View {
-        VStack(spacing: 2) {
-            Text(hourLabel(for: data.hour))
-                .font(.system(size: 12, weight: .semibold))
-            Text("\(data.value) mg/dl")
-                .font(.system(size: 11))
+        VStack(spacing: 0) {
+            // Main content box
+            VStack(spacing: 0) {
+                Text("\(data.value)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primaryGreen)
+                Text("mg/dl")
+                    .font(.system(size: 10))
+                    .foregroundColor(.grayText)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .cornerRadius(6)
+            .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+            
+            // Pointing triangle
+            GlucosePopoverArrow()
+                .fill(Color.white)
+                .frame(width: 12, height: 6)
+                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
         }
-        .foregroundColor(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Color.selectionGreen)
-        .cornerRadius(6)
     }
     
     private func handleDayChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
@@ -368,6 +392,7 @@ struct BloodGlucoseView: View {
                 let isSelected = selectedDataIndex == idx
                 
                 if let min = data.min, let max = data.max {
+                    // Main bar mark
                     BarMark(
                         x: .value("Index", data.index),
                         yStart: .value("Min", min),
@@ -375,6 +400,29 @@ struct BloodGlucoseView: View {
                     )
                     .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.4))
                     
+                    // Show max value label above the bar when selected
+                    if isSelected {
+                        PointMark(
+                            x: .value("Index", data.index),
+                            y: .value("Max", max)
+                        )
+                        .foregroundStyle(.clear)
+                        .annotation(position: .top, alignment: .center, spacing: 4) {
+                            maxValueLabel(value: max)
+                        }
+                        
+                        // Show min value label below the bar when selected
+                        PointMark(
+                            x: .value("Index", data.index),
+                            y: .value("Min", min)
+                        )
+                        .foregroundStyle(.clear)
+                        .annotation(position: .bottom, alignment: .center, spacing: 4) {
+                            minValueLabel(value: min)
+                        }
+                    }
+                    
+                    // Point mark for single values (when min == max)
                     if min == max {
                         PointMark(
                             x: .value("Index", data.index),
@@ -382,16 +430,6 @@ struct BloodGlucoseView: View {
                         )
                         .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.6))
                         .symbolSize(60)
-                    }
-                    
-                    if isSelected {
-                        RuleMark(x: .value("Index", data.index))
-                            .foregroundStyle(Color.selectionGreen)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .annotation(position: .top, alignment: .center, spacing: 0) {
-                                barTooltip(for: data, min: min, max: max)
-                                    .offset(y: 20)
-                            }
                     }
                 } else {
                     // When there's no data
@@ -424,36 +462,27 @@ struct BloodGlucoseView: View {
         }
     }
     
-    private func barTooltip(for data: (index: Int, label: String, min: Int?, max: Int?), min: Int, max: Int) -> some View {
-        VStack(spacing: 2) {
-            Text(tooltipTimeLabel(for: data))
+    // Max value label shown above bar (like "145 mg/dl" in the design)
+    private func maxValueLabel(value: Int) -> some View {
+        VStack(spacing: 0) {
+            Text("\(value)")
                 .font(.system(size: 12, weight: .semibold))
-            Text("min: \(min) | max: \(max)")
-                .font(.system(size: 11))
+                .foregroundColor(.primaryGreen)
+            Text("mg/dl")
+                .font(.system(size: 9))
+                .foregroundColor(.grayText)
         }
-        .foregroundColor(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Color.selectionGreen)
-        .cornerRadius(6)
     }
     
-    private func tooltipTimeLabel(for data: (index: Int, label: String, min: Int?, max: Int?)) -> String {
-        switch selectedMode {
-        case .day:
-            return data.label
-        case .week:
-            // Show abbreviated day of week
-            return data.label
-        case .month:
-            // Format as abbreviated month, day, year
-            let calendar = Calendar.current
-            if let date = calendar.date(bySetting: .day, value: data.index + 1, of: selectedDate) {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMM d, yyyy"
-                return formatter.string(from: date)
-            }
-            return data.label
+    // Min value label shown below bar (like "50 mg/dl" in the design)
+    private func minValueLabel(value: Int) -> some View {
+        VStack(spacing: 0) {
+            Text("\(value)")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.primaryGreen)
+            Text("mg/dl")
+                .font(.system(size: 9))
+                .foregroundColor(.grayText)
         }
     }
     
@@ -855,6 +884,18 @@ private extension Color {
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
+}
+
+// MARK: - Popover Arrow Shape
+struct GlucosePopoverArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
 }
 
 // MARK: - Data Aggregation
