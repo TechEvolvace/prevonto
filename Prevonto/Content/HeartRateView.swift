@@ -101,9 +101,15 @@ struct HeartRateView: View {
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
-        aggregateHeartRate(for: allHeartRateRecords, mode: selectedMode, selectedDate: selectedDate)
-            .enumerated()
-            .map { (idx, item) in (index: idx, label: item.label, min: item.min, max: item.max) }
+        aggregateHeartRate(
+            for: allHeartRateRecords,
+            mode: selectedMode,
+            selectedDate: selectedDate,
+            weekStartDate: weekStartDate,
+            weekEndDate: weekEndDate
+        )
+        .enumerated()
+        .map { (idx, item) in (index: idx, label: item.label, min: item.min, max: item.max) }
     }
     
     var body: some View {
@@ -621,7 +627,9 @@ private extension Color {
 // MARK: - Data Aggregation with complete axis
 func aggregateHeartRate(for records: [HeartRateRecord],
                         mode: HeartRateChartMode,
-                        selectedDate: Date) -> [(label: String, min: Int?, max: Int?)] {
+                        selectedDate: Date,
+                        weekStartDate: Date,
+                        weekEndDate: Date) -> [(label: String, min: Int?, max: Int?)] {
     let calendar = Calendar.current
     let now = Date()
     let todayStart = calendar.startOfDay(for: now)
@@ -655,32 +663,37 @@ func aggregateHeartRate(for records: [HeartRateRecord],
         }
         
     case .week:
-        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else { return [] }
-        let filtered = records.filter { weekInterval.contains($0.timestamp) && $0.timestamp <= now }
-        let grouped = groupByWeekday(records: filtered)
-        // Use short weekday symbols (Sun, Mon, Tue, etc.)
-        let weekdaySymbols = calendar.shortWeekdaySymbols
+        // Use the selected week start and end dates
+        let startOfWeek = calendar.startOfDay(for: weekStartDate)
+        let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
         
-        // Debug Week Mode
-        for (weekday, group) in grouped.sorted(by: { $0.key < $1.key }) {
-            let hrValues = group.map(\.heartRate)
-            let name = weekdaySymbols[weekday - 1]
-            print("\(name):", hrValues)
+        // Filter records within the selected week range
+        let filtered = records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek && $0.timestamp <= now }
+        
+        // Group by actual date (not weekday)
+        let groupedByDate = Dictionary(grouping: filtered) { record -> Date in
+            calendar.startOfDay(for: record.timestamp)
         }
-
-        // Always show all 7 days
-        // .date(bySetting: .weekday...) expects Sunday-based index (1...7)
-        return (1...7).map { weekday in
-            let label = weekdaySymbols[weekday - 1]
-            
-            // For current week, avoid future days
-            if weekInterval.contains(todayStart),
-                let dayDate = calendar.nextDate(after: weekInterval.start, matching: DateComponents(weekday: weekday), matchingPolicy: .nextTime, direction: .forward),
-                dayDate > now {
-                    return (label, nil as Int?, nil as Int?)
+        
+        // Generate 7 days starting from weekStartDate
+        return (0..<7).map { dayOffset in
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) else {
+                return ("", nil as Int?, nil as Int?)
             }
-            if let data = grouped[weekday], !data.isEmpty {
-                return (label, data.map(\.heartRate).min(), data.map(\.heartRate).max())
+            
+            // Get short weekday name for the actual date
+            let weekdayIndex = calendar.component(.weekday, from: currentDate) - 1
+            let label = calendar.shortWeekdaySymbols[weekdayIndex]
+            
+            // Don't show future days
+            if currentDate > now {
+                return (label, nil as Int?, nil as Int?)
+            }
+            
+            // Get data for this specific date
+            if let data = groupedByDate[currentDate], !data.isEmpty {
+                let heartRates = data.map(\.heartRate)
+                return (label, heartRates.min(), heartRates.max())
             } else {
                 return (label, nil as Int?, nil as Int?)
             }
