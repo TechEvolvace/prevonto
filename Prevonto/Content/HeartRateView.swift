@@ -531,7 +531,7 @@ struct HeartRateView: View {
                     HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am", isLast: true)
                 }
             } else {
-                Text("No highlights available for this period")
+                Text("No data available to generate highlights")
                     .font(.custom("Noto Sans", size: 16))
                     .foregroundColor(.grayText)
                     .padding(.vertical, 12)
@@ -555,7 +555,7 @@ struct HeartRateView: View {
                     InsightRow(number: 2, text: "Don't smoke!", isLast: true)
                 }
             } else {
-                Text("No insights available for this period")
+                Text("No data available to generate insights")
                     .font(.custom("Noto Sans", size: 16))
                     .foregroundColor(.grayText)
                     .padding(.vertical, 12)
@@ -566,13 +566,13 @@ struct HeartRateView: View {
     }
     
     private var hasHighlightsData: Bool {
-        // Check if there's data - for now always true, but can be updated based on actual data
-        return true
+        // Check if there's any actual heart rate data in the selected period
+        return chartData.contains { $0.min != nil && $0.max != nil }
     }
     
     private var hasInsightsData: Bool {
-        // Check if there's data - for now always true, but can be updated based on actual data
-        return true
+        // Check if there's any actual heart rate data in the selected period
+        return chartData.contains { $0.min != nil && $0.max != nil }
     }
     
     // MARK: - Helper Functions
