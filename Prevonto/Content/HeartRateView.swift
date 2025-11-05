@@ -128,6 +128,15 @@ struct HeartRateView: View {
                             .foregroundColor(.grayText)
                     }
                     .padding(.vertical, 15)
+                    .onTapGesture {
+                        unselectChartData()
+                    }
+                    
+                    // Average Heart Rate Card
+                    averageHeartRateCard
+                        .onTapGesture {
+                            unselectChartData()
+                        }
                     
                     // View Mode Picker
                     HStack(spacing:20){
@@ -160,15 +169,65 @@ struct HeartRateView: View {
                     
                     // Highlights Section
                     highlightsSection
+                        .onTapGesture {
+                            unselectChartData()
+                        }
                     
                     // Insights Section
                     insightsSection
+                        .onTapGesture {
+                            unselectChartData()
+                        }
                 }
                 .padding(.horizontal, 15)
             }
         }
         .onAppear {
             updateWeekDates()
+        }
+    }
+    
+    // MARK: - Average Heart Rate Card
+    var averageHeartRateCard: some View {
+        VStack(spacing: 8) {
+            Text("\(averageHeartRate)")
+                .font(.system(size: 48, weight: .semibold))
+                .foregroundColor(.primaryGreen)
+            + Text(" bpm")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(.primaryGreen)
+            
+            Text(averageLabel)
+                .font(.custom("Noto Sans", size: 16))
+                .foregroundColor(.grayText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(.bottom, 16)
+    }
+    
+    private var averageHeartRate: Int {
+        let dataWithValues = chartData.filter { $0.min != nil && $0.max != nil }
+        guard !dataWithValues.isEmpty else { return 0 }
+        
+        let sum = dataWithValues.reduce(0) { total, data in
+            let avg = (data.min! + data.max!) / 2
+            return total + avg
+        }
+        return sum / dataWithValues.count
+    }
+    
+    private var averageLabel: String {
+        switch selectedMode {
+        case .day:
+            return "Daily Average"
+        case .week:
+            return "Weekly Average"
+        case .month:
+            return "Monthly Average"
         }
     }
     
@@ -196,10 +255,45 @@ struct HeartRateView: View {
         Chart {
             ForEach(chartData.indices, id: \.self) { idx in
                 let data = chartData[idx]
+                let isSelected = selectedBarIndex == idx
+                
                 if let min = data.min, let max = data.max {
-                    chartBarMark(for: data, min: min, max: max)
+                    // Bar mark
+                    BarMark(
+                        x: .value("Index", data.index),
+                        yStart: .value("Min", min),
+                        yEnd: .value("Max", max)
+                    )
+                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.4))
+                    
+                    // Point mark for single values
+                    if min == max {
+                        PointMark(
+                            x: .value("Index", data.index),
+                            y: .value("Measurement", min)
+                        )
+                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.6))
+                        .symbolSize(60)
+                    }
+                    
+                    // Vertical rule line for selected data
+                    if isSelected {
+                        RuleMark(x: .value("Index", data.index))
+                            .foregroundStyle(Color.selectionGreen)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .annotation(position: .top, alignment: .center, spacing: 0) {
+                                selectionTooltip(for: data, min: min, max: max)
+                                    .offset(y: 20)
+                            }
+                    }
                 } else {
-                    emptyBarMark(for: data)
+                    // When there's no data
+                    BarMark(
+                        x: .value("Index", data.index),
+                        yStart: .value("Min", 0),
+                        yEnd: .value("Max", 0)
+                    )
+                    .foregroundStyle(.clear)
                 }
             }
         }
@@ -211,38 +305,97 @@ struct HeartRateView: View {
             AxisMarks(position: .leading)
         }
         .chartYScale(domain: 0...200)
-    }
-    
-    // MARK: - Chart Components
-    @ChartContentBuilder
-    private func chartBarMark(for data: (index: Int, label: String, min: Int?, max: Int?), min: Int, max: Int) -> some ChartContent {
-        BarMark(
-            x: .value("Index", data.index),
-            yStart: .value("Min", min),
-            yEnd: .value("Max", max)
-        )
-        .foregroundStyle(.green.opacity(0.6))
-        
-        if min == max {
-            PointMark(
-                x: .value("Index", data.index),
-                y: .value("Measurement", min)
-            )
-            .foregroundStyle(.green)
-            .symbolSize(60)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleChartTap(at: location, proxy: proxy, geometry: geometry)
+                    }
+            }
         }
     }
     
-    @ChartContentBuilder
-    private func emptyBarMark(for data: (index: Int, label: String, min: Int?, max: Int?)) -> some ChartContent {
-        BarMark(
-            x: .value("Index", data.index),
-            yStart: .value("Min", 0),
-            yEnd: .value("Max", 0)
-        )
-        .foregroundStyle(.clear)
+    // Selection tooltip view
+    private func selectionTooltip(for data: (index: Int, label: String, min: Int?, max: Int?), min: Int, max: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(tooltipTimeLabel(for: data))
+                .font(.system(size: 12, weight: .semibold))
+            Text("min: \(min) | max: \(max)")
+                .font(.system(size: 11))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Color.selectionGreen)
+        .cornerRadius(6)
     }
     
+    // Format tooltip label based on mode
+    private func tooltipTimeLabel(for data: (index: Int, label: String, min: Int?, max: Int?)) -> String {
+        switch selectedMode {
+        case .day:
+            // Show hour (e.g., "12 pm")
+            let hour = data.index
+            if hour == 0 {
+                return "12 am"
+            } else if hour < 12 {
+                return "\(hour) am"
+            } else if hour == 12 {
+                return "12 pm"
+            } else {
+                return "\(hour - 12) pm"
+            }
+        case .week:
+            // Show day of week (abbreviated)
+            return data.label
+        case .month:
+            // Format as abbreviated month, day, year
+            let calendar = Calendar.current
+            if let date = calendar.date(bySetting: .day, value: data.index + 1, of: selectedDate) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMM d, yyyy"
+                return formatter.string(from: date)
+            }
+            return data.label
+        }
+    }
+    
+    // Handle tap on chart
+    private func handleChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        let xPosition = location.x
+        let chartWidth = geometry.size.width
+        let dataCount = CGFloat(chartData.count)
+        
+        // Calculate which bar was tapped based on position
+        let barWidth = chartWidth / dataCount
+        let tappedIndex = Int(xPosition / barWidth)
+        
+        // Make sure index is within bounds
+        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
+            selectedBarIndex = nil
+            return
+        }
+        
+        // If tapping the same bar, unselect it
+        if selectedBarIndex == tappedIndex {
+            selectedBarIndex = nil
+        } else {
+            // Check if this data point has data
+            let data = chartData[tappedIndex]
+            if data.min != nil && data.max != nil {
+                selectedBarIndex = tappedIndex
+            }
+        }
+    }
+    
+    // Unselect when tapping outside the chart
+    private func unselectChartData() {
+        selectedBarIndex = nil
+    }
+    
+    // MARK: - Chart Components
     @AxisContentBuilder
     private var chartXAxisMarks: some AxisContent {
         AxisMarks(values: chartData.map { $0.index }) { value in
@@ -274,7 +427,7 @@ struct HeartRateView: View {
     // MARK: - Date Navigation Section
     var dateNavigationSection: some View {
         VStack(spacing: 12) {
-            // Month navigation (< May 2025 >)
+            // Month navigation buttons, looks like (< May 2025 >)
             monthNavigationButtons
             
             // Mode-specific date selectors
@@ -336,7 +489,7 @@ struct HeartRateView: View {
         let calendar = Calendar.current
         let day = calendar.component(.day, from: date)
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        // Use 3-letter abbreviation (Mon, Tue, Wed, etc.)
+        // Use 3-letter abbreviated day names (Mon, Tue, etc.)
         let weekdaySymbol = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
         
         return Button(action: {
@@ -621,6 +774,8 @@ private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    // #608E61 for selection highlight
+    static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
 
 
@@ -745,7 +900,7 @@ struct HighlightRow: View {
     let text: String
     let isLast: Bool
     
-    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255) - only for the circle
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Same color as "Heart Rate" title
     private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
@@ -787,7 +942,7 @@ struct InsightRow: View {
     let text: String
     let isLast: Bool
     
-    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255) - only for the circle
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Same color as "Heart Rate" title
     private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
