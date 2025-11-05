@@ -271,7 +271,7 @@ struct BloodGlucoseView: View {
                     y: .value("mg/dl", data.value)
                 )
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.primaryGreen.opacity(0.8))
+                .foregroundStyle(Color.glucoseLineBlue)
                 
                 PointMark(
                     x: .value("Hour", data.hour),
@@ -283,12 +283,6 @@ struct BloodGlucoseView: View {
                     if selectedDataIndex == data.index {
                         dayTooltip(for: data)
                     }
-                }
-                
-                if selectedDataIndex == data.index {
-                    RuleMark(x: .value("Hour", data.hour))
-                        .foregroundStyle(Color.primaryGreen.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
                 }
             }
         }
@@ -328,7 +322,7 @@ struct BloodGlucoseView: View {
         else { return "\(hour - 12)p" }
     }
     
-    // White popover tooltip for day mode (with pointing arrow)
+    // White popover tooltip for day mode
     private func dayTooltip(for data: (index: Int, hour: Int, value: Int)) -> some View {
         VStack(spacing: 0) {
             // Main content box
@@ -398,7 +392,7 @@ struct BloodGlucoseView: View {
                         yStart: .value("Min", min),
                         yEnd: .value("Max", max)
                     )
-                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.4))
+                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.unselectedBar)
                     
                     // Show max value label above the bar when selected
                     if isSelected {
@@ -422,7 +416,7 @@ struct BloodGlucoseView: View {
                         }
                     }
                     
-                    // Point mark for single values (when min == max)
+                    // Point mark for single values (when min blood glucose == max blood glucose)
                     if min == max {
                         PointMark(
                             x: .value("Index", data.index),
@@ -462,7 +456,7 @@ struct BloodGlucoseView: View {
         }
     }
     
-    // Max value label shown above bar (like "145 mg/dl" in the design)
+    // Max value label shown above bar
     private func maxValueLabel(value: Int) -> some View {
         VStack(spacing: 0) {
             Text("\(value)")
@@ -474,7 +468,7 @@ struct BloodGlucoseView: View {
         }
     }
     
-    // Min value label shown below bar (like "50 mg/dl" in the design)
+    // Min value label shown below bar
     private func minValueLabel(value: Int) -> some View {
         VStack(spacing: 0) {
             Text("\(value)")
@@ -884,6 +878,10 @@ private extension Color {
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
+    // Blue color for day mode line chart
+    static let glucoseLineBlue = Color.blue.opacity(0.7)
+    // #AEB2C9 for unselected bars in week/month mode
+    static let unselectedBar = Color(red: 174/255, green: 178/255, blue: 201/255)
 }
 
 // MARK: - Popover Arrow Shape
