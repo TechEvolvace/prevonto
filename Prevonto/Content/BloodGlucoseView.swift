@@ -126,7 +126,7 @@ struct BloodGlucoseView: View {
                 }
                 .padding(.horizontal, 15)
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.white)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { dismiss() }) {
