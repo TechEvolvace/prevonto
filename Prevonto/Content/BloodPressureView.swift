@@ -141,6 +141,10 @@ struct BloodPressureView: View {
         return allRecords.filter { $0.date >= startOfWeek && $0.date < endOfWeek }
     }
     
+    private var hasWeeklyData: Bool {
+        !getWeekRecords().isEmpty
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -152,9 +156,11 @@ struct BloodPressureView: View {
                         // Current BP + Add Button
                         currentBPSection
                         
-                        // Weekly Average Card
-                        weeklyAverageCard
-                            .onTapGesture { unselectChartData() }
+                        // Weekly Average Card (only show if there's data)
+                        if hasWeeklyData {
+                            weeklyAverageCard
+                                .onTapGesture { unselectChartData() }
+                        }
                         
                         // Date Navigation
                         dateNavigationSection
