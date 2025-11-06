@@ -6,9 +6,9 @@ import Charts
 struct BloodPressureRecord: Identifiable {
     let id = UUID()
     let date: Date
-    let systolic: Int      // SYS in mmHg
-    let diastolic: Int     // DIA in mmHg
-    let pulse: Int         // Pulse in BPM
+    let systolic: Int      // SYS units in mmHg
+    let diastolic: Int     // DIA units in mmHg
+    let pulse: Int         // Pulse units in BPM
 }
 
 // Measurement type for chart display
@@ -343,11 +343,45 @@ struct BloodPressureView: View {
             
             if showingStartDatePicker {
                 weekDatePickerView(for: $weekStartDate, isStartDate: true)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissStartDatePicker()
+                            }
+                    )
             }
             
             if showingEndDatePicker {
                 weekDatePickerView(for: $weekEndDate, isStartDate: false)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissEndDatePicker()
+                            }
+                    )
             }
+        }
+    }
+    
+    private func dismissStartDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                weekEndDate = newEndDate
+            }
+            showingStartDatePicker = false
+            selectedDate = weekStartDate
+        }
+    }
+    
+    private func dismissEndDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                weekStartDate = newStartDate
+            }
+            showingEndDatePicker = false
+            selectedDate = weekStartDate
         }
     }
     
@@ -378,40 +412,34 @@ struct BloodPressureView: View {
     }
     
     private func weekDatePickerView(for binding: Binding<Date>, isStartDate: Bool) -> some View {
-        DatePicker("", selection: binding, displayedComponents: .date)
-            .datePickerStyle(GraphicalDatePickerStyle())
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-            .padding(.horizontal, 16)
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.95).combined(with: .opacity),
-                removal: .scale(scale: 0.95).combined(with: .opacity)
-            ))
-            .onChange(of: binding.wrappedValue) { newDate in
-                let calendar = Calendar.current
-                if isStartDate {
-                    if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
-                        weekEndDate = newEndDate
-                    }
-                } else {
-                    if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
-                        weekStartDate = newStartDate
-                    }
+        DatePicker(
+            "",
+            selection: binding,
+            displayedComponents: .date
+        )
+        .datePickerStyle(GraphicalDatePickerStyle())
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .padding(.horizontal, 16)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
+        .onChange(of: binding.wrappedValue) { newDate in
+            let calendar = Calendar.current
+            if isStartDate {
+                if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
+                    weekEndDate = newEndDate
                 }
-                selectedDate = weekStartDate
+            } else {
+                if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
+                    weekStartDate = newStartDate
+                }
             }
-            .onTapGesture { } // Prevent tap from dismissing
-            .background(
-                Color.black.opacity(0.001)
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            showingStartDatePicker = false
-                            showingEndDatePicker = false
-                        }
-                    }
-            )
+            selectedDate = weekStartDate
+        }
     }
     
     // MARK: - Measurement Selector
@@ -614,7 +642,7 @@ struct BloodPressureView: View {
                 .foregroundStyle(Color.primaryGreen)
             }
             
-            // Average line (simulated)
+            // Average line
             ForEach(0..<7, id: \.self) { idx in
                 LineMark(
                     x: .value("Day", idx),
@@ -895,4 +923,3 @@ struct BPInsightRow: View {
 #Preview {
     BloodPressureView()
 }
-
