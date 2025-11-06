@@ -518,7 +518,7 @@ struct BloodPressureView: View {
                     x: .value("Day", data.index),
                     y: .value("Value", data.value!)
                 )
-                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.primaryGreen)
+                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.bpLineBlue)
                 .symbolSize(selectedDataIndex == data.index ? 100 : 60)
                 .annotation(position: .top, alignment: .center, spacing: 4) {
                     if selectedDataIndex == data.index {
@@ -637,7 +637,7 @@ struct BloodPressureView: View {
     
     private var trendsChart: some View {
         Chart {
-            // Current line
+            // Current line (blue)
             ForEach(weeklyChartData.filter { $0.value != nil }, id: \.index) { data in
                 LineMark(
                     x: .value("Day", data.index),
@@ -645,7 +645,21 @@ struct BloodPressureView: View {
                     series: .value("Type", "Current")
                 )
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.primaryGreen)
+                .foregroundStyle(Color.bpLineBlue)
+                
+                // Add "Current" label above the last data point
+                if data.index == (weeklyChartData.filter { $0.value != nil }.last?.index ?? -1) {
+                    PointMark(
+                        x: .value("Day", data.index),
+                        y: .value("Current", data.value!)
+                    )
+                    .foregroundStyle(.clear)
+                    .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                        Text("Current")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.bpLineBlue)
+                    }
+                }
             }
             
             // Average line
@@ -657,9 +671,23 @@ struct BloodPressureView: View {
                 )
                 .foregroundStyle(Color.grayText.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
+                
+                // Add "Avg" label above the last point of average line
+                if idx == 6 {
+                    PointMark(
+                        x: .value("Day", idx),
+                        y: .value("Avg", averageValue)
+                    )
+                    .foregroundStyle(.clear)
+                    .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                        Text("Avg")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.grayText)
+                    }
+                }
             }
         }
-        .frame(height: 150)
+        .frame(height: 200)
         .chartXAxis {
             AxisMarks(values: Array(0..<7)) { value in
                 if let idx = value.as(Int.self), idx < weeklyChartData.count {
@@ -676,10 +704,10 @@ struct BloodPressureView: View {
         }
         .chartYScale(domain: 0...220)
         .chartForegroundStyleScale([
-            "Current": Color.primaryGreen,
+            "Current": Color.bpLineBlue,
             "Avg": Color.grayText.opacity(0.5)
         ])
-        .chartLegend(position: .top, alignment: .trailing)
+        .chartLegend(.hidden)
         .padding(16)
         .background(Color.white)
         .cornerRadius(12)

@@ -277,7 +277,7 @@ struct BloodGlucoseView: View {
                     x: .value("Hour", data.hour),
                     y: .value("mg/dl", data.value)
                 )
-                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.primaryGreen)
+                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.glucoseLineBlue)
                 .symbolSize(selectedDataIndex == data.index ? 100 : 60)
                 .annotation(position: .top, alignment: .center, spacing: 4) {
                     if selectedDataIndex == data.index {
