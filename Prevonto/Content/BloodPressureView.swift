@@ -6,9 +6,9 @@ import Charts
 struct BloodPressureRecord: Identifiable {
     let id = UUID()
     let date: Date
-    let systolic: Int      // SYS units in mmHg
-    let diastolic: Int     // DIA units in mmHg
-    let pulse: Int         // Pulse units in BPM
+    let systolic: Int      // in mmHg units
+    let diastolic: Int     // in mmHg units
+    let pulse: Int         // in BPM (Beats per minute) units
 }
 
 // Measurement type for chart display
@@ -33,7 +33,7 @@ enum BloodPressureMeasurement: String, CaseIterable {
         case .dia:
             return "DIA"
         case .pulse:
-            return "BrPM"
+            return "Pulse"
         }
     }
 }
@@ -562,7 +562,7 @@ struct BloodPressureView: View {
                 Text("\(value)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primaryGreen)
-                Text(selectedMeasurement.chartLabel)
+                Text(selectedMeasurement.unit)
                     .font(.system(size: 10))
                     .foregroundColor(.grayText)
             }
