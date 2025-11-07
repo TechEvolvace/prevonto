@@ -814,7 +814,7 @@ struct BloodPressureView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.secondaryGreen)
+                        .background(Color.primaryGreen)
                         .cornerRadius(10)
                 }
             }
