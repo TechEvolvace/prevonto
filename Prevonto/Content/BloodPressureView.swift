@@ -637,7 +637,13 @@ struct BloodPressureView: View {
     
     private var trendsChart: some View {
         Chart {
-            // Current line (blue)
+            // Placeholder points to ensure x-axis is always visible in Trends chart
+            ForEach(0..<7, id: \.self) { idx in
+                PointMark(x: .value("Day", idx), y: .value("Value", 0))
+                    .foregroundStyle(.clear)
+            }
+            
+            // Current line with dots in Trends Chart
             ForEach(weeklyChartData.filter { $0.value != nil }, id: \.index) { data in
                 LineMark(
                     x: .value("Day", data.index),
@@ -646,6 +652,14 @@ struct BloodPressureView: View {
                 )
                 .interpolationMethod(.catmullRom)
                 .foregroundStyle(Color.bpLineBlue)
+                
+                // Visible dot for each data point
+                PointMark(
+                    x: .value("Day", data.index),
+                    y: .value("Current", data.value!)
+                )
+                .foregroundStyle(Color.bpLineBlue)
+                .symbolSize(40)
                 
                 // Add "Current" label above the last data point
                 if data.index == (weeklyChartData.filter { $0.value != nil }.last?.index ?? -1) {
@@ -662,27 +676,29 @@ struct BloodPressureView: View {
                 }
             }
             
-            // Average line
-            ForEach(0..<7, id: \.self) { idx in
-                LineMark(
-                    x: .value("Day", idx),
-                    y: .value("Avg", averageValue),
-                    series: .value("Type", "Avg")
-                )
-                .foregroundStyle(Color.grayText.opacity(0.5))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
-                
-                // Add "Avg" label above the last point of average line
-                if idx == 6 {
-                    PointMark(
+            // Average line only show if there's data for that week
+            if hasWeeklyData {
+                ForEach(0..<7, id: \.self) { idx in
+                    LineMark(
                         x: .value("Day", idx),
-                        y: .value("Avg", averageValue)
+                        y: .value("Avg", averageValue),
+                        series: .value("Type", "Avg")
                     )
-                    .foregroundStyle(.clear)
-                    .annotation(position: .top, alignment: .trailing, spacing: 4) {
-                        Text("Avg")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.grayText)
+                    .foregroundStyle(Color.grayText.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
+                    
+                    // Add "Avg" label above the last point of average line
+                    if idx == 6 {
+                        PointMark(
+                            x: .value("Day", idx),
+                            y: .value("Avg", averageValue)
+                        )
+                        .foregroundStyle(.clear)
+                        .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                            Text("Avg")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.grayText)
+                        }
                     }
                 }
             }
