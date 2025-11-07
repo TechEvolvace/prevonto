@@ -616,9 +616,9 @@ struct BloodPressureView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 24))
-                    .foregroundColor(.primaryGreen)
+                    .foregroundColor(.white)
                     .frame(width: 40, height: 40)
-                    .background(Color.primaryGreen.opacity(0.1))
+                    .background(Color.blue.opacity(0.8))
                     .cornerRadius(20)
                 
                 Text("Higher \(selectedMeasurement.chartLabel) by 25% this week as compared to your average metrics")
