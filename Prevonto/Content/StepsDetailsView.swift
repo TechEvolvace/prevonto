@@ -142,40 +142,14 @@ struct StepsDetailsView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(.proPrimary)
                 
-                // Space for popover + chart
-                ZStack(alignment: .top) {
-                    VStack(spacing: 0) {
-                        // Reserved space for popover
-                        Color.clear.frame(height: 60)
-                        
-                        // Actual chart
-                        stepsChart
-                    }
-                    
-                    // Popover overlay
-                    if let selectedIndex = selectedBarIndex, selectedIndex < currentData.count {
-                        popoverOverlay(for: selectedIndex)
-                    }
-                }
+                // Chart with integrated popover
+                stepsChart
             }
             .padding(16)
             .background(Color.white)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 24)
-        }
-    }
-    
-    // MARK: - Popover Overlay
-    private func popoverOverlay(for index: Int) -> some View {
-        GeometryReader { geometry in
-            let chartWidth = geometry.size.width
-            let dataCount = CGFloat(currentData.count)
-            let barWidth = chartWidth / dataCount
-            let xPosition = (CGFloat(index) + 0.5) * barWidth
-            
-            stepsTooltip(steps: currentData[index].steps)
-                .position(x: xPosition, y: 30)
         }
     }
     
@@ -191,9 +165,21 @@ struct StepsDetailsView: View {
                 )
                 .foregroundStyle(isSelected ? Color.proSecondary : Color.barDefault)
                 .cornerRadius(4)
+                
+                // Popover annotation directly on the selected bar
+                if isSelected {
+                    PointMark(
+                        x: .value("Label", point.label),
+                        y: .value("Steps", point.steps)
+                    )
+                    .foregroundStyle(.clear)
+                    .annotation(position: .top, alignment: .center, spacing: 8) {
+                        stepsTooltip(steps: point.steps)
+                    }
+                }
             }
         }
-        .frame(height: 200)
+        .frame(height: 260) // Extra height to accommodate popover
         .chartXAxis {
             AxisMarks { value in
                 AxisValueLabel()
@@ -204,7 +190,7 @@ struct StepsDetailsView: View {
         .chartYAxis {
             AxisMarks(position: .leading)
         }
-        .chartYScale(domain: 0...maxYValue)
+        .chartYScale(domain: 0...(maxYValue + Int(Double(maxYValue) * 0.15))) // Extra space at top for popover
         .chartOverlay { proxy in
             GeometryReader { geometry in
                 Rectangle()
