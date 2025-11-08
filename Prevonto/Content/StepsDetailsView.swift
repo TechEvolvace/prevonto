@@ -218,16 +218,16 @@ struct StepsDetailsView: View {
         }
     }
     
-    // MARK: - Steps Tooltip (green background, white text)
+    // MARK: - Steps Tooltip (green background, white text, horizontal layout)
     private func stepsTooltip(steps: Int) -> some View {
         VStack(spacing: 0) {
-            VStack(spacing: 2) {
-                Text("\(steps)")
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(formatSteps(steps))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                 Text("steps")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.9))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -239,6 +239,14 @@ struct StepsDetailsView: View {
                 .fill(Color.proSecondary)
                 .frame(width: 12, height: 6)
         }
+        .fixedSize()
+    }
+    
+    // Format steps with comma separators for readability
+    private func formatSteps(_ steps: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: steps)) ?? "\(steps)"
     }
     
     // MARK: - Chart Tap Handler
