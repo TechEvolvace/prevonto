@@ -136,11 +136,14 @@ struct StepsDetailsView: View {
     private var stepsTrackerSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Chart Card with title inside
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text("Steps Tracker")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(.proPrimary)
+                
+                // Space for popover to appear without overlapping title
+                Spacer().frame(height: 60)
                 
                 // Chart with integrated popover
                 stepsChart
