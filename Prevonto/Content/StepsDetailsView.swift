@@ -218,9 +218,10 @@ struct StepsDetailsView: View {
         }
     }
     
-    // MARK: - Steps Tooltip (green background, white text, horizontal layout)
+    // MARK: - Steps Tooltip
     private func stepsTooltip(steps: Int) -> some View {
         VStack(spacing: 0) {
+            // Popover
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(formatSteps(steps))
                     .font(.system(size: 16, weight: .bold))
@@ -331,9 +332,8 @@ struct StepsDetailsView: View {
     // MARK: - Trend Card
     private func trendCard(icon: String, value: String, unit: String, description: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            
-            HStack {
-                VStack {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(value)
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.proSecondary)
