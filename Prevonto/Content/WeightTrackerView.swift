@@ -74,7 +74,7 @@ struct WeightTrackerView: View {
             .padding(.horizontal)  // Add padding once here
             .padding(.top)
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(Color.white)
         .navigationTitle("Weight Full Page")
         .navigationBarTitleDisplayMode(.inline)
     }
