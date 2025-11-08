@@ -15,7 +15,7 @@ struct StepsDetailsView: View {
     @State private var monthChartData: [ChartDataPoint] = []
     @State private var yearChartData: [ChartDataPoint] = []
     
-    // Performance optimizations: cached values
+    // Performance optimizations with cached values
     @State private var maxYValue: Int = 1000
     @State private var currentData: [ChartDataPoint] = []
     
@@ -285,16 +285,16 @@ struct StepsDetailsView: View {
                 HStack(spacing: 16) {
                     trendCard(
                         icon: "figure.walk",
-                        value: "52",
+                        value: "\(Int(exerciseCurrent))",
                         unit: "MIN/DAY",
                         description: "Compared to yesterday, your exercising duration has increased! Way to stay active!"
                     )
                     
                     trendCard(
-                        icon: "figure.run",
-                        value: "12",
+                        icon: "figure.stand",
+                        value: "\(Int(standCurrent))",
                         unit: "HR/DAY",
-                        description: "Supporting good posture"
+                        description: "On the way to supporting good posture"
                     )
                     
                     trendCard(
@@ -321,25 +321,22 @@ struct StepsDetailsView: View {
     // MARK: - Trend Card
     private func trendCard(icon: String, value: String, unit: String, description: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+            
             HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.proPrimary)
+                VStack {
+                    Text(value)
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.proSecondary)
+                    Text(unit)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.grayText)
+                }
                 
                 Spacer()
                 
                 Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.proPrimary.opacity(0.3))
-            }
-            
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(value)
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.proSecondary)
-                Text(unit)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.grayText)
+                    .font(.system(size: 24))
+                    .foregroundColor(.proPrimary)
             }
             
             Text(description)
