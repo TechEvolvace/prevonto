@@ -166,16 +166,15 @@ struct StepsDetailsView: View {
                 .foregroundStyle(isSelected ? Color.proSecondary : Color.barDefault)
                 .cornerRadius(4)
                 
-                // Popover annotation directly on the selected bar
+                // Popover annotation and connecting line for selected bar
                 if isSelected {
-                    PointMark(
-                        x: .value("Label", point.label),
-                        y: .value("Steps", point.steps)
-                    )
-                    .foregroundStyle(.clear)
-                    .annotation(position: .top, alignment: .center, spacing: 8) {
-                        stepsTooltip(steps: point.steps)
-                    }
+                    // Vertical dashed line from popover to bar
+                    RuleMark(x: .value("Label", point.label))
+                        .foregroundStyle(Color.proSecondary)
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                        .annotation(position: .top, alignment: .center, spacing: 0) {
+                            stepsTooltip(steps: point.steps)
+                        }
                 }
             }
         }
