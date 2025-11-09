@@ -52,24 +52,43 @@ struct MedicationSelectionView: View {
                             }) {
                                 HStack {
                                     Text(med)
-                                        .foregroundColor(selectedMeds.contains(med) ? .white : .primary)
+                                        .foregroundColor(.primary)
                                     Spacer()
-                                    if selectedMeds.contains(med) {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.white)
+                                    // Rounded checkbox
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(selectedMeds.contains(med) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                                            .frame(width: 24, height: 24)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 6)
+                                                    .stroke(selectedMeds.contains(med) ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                            )
+                                        
+                                        if selectedMeds.contains(med) {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(.white)
+                                        }
                                     }
                                 }
                                 .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(selectedMeds.contains(med) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
-                                )
+                                .background(Color.white)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            
+                            // Divider between items (except last)
+                            if med != filteredMedications.last {
+                                Divider()
+                                    .padding(.leading)
+                            }
                         }
                     }
-                    .background(Color.gray.opacity(0.05))
+                    .background(Color.white)
                     .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
                 }
 
                 // Selected chips
