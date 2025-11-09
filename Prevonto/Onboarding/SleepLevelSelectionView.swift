@@ -15,11 +15,11 @@ struct SleepLevelSelectionView: View {
     }
 
     let sleepOptions: [SleepOption] = [
-        .init(id: 1, title: "😴 Very Low", subtitle: "~0–3hr daily"),
-        .init(id: 2, title: "😪 Low", subtitle: "~3–5hr daily"),
-        .init(id: 3, title: "💤 Moderate", subtitle: "~5–8hr daily"),
-        .init(id: 4, title: "😌 High", subtitle: "~8–10hr daily"),
-        .init(id: 5, title: "🛌 Excellent", subtitle: "10+ hr daily")
+        .init(id: 1, title: "Very Low", subtitle: "~0–3 hours daily"),
+        .init(id: 2, title: "Low", subtitle: "~3–5 hours daily"),
+        .init(id: 3, title: "Moderate", subtitle: "~5–8 hours daily"),
+        .init(id: 4, title: "High", subtitle: "~8–10 hours daily"),
+        .init(id: 5, title: "Excellent", subtitle: "10+ hours daily")
     ]
 
     var body: some View {
