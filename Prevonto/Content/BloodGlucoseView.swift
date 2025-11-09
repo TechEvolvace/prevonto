@@ -422,7 +422,7 @@ struct BloodGlucoseView: View {
                             x: .value("Index", data.index),
                             y: .value("Measurement", min)
                         )
-                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.6))
+                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.unselectedBar)
                         .symbolSize(60)
                     }
                 } else {
