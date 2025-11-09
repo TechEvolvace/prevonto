@@ -36,8 +36,8 @@ struct CenteredVerticalAgePicker: View {
     let ages: [Int]
     @Binding var selectedAge: Int
 
-    let itemHeight: CGFloat = 48
-    let spacing: CGFloat = 12
+    let itemHeight: CGFloat = 56
+    let spacing: CGFloat = 8
 
     var body: some View {
         GeometryReader { geo in
@@ -56,16 +56,17 @@ struct CenteredVerticalAgePicker: View {
                                 .id(age)
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical, (geo.size.height - itemHeight) / 2)
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             proxy.scrollTo(selectedAge, anchor: .center)
                         }
                     }
                 }
             }
         }
-        .frame(height: 240)
+        .frame(height: 280)
     }
 }
 
@@ -76,24 +77,62 @@ struct AgeRow: View {
     let centerY: CGFloat
     let itemHeight: CGFloat
     let totalHeight: CGFloat
+    
+    private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
 
     var body: some View {
         GeometryReader { geo in
             let itemCenterY = geo.frame(in: .global).midY
-            let isSelected = abs(itemCenterY - centerY) < totalHeight / 2
+            let distance = abs(itemCenterY - centerY)
+            let maxDistance: CGFloat = totalHeight * 2.5 // Distance for full fade
+            let normalizedDistance = min(distance / maxDistance, 1.0)
+            
+            // Determine if this is the selected age
+            let isSelected = distance < totalHeight / 2
+            
+            // Dynamic font size based on distance from center
+            // Selected: 32pt, Very close: 24pt, Close: 20pt, Medium: 18pt, Far: 16pt
+            let fontSize: CGFloat = {
+                if isSelected {
+                    return 32
+                } else if normalizedDistance < 0.2 {
+                    return 24
+                } else if normalizedDistance < 0.4 {
+                    return 20
+                } else if normalizedDistance < 0.6 {
+                    return 18
+                } else {
+                    return 16
+                }
+            }()
+            
+            // Dynamic opacity based on distance
+            let opacity = isSelected ? 1.0 : max(0.3, 1.0 - normalizedDistance * 0.7)
+            
+            // Dynamic font weight
+            let fontWeight: Font.Weight = isSelected ? .bold : (normalizedDistance < 0.3 ? .semibold : .regular)
+            
+            // Calculate box width based on number of digits (2-digit: 100pt, 3-digit: 120pt)
+            let boxWidth: CGFloat = isSelected ? (age >= 100 ? 120 : 100) : 0
 
             Text("\(age)")
-                .font(.system(size: isSelected ? 22 : 18, weight: isSelected ? .bold : .regular))
-                .foregroundColor(isSelected ? .white : .gray.opacity(0.5))
-                .padding(.horizontal, isSelected ? 32 : 0)
-                .frame(height: itemHeight)
-                .frame(maxWidth: .infinity)
+                .font(.system(size: fontSize, weight: fontWeight))
+                .foregroundColor(isSelected ? .white : .gray.opacity(opacity))
+                .padding(.horizontal, isSelected ? 24 : 0)
+                .padding(.vertical, isSelected ? 12 : 0)
+                .frame(width: isSelected ? boxWidth : nil, height: isSelected ? 56 : itemHeight)
                 .background(
-                    isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.clear
+                    isSelected ? secondaryGreen : Color.clear
                 )
                 .cornerRadius(isSelected ? 16 : 0)
                 .shadow(color: isSelected ? Color.green.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
+                .frame(maxWidth: .infinity)
                 .onAppear {
+                    if isSelected {
+                        selectedAge = age
+                    }
+                }
+                .onChange(of: distance) { _ in
                     if isSelected {
                         selectedAge = age
                     }
