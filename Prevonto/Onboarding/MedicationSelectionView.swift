@@ -47,32 +47,34 @@ struct MedicationSelectionView: View {
                 if !filteredMedications.isEmpty {
                     VStack(spacing: 0) {
                         ForEach(filteredMedications, id: \.self) { med in
+                            let isSelected = selectedMeds.contains(med)
+                            
                             Button(action: {
                                 toggleSelection(for: med)
                             }) {
                                 HStack {
                                     Text(med)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(isSelected ? .white : .primary)
                                     Spacer()
                                     // Rounded checkbox
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 6)
-                                            .fill(selectedMeds.contains(med) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                                            .fill(isSelected ? Color.white : Color.white)
                                             .frame(width: 24, height: 24)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 6)
-                                                    .stroke(selectedMeds.contains(med) ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1.5)
                                             )
                                         
-                                        if selectedMeds.contains(med) {
+                                        if isSelected {
                                             Image(systemName: "checkmark")
                                                 .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
                                         }
                                     }
                                 }
                                 .padding()
-                                .background(Color.white)
+                                .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
                             }
                             .buttonStyle(PlainButtonStyle())
                             
