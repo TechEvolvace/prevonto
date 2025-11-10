@@ -45,7 +45,7 @@ struct MedicationSelectionView: View {
 
                 // Medication search result list
                 if !filteredMedications.isEmpty {
-                    ScrollView {
+                    ScrollView(showsIndicators: false) {
                         VStack(spacing: 0) {
                             ForEach(filteredMedications, id: \.self) { med in
                                 let isSelected = selectedMeds.contains(med)
