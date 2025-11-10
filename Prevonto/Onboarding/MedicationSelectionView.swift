@@ -45,52 +45,55 @@ struct MedicationSelectionView: View {
 
                 // Medication search result list
                 if !filteredMedications.isEmpty {
-                    VStack(spacing: 0) {
-                        ForEach(filteredMedications, id: \.self) { med in
-                            let isSelected = selectedMeds.contains(med)
-                            
-                            Button(action: {
-                                toggleSelection(for: med)
-                            }) {
-                                HStack {
-                                    Text(med)
-                                        .foregroundColor(isSelected ? .white : .primary)
-                                    Spacer()
-                                    // Rounded checkbox
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(isSelected ? Color.white : Color.white)
-                                            .frame(width: 24, height: 24)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 6)
-                                                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1.5)
-                                            )
-                                        
-                                        if isSelected {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 14, weight: .semibold))
-                                                .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(filteredMedications, id: \.self) { med in
+                                let isSelected = selectedMeds.contains(med)
+                                
+                                Button(action: {
+                                    toggleSelection(for: med)
+                                }) {
+                                    HStack {
+                                        Text(med)
+                                            .foregroundColor(isSelected ? .white : .primary)
+                                        Spacer()
+                                        // Rounded checkbox
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(isSelected ? Color.white : Color.white)
+                                                .frame(width: 24, height: 24)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 6)
+                                                        .stroke(isSelected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                                )
+                                            
+                                            if isSelected {
+                                                Image(systemName: "checkmark")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                                            }
                                         }
                                     }
+                                    .padding()
+                                    .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
                                 }
-                                .padding()
-                                .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            // Divider between items (except last)
-                            if med != filteredMedications.last {
-                                Divider()
-                                    .padding(.leading)
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                // Divider between items (except last)
+                                if med != filteredMedications.last {
+                                    Divider()
+                                        .padding(.leading)
+                                }
                             }
                         }
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        )
                     }
-                    .background(Color.white)
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    )
+                    .frame(maxHeight: 400)
                 }
 
                 // Selected chips
