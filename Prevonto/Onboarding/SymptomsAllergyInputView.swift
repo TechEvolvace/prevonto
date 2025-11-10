@@ -7,14 +7,23 @@ struct SymptomsAllergyInputView: View {
     @State private var showAllergyDetails = false
     @State private var allergyDetails: Set<String> = ["Gluten"]
     @State private var allergyDescription: String = ""
+    @State private var showAllSymptoms = false
 
     let next: () -> Void
     let back: () -> Void
     let step: Int
 
-    let commonSymptoms = ["Cough", "Fever", "Headache", "Flu", "Muscle fatigue", "Shortness of breath"]
+    let commonSymptoms = ["Cough", "Fever", "Headache", "Flu", "Muscle fatigue", "Shortness of breath", "Sore throat", "Runny nose", "Nausea"]
     let allergyCategories = ["Food", "Indoor", "Seasonal", "Drug", "Skin", "Other"]
     let additionalAllergyTags = ["Dairy", "Gluten", "Soy", "Shellfish", "Nuts"]
+    
+    private var displayedSymptoms: [String] {
+        showAllSymptoms ? commonSymptoms : Array(commonSymptoms.prefix(5))
+    }
+    
+    private var remainingSymptomsCount: Int {
+        max(0, commonSymptoms.count - 5)
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "Do you have any\nsymptoms or allergies?") {
@@ -24,11 +33,17 @@ struct SymptomsAllergyInputView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
 
-                FlowLayout(tags: commonSymptoms.prefix(5).map { String($0) }, selection: $selectedSymptoms)
+                FlowLayout(tags: displayedSymptoms, selection: $selectedSymptoms)
 
-                HStack {
-                    TagPill(label: "+4", selected: false, action: {})
-                    Spacer()
+                if !showAllSymptoms && remainingSymptomsCount > 0 {
+                    HStack {
+                        TagPill(label: "+\(remainingSymptomsCount)", selected: false) {
+                            withAnimation {
+                                showAllSymptoms = true
+                            }
+                        }
+                        Spacer()
+                    }
                 }
 
                 HStack {
