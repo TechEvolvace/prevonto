@@ -33,18 +33,17 @@ struct SymptomsAllergyInputView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
 
-                FlowLayout(tags: displayedSymptoms, selection: $selectedSymptoms)
-
-                if !showAllSymptoms && remainingSymptomsCount > 0 {
-                    HStack {
-                        TagPill(label: "+\(remainingSymptomsCount)", selected: false) {
-                            withAnimation {
-                                showAllSymptoms = true
-                            }
+                SymptomsFlowLayout(
+                    symptoms: displayedSymptoms,
+                    selection: $selectedSymptoms,
+                    showExpandButton: !showAllSymptoms && remainingSymptomsCount > 0,
+                    expandButtonLabel: "+\(remainingSymptomsCount)",
+                    onExpand: {
+                        withAnimation {
+                            showAllSymptoms = true
                         }
-                        Spacer()
                     }
-                }
+                )
 
                 HStack {
                     TextField("Search", text: .constant(""))
@@ -88,6 +87,33 @@ struct SymptomsAllergyInputView: View {
             }
             .sheet(isPresented: $showAllergyDetails) {
                 AllergyDetailModal(selectedTags: $allergyDetails, description: $allergyDescription)
+            }
+        }
+    }
+}
+
+struct SymptomsFlowLayout: View {
+    let symptoms: [String]
+    @Binding var selection: Set<String>
+    let showExpandButton: Bool
+    let expandButtonLabel: String
+    let onExpand: () -> Void
+    
+    var body: some View {
+        FlexibleViewWithTrailing(
+            data: symptoms,
+            spacing: 8,
+            alignment: .leading,
+            trailingView: showExpandButton ? {
+                TagPill(label: expandButtonLabel, selected: false, action: onExpand)
+            } : nil
+        ) { tag in
+            TagPill(label: tag, selected: selection.contains(tag)) {
+                if selection.contains(tag) {
+                    selection.remove(tag)
+                } else {
+                    selection.insert(tag)
+                }
             }
         }
     }
@@ -174,6 +200,65 @@ struct AllergyDetailModal: View {
     }
 }
 
+
+struct FlexibleViewWithTrailing<Data: Collection, Content: View, Trailing: View>: View where Data.Element: Hashable {
+    let data: Data
+    let spacing: CGFloat
+    let alignment: HorizontalAlignment
+    let content: (Data.Element) -> Content
+    let trailingView: (() -> Trailing)?
+
+    init(data: Data, spacing: CGFloat = 8, alignment: HorizontalAlignment = .leading,
+         trailingView: (() -> Trailing)? = nil,
+         @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.data = data
+        self.spacing = spacing
+        self.alignment = alignment
+        self.content = content
+        self.trailingView = trailingView
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            self.generateContent(in: geometry)
+        }
+    }
+
+    func generateContent(in geometry: GeometryProxy) -> some View {
+        var width = CGFloat.zero
+        var height = CGFloat.zero
+        var rows: [[Data.Element]] = [[]]
+
+        for item in data {
+            let itemView = UIHostingController(rootView: content(item)).view!
+            let itemSize = itemView.intrinsicContentSize
+
+            if width + itemSize.width + spacing > geometry.size.width {
+                width = 0
+                height += itemSize.height + spacing
+                rows.append([item])
+            } else {
+                rows[rows.count - 1].append(item)
+            }
+            width += itemSize.width + spacing
+        }
+
+        return VStack(alignment: alignment, spacing: spacing) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                HStack(spacing: spacing) {
+                    ForEach(row, id: \.self) { item in
+                        content(item)
+                    }
+                    // Add trailing view inline with the last row
+                    if index == rows.count - 1, let trailingView = trailingView {
+                        trailingView()
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+}
 
 struct FlexibleView<Data: Collection, Content: View>: View where Data.Element: Hashable {
     let data: Data
