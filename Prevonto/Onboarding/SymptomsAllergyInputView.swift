@@ -2,10 +2,10 @@
 import SwiftUI
 
 struct SymptomsAllergyInputView: View {
-    @State private var selectedSymptoms: Set<String> = ["Fever"]
-    @State private var selectedAllergyCategory: String? = "Food"
+    @State private var selectedSymptoms: Set<String> = []
+    @State private var selectedAllergyCategory: String? = nil
     @State private var showAllergyDetails = false
-    @State private var allergyDetails: Set<String> = ["Gluten"]
+    @State private var allergyDetails: Set<String> = []
     @State private var allergyDescription: String = ""
     @State private var showAllSymptoms = false
 
