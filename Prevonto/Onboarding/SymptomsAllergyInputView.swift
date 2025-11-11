@@ -28,38 +28,40 @@ struct SymptomsAllergyInputView: View {
     var body: some View {
         OnboardingStepWrapper(step: step, title: "Do you have any\nsymptoms or allergies?") {
             VStack(alignment: .leading, spacing: 0) {
-                // Symptoms section
-                Text("Symptoms")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding(.bottom, 8)
-
-                SymptomsFlowLayout(
-                    symptoms: displayedSymptoms,
-                    selection: $selectedSymptoms,
-                    showExpandButton: !showAllSymptoms && remainingSymptomsCount > 0,
-                    expandButtonLabel: "+\(remainingSymptomsCount)",
-                    onExpand: {
-                        withAnimation {
-                            showAllSymptoms = true
-                        }
-                    }
-                )
-                .padding(.bottom, 12)
-
-                HStack {
-                    TextField("Search", text: .constant(""))
-                        .disabled(true)
-                        .padding(.vertical, 8)
-                        .padding(.leading, 12)
-                    Spacer()
-                    Image(systemName: "magnifyingglass")
+                
+                VStack(alignment: .leading, spacing: 0){
+                    // Symptoms section
+                    Text("Symptoms")
+                        .font(.subheadline)
                         .foregroundColor(.gray)
-                        .padding(.trailing, 12)
+                        .padding(.bottom, 8)
+
+                    SymptomsFlowLayout(
+                        symptoms: displayedSymptoms,
+                        selection: $selectedSymptoms,
+                        showExpandButton: !showAllSymptoms && remainingSymptomsCount > 0,
+                        expandButtonLabel: "+\(remainingSymptomsCount)",
+                        onExpand: {
+                            withAnimation {
+                                showAllSymptoms = true
+                            }
+                        }
+                    )
+
+                    HStack {
+                        TextField("Search", text: .constant(""))
+                            .disabled(true)
+                            .padding(.vertical, 8)
+                            .padding(.leading, 12)
+                        Spacer()
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                            .padding(.trailing, 12)
+                    }
+                    .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
+                    .frame(height: 44)
                 }
-                .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
-                .frame(height: 44)
-                .padding(.bottom, 24)
+                .padding(.bottom, 48)
 
                 // Allergy section
                 Text("Allergies")
