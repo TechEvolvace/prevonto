@@ -27,11 +27,12 @@ struct SymptomsAllergyInputView: View {
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "Do you have any\nsymptoms or allergies?") {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Symptoms section
                 Text("Symptoms")
                     .font(.subheadline)
                     .foregroundColor(.gray)
+                    .padding(.bottom, 8)
 
                 SymptomsFlowLayout(
                     symptoms: displayedSymptoms,
@@ -44,6 +45,7 @@ struct SymptomsAllergyInputView: View {
                         }
                     }
                 )
+                .padding(.bottom, 12)
 
                 HStack {
                     TextField("Search", text: .constant(""))
@@ -57,11 +59,13 @@ struct SymptomsAllergyInputView: View {
                 }
                 .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3)))
                 .frame(height: 44)
+                .padding(.bottom, 24)
 
                 // Allergy section
                 Text("Allergies")
                     .font(.subheadline)
                     .foregroundColor(.gray)
+                    .padding(.bottom, 8)
 
                 FlowLayout(tags: allergyCategories, selection: .init(
                     get: { selectedAllergyCategory.map { [$0] } ?? [] },
@@ -149,7 +153,7 @@ struct TagPill: View {
             HStack(spacing: 6) {
                 Text(label)
                     .font(.footnote)
-                    .foregroundColor(selected ? .white : .primary)
+                    .foregroundColor(selected ? .white : .gray)
                 if selected {
                     Image(systemName: "checkmark")
                         .foregroundColor(.white)
@@ -158,7 +162,11 @@ struct TagPill: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.gray.opacity(0.15))
+            .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1)
+            )
             .cornerRadius(16)
         }
         .buttonStyle(PlainButtonStyle())
