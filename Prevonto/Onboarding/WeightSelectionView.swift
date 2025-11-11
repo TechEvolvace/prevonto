@@ -5,8 +5,8 @@ struct WeightSelectionView: View {
     @State private var selectedUnit: String = "lbs"
     @State private var selectedWeight: Int = 140
 
-    let lbRange = Array(80...300)
-    let kgRange = Array(36...136)
+    let lbRange = Array(0...500)
+    let kgRange = Array(0...227)
 
     let next: () -> Void
     let back: () -> Void
@@ -31,7 +31,7 @@ struct WeightSelectionView: View {
                 }
 
                 // Display weight amount in current unit
-                HStack(spacing: 4) {
+                HStack(spacing: 8) {
                     Text("\(selectedWeight)")
                         .font(.system(size: 48, weight: .bold))
                         .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
@@ -100,8 +100,9 @@ struct WeightPickerView: View {
 
                                 VStack(spacing: 6) {
                                     Rectangle()
-                                        .frame(width: 2, height: val % 10 == 0 ? 28 : 14)
+                                        .frame(width: 2, height: val % 10 == 0 ? 32 : 16)
                                         .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray.opacity(0.3))
+                                        .padding(.top, val % 10 == 0 ? 0 : 8)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
