@@ -104,13 +104,13 @@ struct WeightPickerView: View {
                                 VStack(spacing: 6) {
                                     Rectangle()
                                         .frame(width: 2, height: val % 10 == 0 ? 32 : 16)
-                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray.opacity(0.3))
+                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : val % 10 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
                                         .padding(.top, val % 10 == 0 ? 0 : 8)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
                                             .font(.caption)
-                                            .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
+                                            .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6))
                                     }
                                 }
                                 .frame(width: itemWidth)
