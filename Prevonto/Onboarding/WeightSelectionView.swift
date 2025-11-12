@@ -23,10 +23,12 @@ struct WeightSelectionView: View {
                 // Weight unit conversion between the 2 weight unit types
                 HStack(spacing: 32) {
                     UnitButton(title: "lbs", selected: $selectedUnit) {
-                        selectedWeight = Int(Double(selectedWeight) * 2.20462)
+                        let converted = Int(Double(selectedWeight) * 2.20462)
+                        selectedWeight = min(max(converted, lbRange.first ?? 0), lbRange.last ?? 500)
                     }
                     UnitButton(title: "kg", selected: $selectedUnit) {
-                        selectedWeight = Int(Double(selectedWeight) * 0.453592)
+                        let converted = Int(Double(selectedWeight) * 0.453592)
+                        selectedWeight = min(max(converted, kgRange.first ?? 0), kgRange.last ?? 227)
                     }
                 }
 
@@ -41,7 +43,7 @@ struct WeightSelectionView: View {
                 }
 
                 // Picker for user to swipe or drag to correct weight
-                WeightPickerView(values: currentRange, selected: $selectedWeight)
+                WeightPickerView(values: currentRange, selected: $selectedWeight, unit: selectedUnit)
 
                 // Next button
                 Button {
@@ -63,6 +65,7 @@ struct WeightSelectionView: View {
 struct WeightPickerView: View {
     let values: [Int]
     @Binding var selected: Int
+    let unit: String // Track unit to detect when it changes
 
     let itemWidth: CGFloat = 40
     let spacing: CGFloat = 12
@@ -120,7 +123,19 @@ struct WeightPickerView: View {
                     .onAppear {
                         scrollViewWidth = geo.size.width
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            proxy.scrollTo(selected, anchor: .center)
+                            if values.contains(selected) {
+                                proxy.scrollTo(selected, anchor: .center)
+                            }
+                        }
+                    }
+                    .onChange(of: unit) { _ in
+                        // When unit changes, scroll to the converted weight value
+                        if values.contains(selected) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    proxy.scrollTo(selected, anchor: .center)
+                                }
+                            }
                         }
                     }
                 }
