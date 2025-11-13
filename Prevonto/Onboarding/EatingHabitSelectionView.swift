@@ -10,17 +10,17 @@ struct EatingHabitSelectionView: View {
 
     struct HabitOption: Identifiable {
         let id = UUID()
-        let icon: String
+        let iconName: String
         let label: String
     }
 
     let habits: [HabitOption] = [
-        .init(icon: "🍎", label: "Balanced Diet"),
-        .init(icon: "🥕", label: "Mostly Vegetarian"),
-        .init(icon: "🍖", label: "Low Carb"),
-        .init(icon: "🌾", label: "Gluten Free"),
-        .init(icon: "🌱", label: "Vegan"),
-        .init(icon: "🥩", label: "Keto")
+        .init(iconName: "Balanced Diet icon", label: "Balanced Diet"),
+        .init(iconName: "Mostly Vegetarian icon", label: "Mostly Vegetarian"),
+        .init(iconName: "Low Carb icon", label: "Low Carb"),
+        .init(iconName: "Gluten Free icon", label: "Gluten Free"),
+        .init(iconName: "Vegan icon", label: "Vegan"),
+        .init(iconName: "Keto icon", label: "Keto")
     ]
 
     var body: some View {
@@ -32,8 +32,12 @@ struct EatingHabitSelectionView: View {
                     }) {
                         HStack(alignment: .center, spacing: 12) {
                             VStack(spacing: 4) {
-                                Text(habit.icon)
-                                    .font(.system(size: 26))
+                                Image(habit.iconName)
+                                    .resizable()
+                                    .renderingMode(selectedHabit == habit.label ? .template : .original)
+                                    .foregroundColor(selectedHabit == habit.label ? .white : nil)
+                                    .frame(width: 26, height: 26)
+                                    .aspectRatio(contentMode: .fit)
                                 Text(habit.label)
                                     .font(.footnote)
                                     .multilineTextAlignment(.center)
@@ -43,7 +47,7 @@ struct EatingHabitSelectionView: View {
 
                             if selectedHabit == habit.label {
                                 Image(systemName: "checkmark")
-                                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                                    .foregroundColor(.white)
                             }
                         }
                         .padding()
