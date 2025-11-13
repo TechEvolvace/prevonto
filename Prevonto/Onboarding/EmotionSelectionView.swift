@@ -8,12 +8,12 @@ struct EmotionSelectionView: View {
     let back: () -> Void
     let step: Int
 
-    let emotions: [(icon: String, description: String)] = [
-        ("😫", "exhausted"),
-        ("☹️", "a bit down"),
-        ("😐", "neutral"),
-        ("🙂", "content"),
-        ("😄", "happy")
+    let emotions: [(iconName: String, description: String)] = [
+        ("Emotion depressed", "exhausted"),
+        ("Emotion sad", "a bit down"),
+        ("Emotion neutral", "neutral"),
+        ("Emotion happy", "content"),
+        ("Emotion overjoyed", "happy")
     ]
 
     var body: some View {
@@ -25,18 +25,14 @@ struct EmotionSelectionView: View {
                         Button(action: {
                             selectedEmotionIndex = index
                         }) {
-                            Text(emotions[index].icon)
-                                .font(.system(size: 32))
-                                .frame(width: 56, height: 56)
-                                .background(
-                                    selectedEmotionIndex == index
-                                    ? Color(red: 0.39, green: 0.59, blue: 0.38)
-                                    : Color.gray.opacity(0.15)
-                                )
-                                .foregroundColor(.white)
+                            Image(emotions[index].iconName)
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(selectedEmotionIndex == index ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: selectedEmotionIndex == index ? 56 : 48, 
+                                       height: selectedEmotionIndex == index ? 56 : 48)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .shadow(color: selectedEmotionIndex == index ? Color.green.opacity(0.3) : .clear,
-                                        radius: 8, x: 0, y: 4)
                         }
                     }
                 }
