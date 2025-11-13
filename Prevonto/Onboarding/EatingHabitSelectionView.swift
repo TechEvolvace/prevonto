@@ -30,25 +30,27 @@ struct EatingHabitSelectionView: View {
                     Button(action: {
                         selectedHabit = habit.label
                     }) {
-                        VStack(spacing: 4) {
-                            Image(habit.iconName)
-                                .resizable()
-                                .renderingMode(.template)
-                                .foregroundColor(selectedHabit == habit.label ? .white : .gray)
-                                .frame(width: 26, height: 26)
-                                .aspectRatio(contentMode: .fit)
-                            Text(habit.label)
-                                .font(.footnote)
-                                .multilineTextAlignment(.center)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Image(habit.iconName)
+                                    .resizable()
+                                    .renderingMode(.template)
+                                    .foregroundColor(selectedHabit == habit.label ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
+                                    .frame(width: 26, height: 26)
+                                    .aspectRatio(contentMode: .fit)
+                                Text(habit.label)
+                                    .font(.subheadline)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
                         .padding()
-                        .frame(minHeight: 80)
+                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(selectedHabit == habit.label ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
                         )
-                        .foregroundColor(selectedHabit == habit.label ? .white : .gray)
+                        .foregroundColor(selectedHabit == habit.label ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
                         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                 }
