@@ -46,6 +46,8 @@ struct SelectGenderView: View {
                     }
                 }
             }
+            
+            Spacer()
 
             // Next button
             Button {

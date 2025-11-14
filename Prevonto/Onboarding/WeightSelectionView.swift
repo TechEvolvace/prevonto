@@ -44,6 +44,8 @@ struct WeightSelectionView: View {
 
                 // Picker for user to swipe or drag to correct weight
                 WeightPickerView(values: currentRange, selected: $selectedWeight, unit: selectedUnit)
+                
+                Spacer()
 
                 // Next button
                 Button {

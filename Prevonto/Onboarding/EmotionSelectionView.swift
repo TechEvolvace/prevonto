@@ -48,6 +48,8 @@ struct EmotionSelectionView: View {
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.2))
+                
+                Spacer()
 
                 // Next button
                 Button {
@@ -60,8 +62,6 @@ struct EmotionSelectionView: View {
                         .background(Color(red: 0.01, green: 0.33, blue: 0.18))
                         .cornerRadius(12)
                 }
-
-                Spacer()
             }
         }
     }

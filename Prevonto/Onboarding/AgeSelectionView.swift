@@ -14,6 +14,8 @@ struct AgeSelectionView: View {
             VStack(spacing: 24) {
                 // Picker for user to swipe or drag vertically to specific age user choose
                 CenteredVerticalAgePicker(ages: ageRange, selectedAge: $selectedAge)
+                
+                Spacer()
 
                 // Next Button
                 Button {
