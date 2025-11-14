@@ -27,14 +27,15 @@ struct EmotionSelectionView: View {
                         }) {
                             let isNeutral = index == 2 // Emotion neutral
                             let baseIconSize: CGFloat = selectedEmotionIndex == index ? 56 : 48
-                            let iconSize = isNeutral ? baseIconSize * 2.6 : baseIconSize
                             
                             Image(emotions[index].iconName)
                                 .resizable()
                                 .renderingMode(.template)
                                 .foregroundColor(selectedEmotionIndex == index ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: iconSize, height: iconSize)
+                                .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
+                                .frame(width: baseIconSize, height: baseIconSize)
+                                .clipped()
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                     }
