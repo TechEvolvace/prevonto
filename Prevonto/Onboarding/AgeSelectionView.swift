@@ -7,15 +7,14 @@ struct AgeSelectionView: View {
     let back: () -> Void
     let step: Int
 
-    let ageRange = Array(13...100)
+    let ageRange = Array(1...150)
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "How old are you?") {
             VStack(spacing: 24) {
                 // Picker for user to swipe or drag vertically to specific age user choose
                 CenteredVerticalAgePicker(ages: ageRange, selectedAge: $selectedAge)
-                
-                Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 // Next Button
                 Button {
@@ -68,7 +67,7 @@ struct CenteredVerticalAgePicker: View {
                 }
             }
         }
-        .frame(height: 280)
+        .frame(maxHeight: .infinity)
     }
 }
 
