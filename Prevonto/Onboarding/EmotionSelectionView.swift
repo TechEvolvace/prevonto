@@ -26,7 +26,7 @@ struct EmotionSelectionView: View {
                             selectedEmotionIndex = index
                         }) {
                             let isNeutral = index == 2 // Emotion neutral
-                            let baseIconSize: CGFloat = selectedEmotionIndex == index ? 56 : 48
+                            let baseIconSize: CGFloat = selectedEmotionIndex == index ? 88 : 60
                             
                             Image(emotions[index].iconName)
                                 .resizable()
@@ -35,9 +35,11 @@ struct EmotionSelectionView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
                                 .frame(width: baseIconSize, height: baseIconSize)
-                                .clipped()
+                                .background(Color.clear)
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
 
