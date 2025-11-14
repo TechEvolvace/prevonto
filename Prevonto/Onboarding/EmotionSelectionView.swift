@@ -35,9 +35,6 @@ struct EmotionSelectionView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
                                 .frame(width: baseIconSize, height: baseIconSize)
-                                .background(Color.clear)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
