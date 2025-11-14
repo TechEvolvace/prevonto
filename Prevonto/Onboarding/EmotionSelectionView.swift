@@ -9,11 +9,11 @@ struct EmotionSelectionView: View {
     let step: Int
 
     let emotions: [(iconName: String, description: String)] = [
-        ("Emotion depressed", "exhausted"),
-        ("Emotion sad", "a bit down"),
+        ("Emotion depressed", "depressed"),
+        ("Emotion sad", "sad"),
         ("Emotion neutral", "neutral"),
-        ("Emotion happy", "content"),
-        ("Emotion overjoyed", "happy")
+        ("Emotion happy", "happy"),
+        ("Emotion overjoyed", "overjoyed")
     ]
 
     var body: some View {
@@ -25,13 +25,16 @@ struct EmotionSelectionView: View {
                         Button(action: {
                             selectedEmotionIndex = index
                         }) {
+                            let isNeutral = index == 2 // Emotion neutral
+                            let baseIconSize: CGFloat = selectedEmotionIndex == index ? 56 : 48
+                            let iconSize = isNeutral ? baseIconSize * 2.6 : baseIconSize
+                            
                             Image(emotions[index].iconName)
                                 .resizable()
                                 .renderingMode(.template)
                                 .foregroundColor(selectedEmotionIndex == index ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: selectedEmotionIndex == index ? 56 : 48, 
-                                       height: selectedEmotionIndex == index ? 56 : 48)
+                                .frame(width: iconSize, height: iconSize)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                     }
