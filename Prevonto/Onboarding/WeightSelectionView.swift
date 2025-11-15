@@ -71,7 +71,7 @@ struct WeightPickerView: View {
     let unit: String // Track unit to detect when it changes
 
     let itemWidth: CGFloat = 50
-    let spacing: CGFloat = 10
+    let spacing: CGFloat = 4
 
     @State private var scrollOffset: CGFloat = 0.0
     @State private var scrollViewWidth: CGFloat = 0.0
