@@ -22,12 +22,14 @@ struct WeightSelectionView: View {
             VStack(spacing: 24) {
                 // Weight unit conversion between the 2 weight unit types
                 HStack(spacing: 32) {
+                    // kg converted to lbs when lbs button is selected
                     UnitButton(title: "lbs", selected: $selectedUnit) {
-                        let converted = Int(Double(selectedWeight) * 2.20462)
+                        let converted = Int(Double(selectedWeight) * 2.205)
                         selectedWeight = min(max(converted, lbRange.first ?? 0), lbRange.last ?? 500)
                     }
+                    // lbs converted to kg when kg button is selected
                     UnitButton(title: "kg", selected: $selectedUnit) {
-                        let converted = Int(Double(selectedWeight) * 0.453592)
+                        let converted = Int(Double(selectedWeight) * 0.45359237)
                         selectedWeight = min(max(converted, kgRange.first ?? 0), kgRange.last ?? 227)
                     }
                 }
@@ -63,14 +65,14 @@ struct WeightSelectionView: View {
     }
 }
 
-// Picker for user to swipe or drag to correct weight
+// Picker for user to swipe or drag to correct weights
 struct WeightPickerView: View {
     let values: [Int]
     @Binding var selected: Int
     let unit: String // Track unit to detect when it changes
 
     let itemWidth: CGFloat = 40
-    let spacing: CGFloat = 12
+    let spacing: CGFloat = 8
 
     @State private var scrollOffset: CGFloat = 0.0
     @State private var scrollViewWidth: CGFloat = 0.0
@@ -97,7 +99,7 @@ struct WeightPickerView: View {
                                             selected = val
                                         }
                                     }
-                                    .onChange(of: distance) { _ in
+                                    .onChange(of: distance) {
                                         if isSelected {
                                             selected = val
                                         }
@@ -105,9 +107,9 @@ struct WeightPickerView: View {
 
                                 VStack(spacing: 6) {
                                     Rectangle()
-                                        .frame(width: 2, height: val % 10 == 0 ? 32 : 24)
-                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : val % 10 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
-                                        .padding(.top, val % 10 == 0 ? 0 : 8)
+                                        .frame(width: 2, height: val % 10 == 0 ? 32 : val % 5 == 0 ? 32 : 24)
+                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : val % 5 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
+                                        .padding(.top, val % 10 == 0 ? 0 : val % 5 == 0 ? 4 : 8)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
@@ -130,7 +132,7 @@ struct WeightPickerView: View {
                             }
                         }
                     }
-                    .onChange(of: unit) { _ in
+                    .onChange(of: unit) {
                         // When unit changes, scroll to the converted weight value
                         if values.contains(selected) {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -144,7 +146,7 @@ struct WeightPickerView: View {
             }
             .padding(.top, 16)
 
-            // Vertical indicator with caps
+            // Vertical slider indicator on weight slider
             VStack(spacing: 4) {
                 // Top triangle pointing down
                 RoundedTriangle()
