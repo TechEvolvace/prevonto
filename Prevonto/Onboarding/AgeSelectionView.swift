@@ -91,19 +91,17 @@ struct AgeRow: View {
             // Determine if this is the selected age
             let isSelected = distance < totalHeight / 2
             
-            // Dynamic font size based on distance from center
-            // Selected: 32pt, Very close: 24pt, Close: 20pt, Medium: 18pt, Far: 16pt
+            // Dynamic font size based on distance from center - smooth decrease
+            // Selected: 32pt, decreasing smoothly as distance increases
             let fontSize: CGFloat = {
                 if isSelected {
                     return 32
-                } else if normalizedDistance < 0.2 {
-                    return 24
-                } else if normalizedDistance < 0.4 {
-                    return 20
-                } else if normalizedDistance < 0.6 {
-                    return 18
                 } else {
-                    return 16
+                    // Smooth interpolation from 32pt (selected) to 14pt (far away)
+                    // Using normalizedDistance for smooth transition
+                    let minSize: CGFloat = 14
+                    let maxSize: CGFloat = 32
+                    return maxSize - (normalizedDistance * (maxSize - minSize))
                 }
             }()
             
@@ -113,7 +111,7 @@ struct AgeRow: View {
             // Dynamic font weight
             let fontWeight: Font.Weight = isSelected ? .bold : (normalizedDistance < 0.3 ? .semibold : .regular)
             
-            // Calculate box width based on number of digits (2-digit: 100pt, 3-digit: 120pt)
+            // Calculate box width based on number of digits
             let boxWidth: CGFloat = isSelected ? (age >= 100 ? 120 : 100) : 0
 
             Text("\(age)")
@@ -133,7 +131,7 @@ struct AgeRow: View {
                         selectedAge = age
                     }
                 }
-                .onChange(of: distance) { _ in
+                .onChange(of: distance) {
                     if isSelected {
                         selectedAge = age
                     }
