@@ -46,8 +46,7 @@ struct WeightSelectionView: View {
 
                 // Picker for user to swipe or drag to correct weight
                 WeightPickerView(values: currentRange, selected: $selectedWeight, unit: selectedUnit)
-                
-                Spacer()
+                    .frame(maxHeight: .infinity)
 
                 // Next button
                 Button {
@@ -71,8 +70,8 @@ struct WeightPickerView: View {
     @Binding var selected: Int
     let unit: String // Track unit to detect when it changes
 
-    let itemWidth: CGFloat = 40
-    let spacing: CGFloat = 8
+    let itemWidth: CGFloat = 50
+    let spacing: CGFloat = 10
 
     @State private var scrollOffset: CGFloat = 0.0
     @State private var scrollViewWidth: CGFloat = 0.0
@@ -105,15 +104,15 @@ struct WeightPickerView: View {
                                         }
                                     }
 
-                                VStack(spacing: 6) {
+                                VStack(spacing: 8) {
                                     Rectangle()
-                                        .frame(width: 2, height: val % 10 == 0 ? 32 : val % 5 == 0 ? 32 : 24)
+                                        .frame(width: 2.5, height: val % 10 == 0 ? 40 : val % 5 == 0 ? 40 : 30)
                                         .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : val % 5 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
-                                        .padding(.top, val % 10 == 0 ? 0 : val % 5 == 0 ? 4 : 8)
+                                        .padding(.top, val % 5 == 0 ? 5 : 10)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
-                                            .font(.caption)
+                                            .font(.system(size: 16, weight: .medium))
                                             .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6))
                                     }
                                 }
@@ -147,21 +146,21 @@ struct WeightPickerView: View {
             .padding(.top, 16)
 
             // Vertical slider indicator on weight slider
-            VStack(spacing: 4) {
+            VStack(spacing: 5) {
                 // Top triangle pointing down
                 RoundedTriangle()
                     .rotation(.degrees(180))
-                    .frame(width: 8, height: 8)
-                RoundedRectangle(cornerRadius: 1)
-                    .frame(width: 2, height: 50)
+                    .frame(width: 10, height: 10)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .frame(width: 3, height: 60)
                 // Bottom triangle pointing up
                 RoundedTriangle()
-                    .frame(width: 8, height: 8)
+                    .frame(width: 10, height: 10)
             }
             .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
             .frame(maxWidth: .infinity, alignment: .center)
         }
-        .frame(height: 240)
+        .frame(height: 320)
     }
 }
 
