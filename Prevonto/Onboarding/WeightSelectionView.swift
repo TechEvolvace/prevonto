@@ -144,13 +144,16 @@ struct WeightPickerView: View {
             }
             .padding(.top, 16)
 
-            // Vertical indicator with caps (design only)
+            // Vertical indicator with caps
             VStack(spacing: 4) {
-                Circle()
+                // Top triangle pointing down
+                RoundedTriangle()
+                    .rotation(.degrees(180))
                     .frame(width: 8, height: 8)
                 RoundedRectangle(cornerRadius: 1)
                     .frame(width: 2, height: 50)
-                Circle()
+                // Bottom triangle pointing up
+                RoundedTriangle()
                     .frame(width: 8, height: 8)
             }
             .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
@@ -160,6 +163,48 @@ struct WeightPickerView: View {
     }
 }
 
+
+// Rounded triangle shape for slider marker caps of green slider mark
+struct RoundedTriangle: Shape {
+    var cornerRadius: CGFloat = 1.5
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let curveAmount: CGFloat = 2.0 // Amount of curve for the edges
+        
+        // Triangle pointing up: top point, bottom left, bottom right
+        let top = CGPoint(x: rect.midX, y: rect.minY)
+        let bottomLeft = CGPoint(x: rect.minX, y: rect.maxY)
+        let bottomRight = CGPoint(x: rect.maxX, y: rect.maxY)
+        
+        // Start from top point
+        path.move(to: top)
+        
+        // Curved edge from top to bottom left
+        let leftControl = CGPoint(
+            x: top.x + (bottomLeft.x - top.x) * 0.5 - curveAmount,
+            y: top.y + (bottomLeft.y - top.y) * 0.5 + curveAmount
+        )
+        path.addQuadCurve(to: bottomLeft, control: leftControl)
+        
+        // Curved edge from bottom left to bottom right
+        let bottomControl = CGPoint(
+            x: rect.midX,
+            y: rect.maxY + curveAmount
+        )
+        path.addQuadCurve(to: bottomRight, control: bottomControl)
+        
+        // Curved edge from bottom right back to top
+        let rightControl = CGPoint(
+            x: top.x + (bottomRight.x - top.x) * 0.5 + curveAmount,
+            y: top.y + (bottomRight.y - top.y) * 0.5 + curveAmount
+        )
+        path.addQuadCurve(to: top, control: rightControl)
+        
+        path.closeSubpath()
+        return path
+    }
+}
 
 // Weight Unit toggle selection buttons
 struct UnitButton: View {
