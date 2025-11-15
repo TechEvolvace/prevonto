@@ -26,7 +26,7 @@ struct EmotionSelectionView: View {
                             selectedEmotionIndex = index
                         }) {
                             let isNeutral = index == 2 // Emotion neutral
-                            let baseIconSize: CGFloat = selectedEmotionIndex == index ? 88 : 60
+                            let baseIconSize: CGFloat = selectedEmotionIndex == index ? 80 : 60
                             
                             Image(emotions[index].iconName)
                                 .resizable()
