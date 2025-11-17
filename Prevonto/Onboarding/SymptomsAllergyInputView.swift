@@ -220,8 +220,8 @@ struct AllergyDetailPopup: View {
                 Text("Please add additional details\nregarding your food allergy")
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .foregroundColor(.gray)
                 
                 // Allergy tags in rows of 3
                 VStack(alignment: .leading, spacing: 8) {
@@ -281,6 +281,7 @@ struct AllergyDetailPopup: View {
                     if description.isEmpty {
                         Text("Add more description...")
                             .foregroundColor(.gray.opacity(0.6))
+                            .font(.system(size: 14))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 16)
                             .allowsHitTesting(false)
@@ -309,7 +310,7 @@ struct AllergyDetailPopup: View {
             .background(Color.white)
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 60)
             .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
