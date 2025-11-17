@@ -3,7 +3,7 @@ import SwiftUI
 
 struct SymptomsAllergyInputView: View {
     @State private var selectedSymptoms: Set<String> = []
-    @State private var selectedAllergyCategory: String? = nil
+    @State private var selectedAllergyCategories: Set<String> = []
     @State private var showAllergyDetails = false
     @State private var allergyDetails: Set<String> = []
     @State private var allergyDescription: String = ""
@@ -69,11 +69,9 @@ struct SymptomsAllergyInputView: View {
                     .foregroundColor(.gray)
                     .padding(.bottom, 8)
 
-                FlowLayout(tags: allergyCategories, selection: .init(
-                    get: { selectedAllergyCategory.map { [$0] } ?? [] },
-                    set: { selectedAllergyCategory = $0.first }
-                )) {
-                    if $0 == "Food" {
+                FlowLayout(tags: allergyCategories, selection: $selectedAllergyCategories) { category in
+                    if category == "Food" && selectedAllergyCategories.contains("Food") {
+                        // Food is being selected, open the popup
                         showAllergyDetails = true
                     }
                 }
@@ -164,7 +162,7 @@ struct TagPill: View {
             Text(label)
                 .font(.footnote)
                 .foregroundColor(selected ? .white : .gray)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 6)
                 .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
                 .overlay(
@@ -237,7 +235,7 @@ struct AllergyDetailPopup: View {
                                 }
                             }
                             
-                            // Add +4 button to the last row if needed and there's space (less than 3 items)d
+                            // Add +# button, where the # indicates the number of hidden allergies not shown yet.
                             if rowIndex == rows.count - 1 && !showAllAllergies && remainingAllergiesCount > 0 && row.count < 3 {
                                 TagPill(label: "+\(remainingAllergiesCount)", selected: false) {
                                     withAnimation {
@@ -418,5 +416,16 @@ struct FlexibleView<Data: Collection, Content: View>: View where Data.Element: H
                 }
             }
         }
+    }
+}
+
+// To preview Onboarding Page 9, for only developer uses
+struct SymptomsAllergyInputView_Previews: PreviewProvider {
+    static var previews: some View {
+        SymptomsAllergyInputView(
+            next: {},
+            back: {},
+            step: 8
+        )
     }
 }
