@@ -161,24 +161,17 @@ struct TagPill: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                Text(label)
-                    .font(.footnote)
-                    .foregroundColor(selected ? .white : .gray)
-                if selected {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.white)
-                        .font(.system(size: 10, weight: .bold))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(selected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .cornerRadius(16)
+            Text(label)
+                .font(.footnote)
+                .foregroundColor(selected ? .white : .gray)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(selected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .cornerRadius(16)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -244,7 +237,7 @@ struct AllergyDetailPopup: View {
                                 }
                             }
                             
-                            // Add +4 button to the last row if needed and there's space (less than 3 items)
+                            // Add +4 button to the last row if needed and there's space (less than 3 items)d
                             if rowIndex == rows.count - 1 && !showAllAllergies && remainingAllergiesCount > 0 && row.count < 3 {
                                 TagPill(label: "+\(remainingAllergiesCount)", selected: false) {
                                     withAnimation {
