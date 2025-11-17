@@ -8,6 +8,7 @@ struct SymptomsAllergyInputView: View {
     @State private var allergyDetails: Set<String> = []
     @State private var allergyDescription: String = ""
     @State private var showAllSymptoms = false
+    @State private var searchText: String = ""
 
     let next: () -> Void
     let back: () -> Void
@@ -17,12 +18,31 @@ struct SymptomsAllergyInputView: View {
     let allergyCategories = ["Food", "Indoor", "Seasonal", "Drug", "Skin", "Other"]
     let additionalAllergyTags = ["Dairy", "Gluten", "Soy", "Shellfish", "Nuts"]
     
+    // Filter symptoms based on search text
+    private var filteredSymptoms: [String] {
+        if searchText.isEmpty {
+            return commonSymptoms
+        } else {
+            return commonSymptoms.filter { symptom in
+                symptom.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
+    
     private var displayedSymptoms: [String] {
-        showAllSymptoms ? commonSymptoms : Array(commonSymptoms.prefix(5))
+        // If searching, show all filtered results. Otherwise, respect the showAllSymptoms state
+        if !searchText.isEmpty {
+            return filteredSymptoms
+        } else {
+            return showAllSymptoms ? commonSymptoms : Array(commonSymptoms.prefix(5))
+        }
     }
     
     private var remainingSymptomsCount: Int {
-        max(0, commonSymptoms.count - 5)
+        if !searchText.isEmpty {
+            return 0 // Don't show expand button when searching
+        }
+        return max(0, commonSymptoms.count - 5)
     }
 
     var body: some View {
@@ -49,8 +69,7 @@ struct SymptomsAllergyInputView: View {
                     )
 
                     HStack {
-                        TextField("Search", text: .constant(""))
-                            .disabled(true)
+                        TextField("Search", text: $searchText)
                             .padding(.vertical, 8)
                             .padding(.leading, 12)
                         Spacer()
