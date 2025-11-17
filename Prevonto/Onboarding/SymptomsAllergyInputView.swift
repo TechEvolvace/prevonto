@@ -5,8 +5,17 @@ struct SymptomsAllergyInputView: View {
     @State private var selectedSymptoms: Set<String> = []
     @State private var selectedAllergyCategories: Set<String> = []
     @State private var showAllergyDetails = false
-    @State private var allergyDetails: Set<String> = []
-    @State private var allergyDescription: String = ""
+    @State private var currentAllergyType: String = ""
+    @State private var foodAllergyDetails: Set<String> = []
+    @State private var foodAllergyDescription: String = ""
+    @State private var indoorAllergyDetails: Set<String> = []
+    @State private var indoorAllergyDescription: String = ""
+    @State private var seasonalAllergyDetails: Set<String> = []
+    @State private var seasonalAllergyDescription: String = ""
+    @State private var drugAllergyDetails: Set<String> = []
+    @State private var drugAllergyDescription: String = ""
+    @State private var skinAllergyDetails: Set<String> = []
+    @State private var skinAllergyDescription: String = ""
     @State private var showAllSymptoms = false
     @State private var searchText: String = ""
 
@@ -89,8 +98,9 @@ struct SymptomsAllergyInputView: View {
                     .padding(.bottom, 8)
 
                 FlowLayout(tags: allergyCategories, selection: $selectedAllergyCategories) { category in
-                    if category == "Food" && selectedAllergyCategories.contains("Food") {
-                        // Food is being selected, open the popup
+                    if ["Food", "Indoor", "Seasonal", "Drug", "Skin"].contains(category) && selectedAllergyCategories.contains(category) {
+                        // Open the popup for the selected allergy category
+                        currentAllergyType = category
                         showAllergyDetails = true
                     }
                 }
@@ -112,8 +122,9 @@ struct SymptomsAllergyInputView: View {
         .overlay {
             if showAllergyDetails {
                 AllergyDetailPopup(
-                    selectedTags: $allergyDetails,
-                    description: $allergyDescription,
+                    allergyType: currentAllergyType,
+                    selectedTags: getSelectedTagsBinding(for: currentAllergyType),
+                    description: getDescriptionBinding(for: currentAllergyType),
                     isPresented: $showAllergyDetails
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
@@ -121,6 +132,41 @@ struct SymptomsAllergyInputView: View {
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showAllergyDetails)
+    }
+    
+    // Helper functions to get the appropriate binding based on allergy type
+    private func getSelectedTagsBinding(for allergyType: String) -> Binding<Set<String>> {
+        switch allergyType {
+        case "Food":
+            return $foodAllergyDetails
+        case "Indoor":
+            return $indoorAllergyDetails
+        case "Seasonal":
+            return $seasonalAllergyDetails
+        case "Drug":
+            return $drugAllergyDetails
+        case "Skin":
+            return $skinAllergyDetails
+        default:
+            return $foodAllergyDetails
+        }
+    }
+    
+    private func getDescriptionBinding(for allergyType: String) -> Binding<String> {
+        switch allergyType {
+        case "Food":
+            return $foodAllergyDescription
+        case "Indoor":
+            return $indoorAllergyDescription
+        case "Seasonal":
+            return $seasonalAllergyDescription
+        case "Drug":
+            return $drugAllergyDescription
+        case "Skin":
+            return $skinAllergyDescription
+        default:
+            return $foodAllergyDescription
+        }
     }
 }
 
@@ -181,6 +227,8 @@ struct TagPill: View {
             Text(label)
                 .font(.footnote)
                 .foregroundColor(selected ? .white : .gray)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
                 .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
@@ -196,19 +244,59 @@ struct TagPill: View {
 
 // Popup for allergies
 struct AllergyDetailPopup: View {
+    let allergyType: String
     @Binding var selectedTags: Set<String>
     @Binding var description: String
     @Binding var isPresented: Bool
     @State private var showAllAllergies = false
 
+    // Allergy lists for each category
     let allFoodAllergies = ["Dairy", "Gluten", "Soy", "Shellfish", "Nuts", "Eggs", "Fish", "Peanuts", "Sesame"]
+    let allIndoorAllergies = ["Dust mites", "Mold", "Pet dander", "Cockroaches", "Pollen (indoor)", "Carpet fibers", "Air fresheners", "Cleaning products"]
+    let allSeasonalAllergies = ["Tree pollen", "Grass pollen", "Weed pollen", "Ragweed", "Birch", "Oak", "Cedar", "Maple"]
+    let allDrugAllergies = ["Penicillin", "Aspirin", "Ibuprofen", "Sulfa drugs", "Antibiotics", "NSAIDs", "Anesthesia", "Vaccines"]
+    let allSkinAllergies = ["Latex", "Nickel", "Fragrances", "Cosmetics", "Hair dye", "Detergents", "Soaps", "Rubber"]
+    
+    private var allergies: [String] {
+        switch allergyType {
+        case "Food":
+            return allFoodAllergies
+        case "Indoor":
+            return allIndoorAllergies
+        case "Seasonal":
+            return allSeasonalAllergies
+        case "Drug":
+            return allDrugAllergies
+        case "Skin":
+            return allSkinAllergies
+        default:
+            return allFoodAllergies
+        }
+    }
+    
+    private var popupTitle: String {
+        switch allergyType {
+        case "Food":
+            return "Please add additional details\nregarding your food allergy"
+        case "Indoor":
+            return "Please add additional details\nregarding your indoor allergy"
+        case "Seasonal":
+            return "Please add additional details\nregarding your seasonal allergy"
+        case "Drug":
+            return "Please add additional details\nregarding your drug allergy"
+        case "Skin":
+            return "Please add additional details\nregarding your skin allergy"
+        default:
+            return "Please add additional details\nregarding your allergy"
+        }
+    }
     
     private var displayedAllergies: [String] {
-        showAllAllergies ? allFoodAllergies : Array(allFoodAllergies.prefix(5))
+        showAllAllergies ? allergies : Array(allergies.prefix(5))
     }
     
     private var remainingAllergiesCount: Int {
-        max(0, allFoodAllergies.count - 5)
+        max(0, allergies.count - 5)
     }
     
 
@@ -227,7 +315,7 @@ struct AllergyDetailPopup: View {
             // Centered popup
             VStack(spacing: 20) {
                 // Title
-                Text("Please add additional details\nregarding your food allergy")
+                Text(popupTitle)
                     .font(.headline)
                     .fontWeight(.semibold)
                     .multilineTextAlignment(.leading)
@@ -263,11 +351,12 @@ struct AllergyDetailPopup: View {
                                 }
                             }
                             
-                            Spacer()
+                            Spacer(minLength: 0)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     
-                    // If we need to show +4 button but last row is full (3 items), add it on a new row
+                    // Determine placement of +# button in allergy popup
                     if !rows.isEmpty, let lastRow = rows.last, lastRow.count == 3 && !showAllAllergies && remainingAllergiesCount > 0 {
                         HStack(spacing: 8) {
                             TagPill(label: "+\(remainingAllergiesCount)", selected: false) {
@@ -275,8 +364,9 @@ struct AllergyDetailPopup: View {
                                     showAllAllergies = true
                                 }
                             }
-                            Spacer()
+                            Spacer(minLength: 0)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
 
