@@ -91,10 +91,19 @@ struct SymptomsAllergyInputView: View {
                         .cornerRadius(12)
                 }
             }
-            .sheet(isPresented: $showAllergyDetails) {
-                AllergyDetailModal(selectedTags: $allergyDetails, description: $allergyDescription)
+        }
+        .overlay {
+            if showAllergyDetails {
+                AllergyDetailPopup(
+                    selectedTags: $allergyDetails,
+                    description: $allergyDescription,
+                    isPresented: $showAllergyDetails
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .zIndex(1000)
             }
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showAllergyDetails)
     }
 }
 
@@ -175,38 +184,135 @@ struct TagPill: View {
     }
 }
 
-struct AllergyDetailModal: View {
+// Popup for allergies
+struct AllergyDetailPopup: View {
     @Binding var selectedTags: Set<String>
     @Binding var description: String
+    @Binding var isPresented: Bool
+    @State private var showAllAllergies = false
 
-    let tags = ["Dairy", "Gluten", "Soy", "Shellfish", "Nuts"]
+    let allFoodAllergies = ["Dairy", "Gluten", "Soy", "Shellfish", "Nuts", "Eggs", "Fish", "Peanuts", "Sesame"]
+    
+    private var displayedAllergies: [String] {
+        showAllAllergies ? allFoodAllergies : Array(allFoodAllergies.prefix(5))
+    }
+    
+    private var remainingAllergiesCount: Int {
+        max(0, allFoodAllergies.count - 5)
+    }
+    
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Please add additional details\nregarding your food allergy")
-                .font(.headline)
-                .multilineTextAlignment(.center)
+        ZStack {
+            // Dimmed background covering entire screen
+            Color.black.opacity(0.4)
+                .ignoresSafeArea(.all)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onTapGesture {
+                    withAnimation {
+                        isPresented = false
+                    }
+                }
+            
+            // Centered popup
+            VStack(spacing: 20) {
+                // Title
+                Text("Please add additional details\nregarding your food allergy")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.primary)
+                
+                // Allergy tags in rows of 3
+                VStack(alignment: .leading, spacing: 8) {
+                    // Create rows of 3 items each
+                    let allItems = displayedAllergies
+                    let rows = stride(from: 0, to: allItems.count, by: 3).map {
+                        Array(allItems[$0..<min($0 + 3, allItems.count)])
+                    }
+                    
+                    ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
+                        HStack(spacing: 8) {
+                            // Display allergies in this row
+                            ForEach(row, id: \.self) { tag in
+                                TagPill(label: tag, selected: selectedTags.contains(tag)) {
+                                    if selectedTags.contains(tag) {
+                                        selectedTags.remove(tag)
+                                    } else {
+                                        selectedTags.insert(tag)
+                                    }
+                                }
+                            }
+                            
+                            // Add +4 button to the last row if needed and there's space (less than 3 items)
+                            if rowIndex == rows.count - 1 && !showAllAllergies && remainingAllergiesCount > 0 && row.count < 3 {
+                                TagPill(label: "+\(remainingAllergiesCount)", selected: false) {
+                                    withAnimation {
+                                        showAllAllergies = true
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                    
+                    // If we need to show +4 button but last row is full (3 items), add it on a new row
+                    if !rows.isEmpty, let lastRow = rows.last, lastRow.count == 3 && !showAllAllergies && remainingAllergiesCount > 0 {
+                        HStack(spacing: 8) {
+                            TagPill(label: "+\(remainingAllergiesCount)", selected: false) {
+                                withAnimation {
+                                    showAllAllergies = true
+                                }
+                            }
+                            Spacer()
+                        }
+                    }
+                }
 
-            FlowLayout(tags: tags, selection: $selectedTags)
-
-            TextEditor(text: $description)
-                .frame(height: 100)
-                .padding()
+                // Description text area
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $description)
+                        .frame(height: 100)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .scrollContentBackground(.hidden)
+                    
+                    if description.isEmpty {
+                        Text("Add more description...")
+                            .foregroundColor(.gray.opacity(0.6))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 16)
+                            .allowsHitTesting(false)
+                    }
+                }
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(12)
 
-            Button {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            } label: {
-                Text("Save")
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(Color(red: 0.01, green: 0.33, blue: 0.18))
-                    .cornerRadius(12)
+                // Save button
+                Button {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    withAnimation {
+                        isPresented = false
+                    }
+                } label: {
+                    Text("Save")
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .cornerRadius(12)
+                }
             }
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity)
         }
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
