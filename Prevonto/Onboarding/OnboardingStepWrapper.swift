@@ -25,7 +25,7 @@ struct OnboardingStepWrapper<Content: View>: View {
                 SegmentedProgressBar(
                     currentStep: step + 1,
                     totalSteps: totalSteps,
-                    activeColor: secondaryGreen,
+                    activeColor: primaryGreen,
                     inactiveColor: Color.gray.opacity(0.3)
                 )
                 
