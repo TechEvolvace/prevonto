@@ -760,7 +760,7 @@ struct BloodGlucoseView: View {
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)
         ))
-        .onChange(of: binding.wrappedValue) { oldDate, newDate in
+        .onChange(of: binding.wrappedValue) { _, newDate in
             let calendar = Calendar.current
             if isStartDate {
                 if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {

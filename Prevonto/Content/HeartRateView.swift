@@ -652,7 +652,7 @@ struct HeartRateView: View {
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)
         ))
-        .onChange(of: binding.wrappedValue) { newDate in
+        .onChange(of: binding.wrappedValue) { _, newDate in
             // Update opposite date in real-time while calendar is open
             let calendar = Calendar.current
             if isStartDate {
