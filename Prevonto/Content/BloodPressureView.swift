@@ -433,7 +433,7 @@ struct BloodPressureView: View {
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)
         ))
-        .onChange(of: binding.wrappedValue) { newDate in
+        .onChange(of: binding.wrappedValue) { oldDate, newDate in
             let calendar = Calendar.current
             if isStartDate {
                 if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
