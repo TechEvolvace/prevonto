@@ -201,10 +201,17 @@ struct FlowLayout: View {
     let tags: [String]
     @Binding var selection: Set<String>
     var onTap: ((String) -> Void)? = nil
+    
+    private func displayLabel(for tag: String) -> String {
+        if ["Food", "Indoor", "Seasonal", "Drug", "Skin"].contains(tag) {
+            return "\(tag) >"
+        }
+        return tag
+    }
 
     var body: some View {
         FlexibleView(data: tags, spacing: 8, alignment: .leading) { tag in
-            TagPill(label: tag, selected: selection.contains(tag)) {
+            TagPill(label: displayLabel(for: tag), selected: selection.contains(tag)) {
                 if selection.contains(tag) {
                     selection.remove(tag)
                 } else {
