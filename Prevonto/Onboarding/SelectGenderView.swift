@@ -15,7 +15,12 @@ struct SelectGenderView: View {
                 // Option buttons for user to select their gender
                 ForEach(genderOptions, id: \.self) { gender in
                     Button(action: {
-                        selectedGender = gender
+                        if selectedGender == gender {
+                            // Lets the user deselect their selection
+                            selectedGender = nil
+                        } else {
+                            selectedGender = gender
+                        }
                     }) {
                         HStack {
                             Text(gender)
