@@ -15,6 +15,7 @@ struct SelectGenderView: View {
                 // Option buttons for user to select their gender
                 ForEach(genderOptions, id: \.self) { gender in
                     Button(action: {
+                        // Handles button selection and deselection
                         if selectedGender == gender {
                             // Lets the user deselect their selection
                             selectedGender = nil

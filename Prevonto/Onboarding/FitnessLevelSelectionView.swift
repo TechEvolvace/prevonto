@@ -26,6 +26,7 @@ struct FitnessLevelSelectionView: View {
             VStack(spacing: 20) {
                 ForEach(fitnessOptions) { option in
                     Button(action: {
+                        // Handles button selection and deselection
                         if selectedLevel == option.id {
                             // Lets the user deselect their selection
                             selectedLevel = nil
