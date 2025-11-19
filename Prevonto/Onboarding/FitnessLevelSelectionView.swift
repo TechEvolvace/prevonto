@@ -26,7 +26,12 @@ struct FitnessLevelSelectionView: View {
             VStack(spacing: 20) {
                 ForEach(fitnessOptions) { option in
                     Button(action: {
-                        selectedLevel = option.id
+                        if selectedLevel == option.id {
+                            // Lets the user deselect their selection
+                            selectedLevel = nil
+                        } else {
+                            selectedLevel = option.id
+                        }
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
@@ -76,10 +81,10 @@ struct FitnessLevelSelectionView: View {
                     }
                 } label: {
                     Text("Next")
-                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(selectedLevel != nil ? .white : .gray)
+                        .background(selectedLevel != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
                         .cornerRadius(12)
                 }
             }
