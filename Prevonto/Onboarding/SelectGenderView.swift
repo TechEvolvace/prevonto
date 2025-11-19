@@ -56,10 +56,10 @@ struct SelectGenderView: View {
                 }
             } label: {
                 Text("Next")
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(selectedGender != nil ? .white : .gray)
+                    .background(selectedGender != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
         }.navigationBarBackButtonHidden(true)
