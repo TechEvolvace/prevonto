@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct EatingHabitSelectionView: View {
-    @State private var selectedHabit: String? = "Mostly Vegetarian"
+    @State private var selectedHabit: String? = nil
 
     let next: () -> Void
     let back: () -> Void
@@ -28,7 +28,13 @@ struct EatingHabitSelectionView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                 ForEach(habits) { habit in
                     Button(action: {
-                        selectedHabit = habit.label
+                        // Handles button selection and deselection
+                        if selectedHabit == habit.label {
+                            // Lets the user deselect their selection
+                            selectedHabit = nil
+                        } else {
+                            selectedHabit = habit.label
+                        }
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -64,10 +70,10 @@ struct EatingHabitSelectionView: View {
                 }
             } label: {
                 Text("Next")
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(selectedHabit != nil ? .white : .gray)
+                    .background(selectedHabit != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
         }
