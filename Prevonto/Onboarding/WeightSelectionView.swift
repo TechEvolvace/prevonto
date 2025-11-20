@@ -1,4 +1,4 @@
-// Onboarding page 2 out of 9 prompts user for their weight
+// Onboarding page 2 out of 10 prompts user for their weight
 import SwiftUI
 
 struct WeightSelectionView: View {

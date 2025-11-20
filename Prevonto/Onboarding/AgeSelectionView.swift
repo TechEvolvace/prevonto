@@ -1,4 +1,4 @@
-// Onboarding page 3 out of 9 prompts user for their age
+// Onboarding page 3 out of 10 prompts user for their age
 import SwiftUI
 
 struct AgeSelectionView: View {

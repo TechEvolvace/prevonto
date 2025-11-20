@@ -1,4 +1,4 @@
-// Onboarding page 1 out of 9 prompts user for their gender
+// Onboarding page 1 out of 10 prompts user for their gender
 import SwiftUI
 
 struct SelectGenderView: View {

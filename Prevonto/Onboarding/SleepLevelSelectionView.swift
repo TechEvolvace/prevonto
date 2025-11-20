@@ -1,4 +1,4 @@
-// Onboarding page 5 out of 9 prompts user for their level amount of sleep
+// Onboarding page 5 out of 10 prompts user for their level amount of sleep
 import SwiftUI
 
 struct SleepLevelSelectionView: View {

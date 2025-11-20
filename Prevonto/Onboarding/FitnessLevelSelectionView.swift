@@ -1,4 +1,4 @@
-// Onboarding page 4 out of 9 prompts user for their level of fitness
+// Onboarding page 4 out of 10 prompts user for their level of fitness
 import SwiftUI
 
 struct FitnessLevelSelectionView: View {

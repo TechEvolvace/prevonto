@@ -1,4 +1,4 @@
-// Onboarding page 6 out of 9 prompts user for their current emotion (when they first signed up an account)
+// Onboarding page 6 out of 10 prompts user for their current emotion (when they first signed up an account)
 import SwiftUI
 
 struct EmotionSelectionView: View {

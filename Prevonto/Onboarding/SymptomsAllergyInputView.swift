@@ -1,4 +1,4 @@
-// Onboarding page 9 out of 9 prompts user for any and all allergies they have
+// Onboarding page 9 out of 10 prompts user for any and all allergies they have
 import SwiftUI
 
 struct SymptomsAllergyInputView: View {

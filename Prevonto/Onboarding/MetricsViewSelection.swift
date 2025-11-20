@@ -1,7 +1,7 @@
-// Onboarding page 10 out of 9 prompts user for their preferred metric to see most
+// Onboarding page 10 out of 10 prompts user for their preferred metric to see most
 import SwiftUI
 
-struct MetricsViewSelection: View {
+struct MetricsSelectionView: View {
     @State private var selectedMetrics: Set<String> = []
 
     let next: () -> Void
@@ -85,9 +85,9 @@ struct MetricsViewSelection: View {
 }
 
 // To preview Onboarding Page 10, for only developer uses
-struct MetricsViewSelection_Previews: PreviewProvider {
+struct MetricsSelectionView_Previews: PreviewProvider {
     static var previews: some View {
-        MetricsViewSelection(
+        MetricsSelectionView(
             next: {},
             back: {},
             step: 9

@@ -1,4 +1,4 @@
-// Onboarding page 7 out of 9 prompts user for their current diet
+// Onboarding page 7 out of 10 prompts user for their current diet
 import SwiftUI
 
 struct EatingHabitSelectionView: View {
