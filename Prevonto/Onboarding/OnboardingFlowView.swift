@@ -34,6 +34,10 @@ struct OnboardingFlowView: View {
             case 8:
                 // 9th onboarding page prompts user for any and all allergies they have
                 SymptomsAllergyInputView(next: { step = 9 }, back: { step = 7 }, step: step)
+                
+            case 9:
+                // 10th onboarding page prompts user for any metrics they want to see on the Dashboard
+                MetricsViewSelection(next: { step = 10 }, back: { step = 8 }, step: step)
 
             default:
                 // After the user goes through the 9 onbaoarding page, they will arrive at the Dashboard page, which is primarily handled by ContentView.swift file.

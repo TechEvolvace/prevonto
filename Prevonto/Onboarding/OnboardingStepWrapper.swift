@@ -11,7 +11,7 @@ struct OnboardingStepWrapper<Content: View>: View {
     private let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
 
-    init(step: Int, totalSteps: Int = 9, title: String, @ViewBuilder content: () -> Content) {
+    init(step: Int, totalSteps: Int = 10, title: String, @ViewBuilder content: () -> Content) {
         self.step = step
         self.totalSteps = totalSteps
         self.title = title
