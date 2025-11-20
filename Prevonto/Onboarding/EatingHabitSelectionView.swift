@@ -45,7 +45,7 @@ struct EatingHabitSelectionView: View {
                                     .frame(width: 26, height: 26)
                                     .aspectRatio(contentMode: .fit)
                                 Text(habit.label)
-                                    .font(.subheadline)
+                                    .font(.headline)
                                     .multilineTextAlignment(.leading)
                             }
                             Spacer()

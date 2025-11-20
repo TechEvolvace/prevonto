@@ -47,7 +47,7 @@ struct OnboardingFlowView: View {
         // Back button navigation
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            if step > 0 && step < 9 {
+            if step > 0 && step < 10 {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Back") {
                         step -= 1

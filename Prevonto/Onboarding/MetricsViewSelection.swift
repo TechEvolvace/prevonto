@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct MetricsViewSelection: View {
-    @State private var selectedMetric: String? = nil
+    @State private var selectedMetrics: Set<String> = []
 
     let next: () -> Void
     let back: () -> Void
@@ -31,11 +31,11 @@ struct MetricsViewSelection: View {
                 ForEach(metrics) { metric in
                     Button(action: {
                         // Handles button selection and deselection
-                        if selectedMetric == metric.label {
+                        if selectedMetrics.contains(metric.label) {
                             // Lets the user deselect their selection
-                            selectedMetric = nil
+                            selectedMetrics.remove(metric.label)
                         } else {
-                            selectedMetric = metric.label
+                            selectedMetrics.insert(metric.label)
                         }
                     }) {
                         HStack {
@@ -43,11 +43,11 @@ struct MetricsViewSelection: View {
                                 Image(metric.iconName)
                                     .resizable()
                                     .renderingMode(.template)
-                                    .foregroundColor(selectedMetric == metric.label ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
+                                    .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
                                     .frame(width: 26, height: 26)
                                     .aspectRatio(contentMode: .fit)
                                 Text(metric.label)
-                                    .font(.subheadline)
+                                    .font(.headline)
                                     .multilineTextAlignment(.leading)
                             }
                             Spacer()
@@ -56,9 +56,9 @@ struct MetricsViewSelection: View {
                         .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(selectedMetric == metric.label ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                                .fill(selectedMetrics.contains(metric.label) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
                         )
-                        .foregroundColor(selectedMetric == metric.label ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
+                        .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
                         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                 }
@@ -67,15 +67,15 @@ struct MetricsViewSelection: View {
             Spacer()
 
             Button {
-                if selectedMetric != nil {
+                if !selectedMetrics.isEmpty {
                     next()
                 }
             } label: {
                 Text("Next")
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .foregroundColor(selectedMetric != nil ? .white : .gray)
-                    .background(selectedMetric != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
+                    .foregroundColor(!selectedMetrics.isEmpty ? .white : .gray)
+                    .background(!selectedMetrics.isEmpty ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
         }
