@@ -27,39 +27,41 @@ struct MetricsViewSelection: View {
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What metric would you like to see most?") {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                ForEach(metrics) { metric in
-                    Button(action: {
-                        // Handles button selection and deselection
-                        if selectedMetrics.contains(metric.label) {
-                            // Lets the user deselect their selection
-                            selectedMetrics.remove(metric.label)
-                        } else {
-                            selectedMetrics.insert(metric.label)
-                        }
-                    }) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Image(metric.iconName)
-                                    .resizable()
-                                    .renderingMode(.template)
-                                    .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
-                                    .frame(width: 26, height: 26)
-                                    .aspectRatio(contentMode: .fit)
-                                Text(metric.label)
-                                    .font(.headline)
-                                    .multilineTextAlignment(.leading)
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
+                    ForEach(metrics) { metric in
+                        Button(action: {
+                            // Handles button selection and deselection
+                            if selectedMetrics.contains(metric.label) {
+                                // Lets the user deselect their selection
+                                selectedMetrics.remove(metric.label)
+                            } else {
+                                selectedMetrics.insert(metric.label)
                             }
-                            Spacer()
+                        }) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Image(metric.iconName)
+                                        .resizable()
+                                        .renderingMode(.template)
+                                        .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
+                                        .frame(width: 26, height: 26)
+                                        .aspectRatio(contentMode: .fit)
+                                    Text(metric.label)
+                                        .font(.headline)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                Spacer()
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(selectedMetrics.contains(metric.label) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                            )
+                            .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
+                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(selectedMetrics.contains(metric.label) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
-                        )
-                        .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
-                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                 }
             }
