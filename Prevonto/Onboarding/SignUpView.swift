@@ -49,6 +49,7 @@ struct SignUpView: View {
                     TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
                     SecureField("Password", text: $password)
                     SecureField("Confirm Password", text: $confirmPassword)
                 }
