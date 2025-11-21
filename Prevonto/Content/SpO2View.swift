@@ -163,7 +163,7 @@ struct SpO2View: View {
 }
 
 struct SegmentedSpO2Gauge: View {
-    var value: Double  // 80 to 100
+    var value: Double  // 0 to 100
     
     // Initializing segment colors for this SpO2 gauge
     var firstSegmentColor = Color(red: 0.427, green: 0.243, blue: 0.058)
@@ -171,26 +171,67 @@ struct SegmentedSpO2Gauge: View {
     var thirdSegmentColor = Color(red: 0.949, green: 0.796, blue: 0.368)
     var fourthSegmentColor = Color.secondaryColor
     
+    // 4 segments evenly spaced at 25%, 50%, 75% with gaps
+    // The gauge goes from 0 to 0.75 (75% of full circle = 270 degrees)
+    // So 25% of 0.75 = 0.1875, 50% of 0.75 = 0.375, 75% of 0.75 = 0.5625
+    private let segmentGap: Double = 0.015  // Gap size between segments
+    private var segment1End: Double { 0.1875 - segmentGap / 2 }  // ~25% of 0.75
+    private var segment2Start: Double { 0.1875 + segmentGap / 2 }
+    private var segment2End: Double { 0.375 - segmentGap / 2 }  // ~50% of 0.75
+    private var segment3Start: Double { 0.375 + segmentGap / 2 }
+    private var segment3End: Double { 0.5625 - segmentGap / 2 }  // ~75% of 0.75
+    private var segment4Start: Double { 0.5625 + segmentGap / 2 }
+    private var segment4End: Double { 0.75 }
+    
+    // Calculate the position on the gauge for the value (0-100 maps to 0-0.75)
+    private var valuePosition: Double {
+        let clampedValue = max(0, min(100, value))  // Clamp value to 0-100 range
+        let normalizedValue = clampedValue / 100.0  // Normalize 0-100 to 0-1
+        return normalizedValue * 0.75  // Map to 0-0.75 range
+    }
+    
     var body: some View {
         ZStack {
-            // Background segments
-            CircleSegment(start: 0.00, end: 0.1875, color: firstSegmentColor.opacity(0.2))
-            CircleSegment(start: 0.1875, end: 0.375, color: secondSegmentColor.opacity(0.2))
-            CircleSegment(start: 0.375, end: 0.5625, color: thirdSegmentColor.opacity(0.2))
-            CircleSegment(start: 0.5625, end: 0.75, color: fourthSegmentColor.opacity(0.2))
+            // Background segments (all 4 segments shown in light opacity)
+            CircleSegment(start: 0.00, end: segment1End, color: firstSegmentColor.opacity(0.2))
+            CircleSegment(start: segment2Start, end: segment2End, color: secondSegmentColor.opacity(0.2))
+            CircleSegment(start: segment3Start, end: segment3End, color: thirdSegmentColor.opacity(0.2))
+            CircleSegment(start: segment4Start, end: segment4End, color: fourthSegmentColor.opacity(0.2))
             
-            // Foreground segments
-            if value > 80 {
-                CircleSegment(start: 0.00, end: min(0.1875, (value - 80) / 20 * 0.75), color: firstSegmentColor)
+            // Foreground segments (filled based on value)
+            // First segment: fill from 0 to either valuePosition or segment1End, whichever is smaller
+            if valuePosition > 0 {
+                let firstSegmentFill = min(segment1End, valuePosition)
+                if firstSegmentFill > 0 {
+                    CircleSegment(start: 0.00, end: firstSegmentFill, color: firstSegmentColor)
+                }
             }
-            if value > 85 {
-                CircleSegment(start: 0.1875, end: min(0.375, (value - 80) / 20 * 0.75), color: secondSegmentColor)
+            // Second segment: only show if valuePosition has passed segment2Start
+            if valuePosition >= segment2Start {
+                let secondSegmentFill = min(segment2End, valuePosition)
+                if secondSegmentFill > segment2Start {
+                    CircleSegment(start: segment2Start, end: secondSegmentFill, color: secondSegmentColor)
+                }
             }
-            if value > 90 {
-                CircleSegment(start: 0.375, end: min(0.5625, (value - 80) / 20 * 0.75), color: thirdSegmentColor)
+            // Third segment: only show if valuePosition has passed segment3Start
+            if valuePosition >= segment3Start {
+                let thirdSegmentFill = min(segment3End, valuePosition)
+                if thirdSegmentFill > segment3Start {
+                    CircleSegment(start: segment3Start, end: thirdSegmentFill, color: thirdSegmentColor)
+                }
             }
-            if value > 95 {
-                CircleSegment(start: 0.5625, end: min(0.75, (value - 80) / 20 * 0.75), color: fourthSegmentColor)
+            // Fourth segment: only show if valuePosition has passed segment4Start
+            if valuePosition >= segment4Start {
+                let fourthSegmentFill = min(segment4End, valuePosition)
+                if fourthSegmentFill > segment4Start {
+                    CircleSegment(start: segment4Start, end: fourthSegmentFill, color: fourthSegmentColor)
+                }
+            }
+            
+            // Circle indicator showing the current SpO2 value position
+            // The indicator is positioned at the end of the filled portion of the gauge
+            if valuePosition >= 0 && valuePosition <= 0.75 {
+                CircleIndicator(position: valuePosition)
             }
             
             // Center text
@@ -218,6 +259,50 @@ struct CircleSegment: View {
             .trim(from: start, to: end)
             .rotation(Angle(degrees: 135))
             .stroke(color, style: StrokeStyle(lineWidth: 20, lineCap: .butt))
+    }
+}
+
+struct CircleIndicator: View {
+    var position: Double  // Position on the circle (0 to 0.75)
+    
+    var body: some View {
+        GeometryReader { geometry in
+            IndicatorPointShape(position: position)
+                .fill(Color.primaryColor)
+        }
+    }
+}
+
+struct IndicatorPointShape: Shape {
+    var position: Double  // Position on the gauge (0 to 0.75)
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius: CGFloat = 110 + 10  // Outer edge of stroke (center: 110, half width: 10)
+        
+        // Convert position (0-0.75) to degrees along the arc (0-270°)
+        let arcProgress = position / 0.75  // 0 to 1
+        let arcDegrees = arcProgress * 270.0  // 0 to 270 degrees
+        
+        let baseStartAngle = 45.0 + 90
+        // Go counterclockwise (opposite to fill) by ADDING arc degrees
+        let finalAngle = baseStartAngle + arcDegrees
+        
+        // Normalize angle to 0-360 range
+        let normalizedAngle = finalAngle.truncatingRemainder(dividingBy: 360.0)
+        let positiveAngle = normalizedAngle < 0 ? normalizedAngle + 360.0 : normalizedAngle
+        
+        // Convert to radians for trigonometric functions
+        let radians = positiveAngle * .pi / 180.0
+        
+        // Calculate x,y coordinates on the circle
+        let x = center.x + radius * cos(radians)
+        let y = center.y + radius * sin(radians)
+        
+        // Draw a filled circle (of 26 x 26) at this point
+        path.addEllipse(in: CGRect(x: x - 13, y: y - 13, width: 26, height: 26))
+        return path
     }
 }
 
