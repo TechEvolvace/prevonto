@@ -1,20 +1,17 @@
-// This is the Sign Up page!
+// This is the Sign In page!
 import SwiftUI
 
-struct SignUpView: View {
+struct SignInView: View {
     @Binding var showSignIn: Bool
     
-    @State private var fullName = ""
     @State private var email = ""
     @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var acceptedTerms = false
-    @State private var navigateToGender = false
+    @State private var navigateToOnboarding = false
 
     @State private var showValidationMessage = false
     @State private var errorMessage = ""
     
-    init(showSignIn: Binding<Bool> = .constant(false)) {
+    init(showSignIn: Binding<Bool> = .constant(true)) {
         _showSignIn = showSignIn
     }
     
@@ -35,7 +32,7 @@ struct SignUpView: View {
         VStack(spacing: 16) {
                 Spacer()
 
-                Text("Let’s get Started")
+                Text("Welcome Back")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
@@ -47,31 +44,19 @@ struct SignUpView: View {
                     .padding(.top, 0)
                     .padding(.bottom, 24)
 
-                // A place for user to enter their credentials to create their new account
-                // User enters their full name, email, and password to create their new account.
-                // User also confirms their password too.
+                // A place for user to enter their credentials to sign in to their account
+                // User enters their email and password to sign in to their account.
                 Group {
-                    TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                     SecureField("Password", text: $password)
-                    SecureField("Confirm Password", text: $confirmPassword)
                 }
                 .padding(.horizontal)
                 .frame(height: 44)
                 .background(Color.white)
                 .overlay(Rectangle().frame(height: 1).padding(.top, 43), alignment: .top)
                 .foregroundColor(.gray)
-
-                // Checkbox that user must check to accept Prevonto's Privacy Policy and Term of Use before proceeding
-                Toggle(isOn: $acceptedTerms) {
-                    Text("By continuing you accept our Privacy Policy and Term of Use")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                }
-                .toggleStyle(CheckboxToggleStyle())
-                .padding(.top, 8)
 
                 // Display Error Message for Invalid Credentials
                 if showValidationMessage {
@@ -82,33 +67,27 @@ struct SignUpView: View {
                         .padding(.horizontal)
                 }
 
-                // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
-                NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToGender) {
+                // After signing in, next page that shows up is controlled by OnboardingFlowView.swift file
+                NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToOnboarding) {
                     EmptyView()
                 }
 
-                // Join button to check all entered credentials are valid before then proceed to the next page!
-                // User clicks on the Join button after entering their credentials to successfully create their new acocunt!
+                // Sign In button to check all entered credentials are valid before then proceed to the next page!
+                // User clicks on the Sign In button after entering their credentials to successfully sign in to their account!
                 Button(action: {
                     if testMode {
-                        navigateToGender = true
+                        navigateToOnboarding = true
                     } else {
-                        if fullName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty {
+                        if email.isEmpty || password.isEmpty {
                             errorMessage = "Please fill in all fields."
-                            showValidationMessage = true
-                        } else if password != confirmPassword {
-                            errorMessage = "Passwords do not match."
-                            showValidationMessage = true
-                        } else if !acceptedTerms {
-                            errorMessage = "Please accept the terms and conditions."
                             showValidationMessage = true
                         } else {
                             showValidationMessage = false
-                            navigateToGender = true
+                            navigateToOnboarding = true
                         }
                     }
                 }) {
-                    Text("Join")
+                    Text("Sign In")
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
@@ -125,17 +104,17 @@ struct SignUpView: View {
                     Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.3))
                 }
 
-                // Link to toggle to Sign In page
+                // Link to toggle to Sign Up page
                 HStack {
-                    Text("Already have an account?")
+                    Text("Don't have an account?")
                         .foregroundColor(.gray)
                         .font(.footnote)
                     Button(action: {
                         withAnimation {
-                            showSignIn = true
+                            showSignIn = false
                         }
                     }) {
-                        Text("Sign In")
+                        Text("Sign Up")
                             .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
                             .font(.footnote)
                             .fontWeight(.semibold)
@@ -148,27 +127,12 @@ struct SignUpView: View {
     }
 }
 
-struct CheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                .resizable()
-                .frame(width: 20, height: 20)
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
-                .onTapGesture {
-                    configuration.isOn.toggle()
-                }
-
-            configuration.label
-        }
-    }
-}
-
-// To preview the Sign Up page, for only developer uses
-struct SignUpView_Previews: PreviewProvider {
+// To preview the Sign In page, for only developer uses
+struct SignInView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            SignUpView()
+            SignInView()
         }
     }
 }
+

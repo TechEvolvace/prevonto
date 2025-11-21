@@ -185,9 +185,9 @@ struct AppIntroView: View {
             arrowProgress = 0.0
             startSubtitleTimer()
         }
-        // Animated page transition to SignUpView page!
+        // Animated page transition to AuthView page (which shows Sign Up or Sign In)!
         .fullScreenCover(isPresented: $showContent) {
-            SignUpView()
+            AuthView()
         }
     }
 
