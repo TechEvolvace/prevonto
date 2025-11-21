@@ -6,7 +6,7 @@ struct SignInView: View {
     
     @State private var email = ""
     @State private var password = ""
-    @State private var navigateToOnboarding = false
+    @State private var navigateToDashboard = false
 
     @State private var showValidationMessage = false
     @State private var errorMessage = ""
@@ -67,23 +67,18 @@ struct SignInView: View {
                         .padding(.horizontal)
                 }
 
-                // After signing in, next page that shows up is controlled by OnboardingFlowView.swift file
-                NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToOnboarding) {
-                    EmptyView()
-                }
 
-                // Sign In button to check all entered credentials are valid before then proceed to the next page!
-                // User clicks on the Sign In button after entering their credentials to successfully sign in to their account!
+                // Sign In button to check all entered credentials are valid before then proceed to the Dashboard!
                 Button(action: {
                     if testMode {
-                        navigateToOnboarding = true
+                        navigateToDashboard = true
                     } else {
                         if email.isEmpty || password.isEmpty {
                             errorMessage = "Please fill in all fields."
                             showValidationMessage = true
                         } else {
                             showValidationMessage = false
-                            navigateToOnboarding = true
+                            navigateToDashboard = true
                         }
                     }
                 }) {
@@ -124,6 +119,10 @@ struct SignInView: View {
                 Spacer()
             }
             .padding()
+            // After signing in, user goes directly to the Dashboard page (ContentView) as a full screen cover
+            .fullScreenCover(isPresented: $navigateToDashboard) {
+                ContentView()
+            }
     }
 }
 
