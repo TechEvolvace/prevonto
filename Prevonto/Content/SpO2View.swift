@@ -165,26 +165,32 @@ struct SpO2View: View {
 struct SegmentedSpO2Gauge: View {
     var value: Double  // 80 to 100
     
+    // Initializing segment colors for this SpO2 gauge
+    var firstSegmentColor = Color(red: 0.427, green: 0.243, blue: 0.058)
+    var secondSegmentColor = Color(red: 0.776, green: 0.525, blue: 0.278)
+    var thirdSegmentColor = Color(red: 0.949, green: 0.796, blue: 0.368)
+    var fourthSegmentColor = Color.secondaryColor
+    
     var body: some View {
         ZStack {
             // Background segments
-            CircleSegment(start: 0.00, end: 0.1875, color: Color.brown.opacity(0.2))
-            CircleSegment(start: 0.1875, end: 0.375, color: Color.orange.opacity(0.2))
-            CircleSegment(start: 0.375, end: 0.5625, color: Color.yellow.opacity(0.2))
-            CircleSegment(start: 0.5625, end: 0.75, color: Color.secondaryColor.opacity(0.2))
+            CircleSegment(start: 0.00, end: 0.1875, color: firstSegmentColor.opacity(0.2))
+            CircleSegment(start: 0.1875, end: 0.375, color: secondSegmentColor.opacity(0.2))
+            CircleSegment(start: 0.375, end: 0.5625, color: thirdSegmentColor.opacity(0.2))
+            CircleSegment(start: 0.5625, end: 0.75, color: fourthSegmentColor.opacity(0.2))
             
             // Foreground segments
             if value > 80 {
-                CircleSegment(start: 0.00, end: min(0.1875, (value - 80) / 20 * 0.75), color: .brown)
+                CircleSegment(start: 0.00, end: min(0.1875, (value - 80) / 20 * 0.75), color: firstSegmentColor)
             }
             if value > 85 {
-                CircleSegment(start: 0.1875, end: min(0.375, (value - 80) / 20 * 0.75), color: .orange)
+                CircleSegment(start: 0.1875, end: min(0.375, (value - 80) / 20 * 0.75), color: secondSegmentColor)
             }
             if value > 90 {
-                CircleSegment(start: 0.375, end: min(0.5625, (value - 80) / 20 * 0.75), color: .yellow)
+                CircleSegment(start: 0.375, end: min(0.5625, (value - 80) / 20 * 0.75), color: thirdSegmentColor)
             }
             if value > 95 {
-                CircleSegment(start: 0.5625, end: min(0.75, (value - 80) / 20 * 0.75), color: .secondaryColor)
+                CircleSegment(start: 0.5625, end: min(0.75, (value - 80) / 20 * 0.75), color: fourthSegmentColor)
             }
             
             // Center text
