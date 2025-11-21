@@ -68,11 +68,13 @@ struct SignInView: View {
                 }
 
 
-                // Sign In button to check all entered credentials are valid before then proceed to the Dashboard!
+                // Join button users click on after entering their credentials to successfully create their new acocunt!
                 Button(action: {
                     if testMode {
+                        // For quicker testing by the developer
                         navigateToDashboard = true
                     } else {
+                        // Check for valid credentials before user signs in
                         if email.isEmpty || password.isEmpty {
                             errorMessage = "Please fill in all fields."
                             showValidationMessage = true

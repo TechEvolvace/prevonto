@@ -82,17 +82,14 @@ struct SignUpView: View {
                         .padding(.horizontal)
                 }
 
-                // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
-                NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToGender) {
-                    EmptyView()
-                }
 
-                // Join button to check all entered credentials are valid before then proceed to the next page!
                 // User clicks on the Join button after entering their credentials to successfully create their new acocunt!
                 Button(action: {
                     if testMode {
+                        // For quicker testing by the developer
                         navigateToGender = true
                     } else {
+                        // Check for valid credentials before user signs up for a new account
                         if fullName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty {
                             errorMessage = "Please fill in all fields."
                             showValidationMessage = true
@@ -145,6 +142,10 @@ struct SignUpView: View {
                 Spacer()
             }
             .padding()
+            // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
+            .navigationDestination(isPresented: $navigateToGender) {
+                OnboardingFlowView()
+            }
     }
 }
 

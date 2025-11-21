@@ -5,7 +5,7 @@ struct AuthView: View {
     @State private var showSignIn = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Group {
                 if showSignIn {
                     SignInView(showSignIn: $showSignIn)
@@ -16,7 +16,6 @@ struct AuthView: View {
                 }
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         .preferredColorScheme(.light)
     }
 }
