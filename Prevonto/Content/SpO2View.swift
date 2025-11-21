@@ -28,7 +28,7 @@ struct SpO2View: View {
             .padding(.horizontal)
             .padding(.top)
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(.white)
         .navigationTitle("SpO2 Full Page")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -54,11 +54,13 @@ struct SpO2View: View {
         Button(title) {
             selectedTab = title
         }
-        .padding()
+        .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
-        .background(selectedTab == title ? Color.secondaryColor : Color.gray.opacity(0.2))
-        .foregroundColor(selectedTab == title ? .white : .black)
+        .background(selectedTab == title ? Color.secondaryColor : .white)
+        .foregroundColor(selectedTab == title ? .white : .gray)
+        .font(.headline)
         .cornerRadius(8)
+        .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
     }
     
     private var calendarSection: some View {
