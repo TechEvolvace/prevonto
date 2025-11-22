@@ -171,19 +171,19 @@ struct SegmentedSpO2Gauge: View {
     var thirdSegmentColor = Color(red: 0.949, green: 0.796, blue: 0.368)
     var fourthSegmentColor = Color.secondaryColor
     
-    // 4 segments evenly spaced at 25%, 50%, 75% with gaps
-    // The gauge goes from 0 to 0.75 (75% of full circle = 270 degrees)
-    // So 25% of 0.75 = 0.1875, 50% of 0.75 = 0.375, 75% of 0.75 = 0.5625
-    private let segmentGap: Double = 0.015  // Gap size between segments
-    private var segment1End: Double { 0.1875 - segmentGap / 2 }  // ~25% of 0.75
-    private var segment2Start: Double { 0.1875 + segmentGap / 2 }
+    // 4 segments evenly spaced at 16%, 50%, 84% with gaps
+    // The gauge goes from 0 to 0.75 (because 75% of full circle = 270 degrees)
+    // So 16% of 0.75 = 0.12, 50% of 0.75 = 0.375, 84% of 0.75 = 0.63
+    private let segmentGap: Double = 0.01  // Gap size between segments
+    private var segment1End: Double { 0.12 - segmentGap / 2 }  // ~25% of 0.75
+    private var segment2Start: Double { 0.12 + segmentGap / 2 }
     private var segment2End: Double { 0.375 - segmentGap / 2 }  // ~50% of 0.75
     private var segment3Start: Double { 0.375 + segmentGap / 2 }
-    private var segment3End: Double { 0.5625 - segmentGap / 2 }  // ~75% of 0.75
-    private var segment4Start: Double { 0.5625 + segmentGap / 2 }
+    private var segment3End: Double { 0.63 - segmentGap / 2 }  // ~75% of 0.75
+    private var segment4Start: Double { 0.63 + segmentGap / 2 }
     private var segment4End: Double { 0.75 }
     
-    // Calculate the position on the gauge for the value (0-100 maps to 0-0.75)
+    // Calculate the position on the gauge for the value
     private var valuePosition: Double {
         let clampedValue = max(0, min(100, value))  // Clamp value to 0-100 range
         let normalizedValue = clampedValue / 100.0  // Normalize 0-100 to 0-1
@@ -258,7 +258,7 @@ struct CircleSegment: View {
         Circle()
             .trim(from: start, to: end)
             .rotation(Angle(degrees: 135))
-            .stroke(color, style: StrokeStyle(lineWidth: 20, lineCap: .butt))
+            .stroke(color, style: StrokeStyle(lineWidth: 14, lineCap: .butt))
     }
 }
 
@@ -267,12 +267,15 @@ struct CircleIndicator: View {
     
     var body: some View {
         GeometryReader { geometry in
+            IndicatorPointShadow(position: position)
+                .fill(Color.white)
             IndicatorPointShape(position: position)
                 .fill(Color.primaryColor)
         }
     }
 }
 
+// Circular indicator point correctly positioned along SpO2 gauge
 struct IndicatorPointShape: Shape {
     var position: Double  // Position on the gauge (0 to 0.75)
     
@@ -285,7 +288,7 @@ struct IndicatorPointShape: Shape {
         let arcProgress = position / 0.75  // 0 to 1
         let arcDegrees = arcProgress * 270.0  // 0 to 270 degrees
         
-        let baseStartAngle = 45.0 + 90
+        let baseStartAngle = 135.0 // Base rotation of SpO2 gauge
         // Go counterclockwise (opposite to fill) by ADDING arc degrees
         let finalAngle = baseStartAngle + arcDegrees
         
@@ -300,8 +303,41 @@ struct IndicatorPointShape: Shape {
         let x = center.x + radius * cos(radians)
         let y = center.y + radius * sin(radians)
         
-        // Draw a filled circle (of 26 x 26) at this point
+        // Draw a filled circle of radius 26 at this point
         path.addEllipse(in: CGRect(x: x - 13, y: y - 13, width: 26, height: 26))
+        return path
+    }
+}
+
+// White shadow for the circular indicator point on SpO2 gauge
+struct IndicatorPointShadow: Shape {
+    // Uses same logic for positioning the white shadow as for the circular indicator point in IndicatorPointShape
+    var position: Double
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius: CGFloat = 110 + 10
+        
+        let arcProgress = position / 0.75
+        let arcDegrees = arcProgress * 270.0
+        
+        let baseStartAngle = 135.0
+        let finalAngle = baseStartAngle + arcDegrees
+        
+        // Normalize angle to 0-360 range
+        let normalizedAngle = finalAngle.truncatingRemainder(dividingBy: 360.0)
+        let positiveAngle = normalizedAngle < 0 ? normalizedAngle + 360.0 : normalizedAngle
+        
+        // Convert to radians for trigonometric functions
+        let radians = positiveAngle * .pi / 180.0
+        
+        // Calculate x,y coordinates on the circle
+        let x = center.x + radius * cos(radians)
+        let y = center.y + radius * sin(radians)
+        
+        // Draw a filled circle of radius 30 at this point
+        path.addEllipse(in: CGRect(x: x - 15, y: y - 15, width: 30, height: 30))
         return path
     }
 }
