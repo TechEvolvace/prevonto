@@ -16,6 +16,27 @@ struct SpO2View: View {
         ("Fri", 93), ("Sat", 92), ("Sun", 94)
     ]
     
+    // Day mode data - 24 hours starting from 12 am (0)
+    let dayTimelineData: [(Int, Double)] = [
+        (0, 95), (1, 94), (2, 93), (3, 94), (4, 95), (5, 96),
+        (6, 95), (7, 94), (8, 95), (9, 96), (10, 95), (11, 94),
+        (12, 95), (13, 96), (14, 95), (15, 94), (16, 95), (17, 96),
+        (18, 95), (19, 94), (20, 95), (21, 96), (22, 95), (23, 94)
+    ]
+    
+    // Helper function to format hour label
+    private func hourLabel(for hour: Int) -> String {
+        if hour == 0 {
+            return "12 am"
+        } else if hour < 12 {
+            return "\(hour) am"
+        } else if hour == 12 {
+            return "12 pm"
+        } else {
+            return "\(hour - 12) pm"
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -59,6 +80,7 @@ struct SpO2View: View {
     private func toggleButton(title: String) -> some View {
         Button(title) {
             selectedTab = title
+            selectedDataIndex = nil // Reset selection when switching tabs
         }
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
@@ -143,68 +165,148 @@ struct SpO2View: View {
                 .font(.headline)
                 .foregroundColor(.primaryColor)
             
-            Chart {
-                ForEach(Array(timelineData.enumerated()), id: \.offset) { index, data in
-                    let (day, value) = data
-                    
-                    // Gradient area fill from line to x-axis
-                    AreaMark(
-                        x: .value("Day", day),
-                        yStart: .value("SpO2", 80),
-                        yEnd: .value("SpO2", value)
-                    )
-                    .interpolationMethod(.monotone)
-                    .foregroundStyle(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
-                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    
-                    LineMark(
-                        x: .value("Day", day),
-                        y: .value("SpO2", value)
-                    )
-                    .foregroundStyle(Color.secondaryColor)
-                    .interpolationMethod(.monotone)
-                    
-                    PointMark(
-                        x: .value("Day", day),
-                        y: .value("SpO2", value)
-                    )
-                    .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
-                    .symbolSize(selectedDataIndex == index ? 100 : 60)
-                    .annotation(position: .top, alignment: .center, spacing: 4) {
-                        if selectedDataIndex == index {
-                            chartTooltip(value: value)
-                        }
-                    }
-                }
-            }
-            .chartYScale(domain: 80...100)  // 🔥 Vertical axis 80 to 100
-            .chartYAxis {
-                AxisMarks(position: .leading)
-            }
-            .frame(height: 200)
-            .chartOverlay { proxy in
-                GeometryReader { geometry in
-                    Rectangle()
-                        .fill(.clear)
-                        .contentShape(Rectangle())
-                        .onTapGesture { location in
-                            handleChartTap(at: location, geometry: geometry)
-                        }
-                }
+            if selectedTab == "Day" {
+                dayChart
+            } else {
+                weekChart
             }
         }
         .padding()
         .background(Color.white)
         .cornerRadius(12)
         .shadow(radius: 1)
+    }
+    
+    private var weekChart: some View {
+        Chart {
+            ForEach(Array(timelineData.enumerated()), id: \.offset) { index, data in
+                let (day, value) = data
+                
+                // Gradient area fill from line to x-axis
+                AreaMark(
+                    x: .value("Day", day),
+                    yStart: .value("SpO2", 80),
+                    yEnd: .value("SpO2", value)
+                )
+                .interpolationMethod(.monotone)
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
+                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                
+                LineMark(
+                    x: .value("Day", day),
+                    y: .value("SpO2", value)
+                )
+                .foregroundStyle(Color.secondaryColor)
+                .interpolationMethod(.monotone)
+                
+                PointMark(
+                    x: .value("Day", day),
+                    y: .value("SpO2", value)
+                )
+                .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                .symbolSize(selectedDataIndex == index ? 100 : 60)
+                .annotation(position: .top, alignment: .center, spacing: 4) {
+                    if selectedDataIndex == index {
+                        chartTooltip(value: value)
+                    }
+                }
+            }
+        }
+        .chartYScale(domain: 80...100)
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .frame(height: 200)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleWeekChartTap(at: location, geometry: geometry)
+                    }
+            }
+        }
+    }
+    
+    private var dayChart: some View {
+        Chart {
+            ForEach(Array(dayTimelineData.enumerated()), id: \.offset) { index, data in
+                let (hour, value) = data
+                
+                // Gradient area fill from line to x-axis
+                AreaMark(
+                    x: .value("Hour", hour),
+                    yStart: .value("SpO2", 80),
+                    yEnd: .value("SpO2", value)
+                )
+                .interpolationMethod(.monotone)
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
+                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                
+                LineMark(
+                    x: .value("Hour", hour),
+                    y: .value("SpO2", value)
+                )
+                .foregroundStyle(Color.secondaryColor)
+                .interpolationMethod(.monotone)
+                
+                PointMark(
+                    x: .value("Hour", hour),
+                    y: .value("SpO2", value)
+                )
+                .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                .symbolSize(selectedDataIndex == index ? 100 : 60)
+                .annotation(position: .top, alignment: .center, spacing: 4) {
+                    if selectedDataIndex == index {
+                        chartTooltip(value: value)
+                    }
+                }
+            }
+        }
+        .chartYScale(domain: 80...100)
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartXAxis {
+            AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
+                if let hour = value.as(Int.self) {
+                    AxisValueLabel {
+                        Text(hourLabel(for: hour))
+                            .font(.system(size: 11))
+                    }
+                    AxisGridLine()
+                }
+            }
+        }
+        .chartXScale(domain: 0...23)
+        .frame(height: 200)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleDayChartTap(at: location, geometry: geometry)
+                    }
+            }
+        }
     }
     
     private func chartTooltip(value: Double) -> some View {
@@ -228,12 +330,29 @@ struct SpO2View: View {
         }
     }
     
-    private func handleChartTap(at location: CGPoint, geometry: GeometryProxy) {
+    private func handleWeekChartTap(at location: CGPoint, geometry: GeometryProxy) {
         let chartWidth = geometry.size.width
         let barWidth = chartWidth / CGFloat(timelineData.count)
         let tappedIndex = Int(location.x / barWidth)
         
         guard tappedIndex >= 0 && tappedIndex < timelineData.count else {
+            selectedDataIndex = nil
+            return
+        }
+        
+        if selectedDataIndex == tappedIndex {
+            selectedDataIndex = nil
+        } else {
+            selectedDataIndex = tappedIndex
+        }
+    }
+    
+    private func handleDayChartTap(at location: CGPoint, geometry: GeometryProxy) {
+        let chartWidth = geometry.size.width
+        let barWidth = chartWidth / 24.0
+        let tappedIndex = Int(location.x / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < dayTimelineData.count else {
             selectedDataIndex = nil
             return
         }
