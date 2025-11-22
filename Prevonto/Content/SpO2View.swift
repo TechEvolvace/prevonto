@@ -167,6 +167,9 @@ struct SpO2View: View {
                 }
             }
             .chartYScale(domain: 80...100)  // 🔥 Vertical axis 80 to 100
+            .chartYAxis {
+                AxisMarks(position: .leading)
+            }
             .frame(height: 200)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
@@ -191,9 +194,6 @@ struct SpO2View: View {
                 Text("\(Int(value))%")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primaryColor)
-                Text("SpO₂")
-                    .font(.system(size: 10))
-                    .foregroundColor(.gray)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
