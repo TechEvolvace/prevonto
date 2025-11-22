@@ -146,6 +146,25 @@ struct SpO2View: View {
             Chart {
                 ForEach(Array(timelineData.enumerated()), id: \.offset) { index, data in
                     let (day, value) = data
+                    
+                    // Gradient area fill from line to x-axis
+                    AreaMark(
+                        x: .value("Day", day),
+                        yStart: .value("SpO2", 80),
+                        yEnd: .value("SpO2", value)
+                    )
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
+                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    
                     LineMark(
                         x: .value("Day", day),
                         y: .value("SpO2", value)
