@@ -63,21 +63,13 @@ struct BloodPressureView: View {
     
     // Sample Blood Pressure data
     @State private var allRecords: [BloodPressureRecord] = [
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 11), systolic: 118, diastolic: 78, pulse: 72),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 12), systolic: 122, diastolic: 82, pulse: 75),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 13), systolic: 120, diastolic: 80, pulse: 70),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 14), systolic: 125, diastolic: 85, pulse: 78),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 15), systolic: 119, diastolic: 79, pulse: 74),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 16), systolic: 128, diastolic: 88, pulse: 96),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 5, day: 17), systolic: 121, diastolic: 81, pulse: 73),
-        // Additional data for different weeks
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 3), systolic: 120, diastolic: 80, pulse: 72),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 4), systolic: 118, diastolic: 78, pulse: 70),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 5), systolic: 122, diastolic: 82, pulse: 74),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 6), systolic: 125, diastolic: 85, pulse: 76),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 7), systolic: 119, diastolic: 79, pulse: 71),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 8), systolic: 123, diastolic: 83, pulse: 96),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 8, day: 9), systolic: 121, diastolic: 81, pulse: 73),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 3), systolic: 120, diastolic: 80, pulse: 72),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 4), systolic: 118, diastolic: 78, pulse: 70),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 5), systolic: 122, diastolic: 82, pulse: 74),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 6), systolic: 125, diastolic: 85, pulse: 76),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 7), systolic: 119, diastolic: 79, pulse: 71),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 8), systolic: 123, diastolic: 83, pulse: 96),
+        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 9), systolic: 121, diastolic: 81, pulse: 73),
     ]
     
     // Chart data for selected week
