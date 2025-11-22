@@ -192,11 +192,11 @@ struct SegmentedSpO2Gauge: View {
     
     var body: some View {
         ZStack {
-            // Background segments (all 4 segments shown in light opacity)
-            CircleSegment(start: 0.00, end: segment1End, color: firstSegmentColor.opacity(0.2))
-            CircleSegment(start: segment2Start, end: segment2End, color: secondSegmentColor.opacity(0.2))
-            CircleSegment(start: segment3Start, end: segment3End, color: thirdSegmentColor.opacity(0.2))
-            CircleSegment(start: segment4Start, end: segment4End, color: fourthSegmentColor.opacity(0.2))
+            // Background colors for the 4 SpO2 gauge segments
+            CircleSegment(start: 0.00, end: segment1End, color: firstSegmentColor)
+            CircleSegment(start: segment2Start, end: segment2End, color: secondSegmentColor)
+            CircleSegment(start: segment3Start, end: segment3End, color: thirdSegmentColor)
+            CircleSegment(start: segment4Start, end: segment4End, color: fourthSegmentColor)
             
             // Foreground segments (filled based on value)
             // First segment: fill from 0 to either valuePosition or segment1End, whichever is smaller
@@ -270,7 +270,7 @@ struct CircleIndicator: View {
             IndicatorPointShadow(position: position)
                 .fill(Color.white)
             IndicatorPointShape(position: position)
-                .fill(Color.primaryColor)
+                .fill(Color.secondaryColor)
         }
     }
 }
