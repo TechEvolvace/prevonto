@@ -8,6 +8,7 @@ struct SpO2View: View {
     @State private var avgSpO2 = 95.0
     @State private var avgHeartRate = 60.0
     @State private var lowestSpO2 = 95.0
+    @State private var selectedDataIndex: Int? = nil
     
     // Obviously hardcoded data right now is used.
     let timelineData: [(String, Double)] = [
@@ -19,10 +20,15 @@ struct SpO2View: View {
         ScrollView {
             VStack(spacing: 20) {
                 header
+                    .onTapGesture { unselectChartData() }
                 toggleTabs
+                    .onTapGesture { unselectChartData() }
                 calendarSection
+                    .onTapGesture { unselectChartData() }
                 gaugeSection
+                    .onTapGesture { unselectChartData() }
                 summarySection
+                    .onTapGesture { unselectChartData() }
                 timelineChart
             }
             .padding(.horizontal)
@@ -137,27 +143,91 @@ struct SpO2View: View {
                 .font(.headline)
                 .foregroundColor(.primaryColor)
             
-            Chart(timelineData, id: \.0) { day, value in
-                LineMark(
-                    x: .value("Day", day),
-                    y: .value("SpO2", value)
-                )
-                .foregroundStyle(Color.secondaryColor)
-                .interpolationMethod(.monotone)
-                
-                PointMark(
-                    x: .value("Day", day),
-                    y: .value("SpO2", value)
-                )
-                .foregroundStyle(Color.secondaryColor)
+            Chart {
+                ForEach(Array(timelineData.enumerated()), id: \.offset) { index, data in
+                    let (day, value) = data
+                    LineMark(
+                        x: .value("Day", day),
+                        y: .value("SpO2", value)
+                    )
+                    .foregroundStyle(Color.secondaryColor)
+                    .interpolationMethod(.monotone)
+                    
+                    PointMark(
+                        x: .value("Day", day),
+                        y: .value("SpO2", value)
+                    )
+                    .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                    .symbolSize(selectedDataIndex == index ? 100 : 60)
+                    .annotation(position: .top, alignment: .center, spacing: 4) {
+                        if selectedDataIndex == index {
+                            chartTooltip(value: value)
+                        }
+                    }
+                }
             }
             .chartYScale(domain: 80...100)  // 🔥 Vertical axis 80 to 100
             .frame(height: 200)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture { location in
+                            handleChartTap(at: location, geometry: geometry)
+                        }
+                }
+            }
         }
         .padding()
         .background(Color.white)
         .cornerRadius(12)
         .shadow(radius: 1)
+    }
+    
+    private func chartTooltip(value: Double) -> some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                Text("\(Int(value))%")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primaryColor)
+                Text("SpO₂")
+                    .font(.system(size: 10))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .cornerRadius(6)
+            .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+            
+            // Pointing triangle
+            SpO2PopoverArrow()
+                .fill(Color.white)
+                .frame(width: 12, height: 6)
+                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+        }
+    }
+    
+    private func handleChartTap(at location: CGPoint, geometry: GeometryProxy) {
+        let chartWidth = geometry.size.width
+        let barWidth = chartWidth / CGFloat(timelineData.count)
+        let tappedIndex = Int(location.x / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < timelineData.count else {
+            selectedDataIndex = nil
+            return
+        }
+        
+        if selectedDataIndex == tappedIndex {
+            selectedDataIndex = nil
+        } else {
+            selectedDataIndex = tappedIndex
+        }
+    }
+    
+    private func unselectChartData() {
+        selectedDataIndex = nil
     }
 
 }
@@ -342,6 +412,18 @@ struct IndicatorPointShadow: Shape {
     }
 }
 
+
+// MARK: - Popover Arrow Shape
+struct SpO2PopoverArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
 
 struct SpO2View_Previews: PreviewProvider {
     static var previews: some View {
