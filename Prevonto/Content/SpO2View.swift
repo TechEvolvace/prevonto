@@ -285,7 +285,7 @@ struct SpO2View: View {
             AxisMarks(position: .leading)
         }
         .chartXAxis {
-            AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
+            AxisMarks(values: [0, 4, 8, 12, 16, 20, 24]) { value in
                 if let hour = value.as(Int.self) {
                     AxisValueLabel {
                         Text(hourLabel(for: hour))
