@@ -2,27 +2,149 @@
 import SwiftUI
 import Charts
 
+// Properties of SpO2 data recorded from users
+struct SpO2Record {
+    let timestamp: Date
+    let spO2Level: Double // in percentage
+}
+
 struct SpO2View: View {
     @State private var selectedTab = "Week"
-    @State private var selectedDay = "Wed 14"
-    @State private var avgSpO2 = 95.0
+    @State private var selectedDate: Date = Date.from(year: 2025, month: 11, day: 14)
     @State private var avgHeartRate = 60.0
-    @State private var lowestSpO2 = 95.0
     @State private var selectedDataIndex: Int? = nil
+    // Week mode start and end date pickers
+    @State private var showingStartDatePicker: Bool = false
+    @State private var showingEndDatePicker: Bool = false
+    @State private var weekStartDate: Date = Date.from(year: 2025, month: 11, day: 14)
+    @State private var weekEndDate: Date = Date.from(year: 2025, month: 11, day: 14)
     
-    // Obviously hardcoded data right now is used.
-    let timelineData: [(String, Double)] = [
-        ("Mon", 94), ("Tue", 95), ("Wed", 96), ("Thu", 95),
-        ("Fri", 93), ("Sat", 92), ("Sun", 94)
+    // Sample SpO2 data for November 2025
+    private let allSpO2Records: [SpO2Record] = [
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 7, minute: 30), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 12, minute: 15), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 18, minute: 45), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 6, minute: 0), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 9, minute: 30), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 12, minute: 0), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 15, minute: 45), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 19, minute: 0), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 7, minute: 45), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 13, minute: 30), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 8, minute: 15), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 14, minute: 0), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 7, minute: 30), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 13, minute: 15), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 8, minute: 0), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 12, minute: 45), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 9, minute: 20), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 15, minute: 10), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 7, minute: 0), spO2Level: 96),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 11, minute: 30), spO2Level: 95)
     ]
     
-    // Day mode data - 24 hours starting from 12 am (0)
-    let dayTimelineData: [(Int, Double)] = [
-        (0, 95), (1, 94), (2, 93), (3, 94), (4, 95), (5, 96),
-        (6, 95), (7, 94), (8, 95), (9, 96), (10, 95), (11, 94),
-        (12, 95), (13, 96), (14, 95), (15, 94), (16, 95), (17, 96),
-        (18, 95), (19, 94), (20, 95), (21, 96), (22, 95), (23, 94)
-    ]
+    // Computed property for average SpO2
+    private var avgSpO2: Double {
+        if selectedTab == "Day" {
+            // Average of SpO2 for the selected day
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: selectedDate)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            let filtered = allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
+            guard !filtered.isEmpty else { return 0 }
+            
+            let sum = filtered.reduce(0.0) { $0 + $1.spO2Level }
+            return sum / Double(filtered.count)
+        } else {
+            // Average of SpO2 for all days within the current selected week
+            let calendar = Calendar.current
+            let startOfWeek = calendar.startOfDay(for: weekStartDate)
+            let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
+            
+            let filtered = allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
+            guard !filtered.isEmpty else { return 0 }
+            
+            let sum = filtered.reduce(0.0) { $0 + $1.spO2Level }
+            return sum / Double(filtered.count)
+        }
+    }
+    
+    // Computed property for lowest SpO2
+    private var computedLowestSpO2: Double {
+        if selectedTab == "Day" {
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: selectedDate)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            let filtered = allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
+            return filtered.map(\.spO2Level).min() ?? 0
+        } else {
+            let calendar = Calendar.current
+            let startOfWeek = calendar.startOfDay(for: weekStartDate)
+            let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
+            
+            let filtered = allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
+            return filtered.map(\.spO2Level).min() ?? 0
+        }
+    }
+    
+    // Week mode chart data
+    private var weekChartData: [(index: Int, label: String, value: Double)] {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.startOfDay(for: weekStartDate)
+        let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
+        
+        let filtered = allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
+        
+        let groupedByDate = Dictionary(grouping: filtered) { record -> Date in
+            calendar.startOfDay(for: record.timestamp)
+        }
+        
+        return (0..<7).map { dayOffset in
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) else {
+                return (index: dayOffset, label: "", value: 0.0)
+            }
+            
+            let weekdayIndex = calendar.component(.weekday, from: currentDate) - 1
+            let label = calendar.shortWeekdaySymbols[weekdayIndex]
+            
+            if let data = groupedByDate[currentDate], !data.isEmpty {
+                // Average SpO2 for the day
+                let avg = data.map(\.spO2Level).reduce(0.0, +) / Double(data.count)
+                return (index: dayOffset, label: label, value: avg)
+            } else {
+                return (index: dayOffset, label: label, value: 0.0)
+            }
+        }
+    }
+    
+    // Day mode chart data
+    private var dayChartData: [(index: Int, hour: Int, value: Double)] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let filtered = allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
+        
+        // Group by hour and average
+        let groupedByHour = Dictionary(grouping: filtered) { record -> Int in
+            calendar.component(.hour, from: record.timestamp)
+        }
+        
+        var result: [(index: Int, hour: Int, value: Double)] = []
+        var indexCounter = 0
+        
+        for hour in 0..<24 {
+            if let data = groupedByHour[hour], !data.isEmpty {
+                let avg = data.map(\.spO2Level).reduce(0.0, +) / Double(data.count)
+                result.append((index: indexCounter, hour: hour, value: avg))
+                indexCounter += 1
+            }
+        }
+        
+        return result
+    }
     
     // Helper function to format hour label
     private func hourLabel(for hour: Int) -> String {
@@ -45,7 +167,6 @@ struct SpO2View: View {
                 toggleTabs
                     .onTapGesture { unselectChartData() }
                 calendarSection
-                    .onTapGesture { unselectChartData() }
                 gaugeSection
                     .onTapGesture { unselectChartData() }
                 summarySection
@@ -58,6 +179,9 @@ struct SpO2View: View {
         .background(.white)
         .navigationTitle("SpO2 Full Page")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            updateWeekDates()
+        }
     }
     
     // MARK: - Subviews
@@ -81,6 +205,9 @@ struct SpO2View: View {
         Button(title) {
             selectedTab = title
             selectedDataIndex = nil // Reset selection when switching tabs
+            if title == "Week" {
+                updateWeekDates()
+            }
         }
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
@@ -92,42 +219,268 @@ struct SpO2View: View {
     }
     
     private var calendarSection: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Button(action: {}) {
-                    Image(systemName: "chevron.left")
-                }
-                Text("May 2025")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                Button(action: {}) {
-                    Image(systemName: "chevron.right")
-                }
-            }
+        VStack(spacing: 12) {
+            // Month navigation buttons
+            monthNavigationButtons
             
-            HStack(spacing: 4) {
-                ForEach(["Mon 12", "Tue 13", "Wed 14", "Thu 15", "Fri 16", "Sat 17", "Sun 18"], id: \.self) { day in
-                    let isSelected = day == selectedDay
-                    VStack(spacing: 4) {
-                        Text(day.prefix(3))
-                            .font(.caption2)
-                        Button(action: {
-                            selectedDay = day
-                            avgSpO2 = Double.random(in: 93...97)
-                            avgHeartRate = Double.random(in: 55...65)
-                            lowestSpO2 = Double.random(in: 90...95)
-                        }) {
-                            Text(day.suffix(2))
-                                .font(.caption)
-                                .frame(width: 32, height: 32)
-                                .background(isSelected ? Color.secondaryColor : Color.gray.opacity(0.2))
-                                .foregroundColor(isSelected ? .white : .black)
-                                .cornerRadius(6)
-                        }
-                    }
-                }
+            // Mode-specific date selectors
+            if selectedTab == "Day" {
+                daySelector
+            } else {
+                weekSelector
             }
         }
+    }
+    
+    private var monthNavigationButtons: some View {
+        HStack {
+            Button(action: {
+                navigateMonth(forward: false)
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryColor)
+            }
+            
+            Spacer()
+            
+            Text(monthYearText)
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(.gray)
+            
+            Spacer()
+            
+            Button(action: {
+                navigateMonth(forward: true)
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryColor)
+            }
+        }
+        .padding(.horizontal, 40)
+        .padding(.vertical, 12)
+    }
+    
+    // MARK: - Day Selector
+    private var daySelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(daysInCurrentMonth, id: \.self) { date in
+                    dayButton(for: date)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    private func dayButton(for date: Date) -> some View {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        // Use 3-letter abbreviated day names (Mon, Tue, etc.)
+        let weekdaySymbol = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1]
+        
+        return Button(action: {
+            selectedDate = date
+            selectedDataIndex = nil
+        }) {
+            VStack(spacing: 4) {
+                Text(weekdaySymbol)
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? .white : .gray)
+                
+                Text("\(day)")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : .primaryColor)
+            }
+            .frame(width: 50, height: 60)
+            .background(isSelected ? Color.secondaryColor : Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var daysInCurrentMonth: [Date] {
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+              let dayRange = calendar.range(of: .day, in: .month, for: selectedDate) else {
+            return []
+        }
+        
+        return dayRange.compactMap { day in
+            calendar.date(bySetting: .day, value: day, of: monthInterval.start)
+        }
+    }
+    
+    // MARK: - Week Selector
+    private var weekSelector: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                weekDateButton(
+                    title: "start date",
+                    date: weekStartDate,
+                    isShowing: showingStartDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingStartDatePicker.toggle()
+                            if showingStartDatePicker {
+                                showingEndDatePicker = false
+                            }
+                        }
+                    }
+                )
+                
+                Text("to")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(.gray)
+                
+                weekDateButton(
+                    title: "end date",
+                    date: weekEndDate,
+                    isShowing: showingEndDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingEndDatePicker.toggle()
+                            if showingEndDatePicker {
+                                showingStartDatePicker = false
+                            }
+                        }
+                    }
+                )
+            }
+            .padding(.horizontal, 16)
+            
+            if showingStartDatePicker {
+                weekDatePickerView(for: $weekStartDate, isStartDate: true)
+            }
+            
+            if showingEndDatePicker {
+                weekDatePickerView(for: $weekEndDate, isStartDate: false)
+            }
+        }
+    }
+    
+    private func dismissStartDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                weekEndDate = newEndDate
+            }
+            showingStartDatePicker = false
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    private func dismissEndDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                weekStartDate = newStartDate
+            }
+            showingEndDatePicker = false
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    private func weekDateButton(title: String, date: Date, isShowing: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "calendar")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                    Text(weekDateFormatter.string(from: date))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primaryColor)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func weekDatePickerView(for binding: Binding<Date>, isStartDate: Bool) -> some View {
+        VStack {
+            DatePicker(
+                "",
+                selection: binding,
+                displayedComponents: .date
+            )
+            .datePickerStyle(GraphicalDatePickerStyle())
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+            .padding(.horizontal, 16)
+        }
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
+        .onChange(of: binding.wrappedValue) { _, newDate in
+            let calendar = Calendar.current
+            if isStartDate {
+                if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
+                    weekEndDate = newEndDate
+                }
+            } else {
+                if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
+                    weekStartDate = newStartDate
+                }
+            }
+            updateSelectedDateFromWeek()
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private var monthYearText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+    
+    private var weekDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }
+    
+    private func navigateMonth(forward: Bool) {
+        let calendar = Calendar.current
+        let value = forward ? 1 : -1
+        
+        if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+            selectedDate = newDate
+            selectedDataIndex = nil
+            
+            if selectedTab == "Week" {
+                updateWeekDates()
+            }
+        }
+    }
+    
+    private func updateWeekDates() {
+        let calendar = Calendar.current
+        if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) {
+            weekStartDate = weekInterval.start
+            weekEndDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
+        }
+    }
+    
+    private func updateSelectedDateFromWeek() {
+        selectedDate = weekStartDate
     }
     
     private var gaugeSection: some View {
@@ -139,7 +492,7 @@ struct SpO2View: View {
         VStack(spacing: 8) {
             Divider()
             HStack {
-                summaryItem(title: "Lowest SpO₂", value: "\(Int(lowestSpO2))%")
+                summaryItem(title: "Lowest SpO₂", value: "\(Int(computedLowestSpO2))%")
                 summaryItem(title: "Avg Heart Rate", value: "\(Int(avgHeartRate)) bpm")
             }
             Divider()
@@ -179,43 +532,55 @@ struct SpO2View: View {
     
     private var weekChart: some View {
         Chart {
-            ForEach(Array(timelineData.enumerated()), id: \.offset) { index, data in
-                let (day, value) = data
-                
-                // Gradient area fill from line to x-axis
-                AreaMark(
-                    x: .value("Day", day),
-                    yStart: .value("SpO2", 80),
-                    yEnd: .value("SpO2", value)
-                )
-                .interpolationMethod(.monotone)
-                .foregroundStyle(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
-                            Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                
-                LineMark(
-                    x: .value("Day", day),
-                    y: .value("SpO2", value)
-                )
-                .foregroundStyle(Color.secondaryColor)
-                .interpolationMethod(.monotone)
-                
+            // Always show placeholder points to ensure x-axis is visible even with no data
+            ForEach(0..<7, id: \.self) { index in
                 PointMark(
-                    x: .value("Day", day),
-                    y: .value("SpO2", value)
+                    x: .value("Day", index),
+                    y: .value("SpO2", 0)
                 )
-                .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
-                .symbolSize(selectedDataIndex == index ? 100 : 60)
-                .annotation(position: .top, alignment: .center, spacing: 4) {
-                    if selectedDataIndex == index {
-                        chartTooltip(value: value)
+                .foregroundStyle(.clear)
+            }
+            
+            ForEach(weekChartData, id: \.index) { data in
+                let isSelected = selectedDataIndex == data.index
+                
+                // Only show data if value > 0 (has data)
+                if data.value > 0 {
+                    // Gradient area fill from line to x-axis
+                    AreaMark(
+                        x: .value("Day", data.index),
+                        yStart: .value("SpO2", 80),
+                        yEnd: .value("SpO2", data.value)
+                    )
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.3),
+                                Color(red: 147/255, green: 173/255, blue: 140/255).opacity(0.05)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    
+                    LineMark(
+                        x: .value("Day", data.index),
+                        y: .value("SpO2", data.value)
+                    )
+                    .foregroundStyle(Color.secondaryColor)
+                    .interpolationMethod(.monotone)
+                    
+                    PointMark(
+                        x: .value("Day", data.index),
+                        y: .value("SpO2", data.value)
+                    )
+                    .foregroundStyle(isSelected ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                    .symbolSize(isSelected ? 100 : 60)
+                    .annotation(position: .top, alignment: .center, spacing: 4) {
+                        if isSelected {
+                            chartTooltip(value: data.value)
+                        }
                     }
                 }
             }
@@ -223,6 +588,17 @@ struct SpO2View: View {
         .chartYScale(domain: 80...100)
         .chartYAxis {
             AxisMarks(position: .leading)
+        }
+        .chartXAxis {
+            AxisMarks(values: [0, 1, 2, 3, 4, 5, 6]) { value in
+                if let idx = value.as(Int.self), idx >= 0, idx < weekChartData.count {
+                    AxisValueLabel {
+                        Text(weekChartData[idx].label)
+                            .font(.system(size: 11))
+                    }
+                    AxisGridLine()
+                }
+            }
         }
         .frame(height: 200)
         .chartOverlay { proxy in
@@ -239,14 +615,23 @@ struct SpO2View: View {
     
     private var dayChart: some View {
         Chart {
-            ForEach(Array(dayTimelineData.enumerated()), id: \.offset) { index, data in
-                let (hour, value) = data
+            // Always show placeholder points to ensure x-axis is visible even with no data
+            ForEach([0, 6, 12, 18], id: \.self) { hour in
+                PointMark(
+                    x: .value("Hour", hour),
+                    y: .value("SpO2", 0)
+                )
+                .foregroundStyle(.clear)
+            }
+            
+            ForEach(dayChartData, id: \.index) { data in
+                let isSelected = selectedDataIndex == data.index
                 
                 // Gradient area fill from line to x-axis
                 AreaMark(
-                    x: .value("Hour", hour),
+                    x: .value("Hour", data.hour),
                     yStart: .value("SpO2", 80),
-                    yEnd: .value("SpO2", value)
+                    yEnd: .value("SpO2", data.value)
                 )
                 .interpolationMethod(.monotone)
                 .foregroundStyle(
@@ -261,21 +646,21 @@ struct SpO2View: View {
                 )
                 
                 LineMark(
-                    x: .value("Hour", hour),
-                    y: .value("SpO2", value)
+                    x: .value("Hour", data.hour),
+                    y: .value("SpO2", data.value)
                 )
                 .foregroundStyle(Color.secondaryColor)
                 .interpolationMethod(.monotone)
                 
                 PointMark(
-                    x: .value("Hour", hour),
-                    y: .value("SpO2", value)
+                    x: .value("Hour", data.hour),
+                    y: .value("SpO2", data.value)
                 )
-                .foregroundStyle(selectedDataIndex == index ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
-                .symbolSize(selectedDataIndex == index ? 100 : 60)
+                .foregroundStyle(isSelected ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                .symbolSize(isSelected ? 100 : 60)
                 .annotation(position: .top, alignment: .center, spacing: 4) {
-                    if selectedDataIndex == index {
-                        chartTooltip(value: value)
+                    if isSelected {
+                        chartTooltip(value: data.value)
                     }
                 }
             }
@@ -303,7 +688,7 @@ struct SpO2View: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        handleDayChartTap(at: location, geometry: geometry)
+                        handleDayChartTap(at: location, proxy: proxy, geometry: geometry)
                     }
             }
         }
@@ -332,35 +717,54 @@ struct SpO2View: View {
     
     private func handleWeekChartTap(at location: CGPoint, geometry: GeometryProxy) {
         let chartWidth = geometry.size.width
-        let barWidth = chartWidth / CGFloat(timelineData.count)
+        let dataCount = CGFloat(weekChartData.count)
+        let barWidth = chartWidth / dataCount
         let tappedIndex = Int(location.x / barWidth)
         
-        guard tappedIndex >= 0 && tappedIndex < timelineData.count else {
+        guard tappedIndex >= 0 && tappedIndex < weekChartData.count else {
             selectedDataIndex = nil
             return
         }
         
-        if selectedDataIndex == tappedIndex {
-            selectedDataIndex = nil
+        // Only allow selection if there's data for that day
+        if weekChartData[tappedIndex].value > 0 {
+            if selectedDataIndex == tappedIndex {
+                selectedDataIndex = nil
+            } else {
+                selectedDataIndex = tappedIndex
+            }
         } else {
-            selectedDataIndex = tappedIndex
+            selectedDataIndex = nil
         }
     }
     
-    private func handleDayChartTap(at location: CGPoint, geometry: GeometryProxy) {
-        let chartWidth = geometry.size.width
-        let barWidth = chartWidth / 24.0
-        let tappedIndex = Int(location.x / barWidth)
+    private func handleDayChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        guard !dayChartData.isEmpty else { return }
         
-        guard tappedIndex >= 0 && tappedIndex < dayTimelineData.count else {
-            selectedDataIndex = nil
-            return
+        let xPosition = location.x
+        
+        // Find closest data point
+        var closestIndex: Int? = nil
+        var closestDistance: CGFloat = .infinity
+        
+        for data in dayChartData {
+            if let xPos = proxy.position(forX: data.hour) {
+                let distance = abs(xPos - xPosition)
+                if distance < closestDistance && distance < 30 {
+                    closestDistance = distance
+                    closestIndex = data.index
+                }
+            }
         }
         
-        if selectedDataIndex == tappedIndex {
-            selectedDataIndex = nil
+        if let index = closestIndex {
+            if selectedDataIndex == index {
+                selectedDataIndex = nil
+            } else {
+                selectedDataIndex = index
+            }
         } else {
-            selectedDataIndex = tappedIndex
+            selectedDataIndex = nil
         }
     }
     
