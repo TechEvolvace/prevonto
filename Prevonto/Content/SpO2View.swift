@@ -515,8 +515,9 @@ struct SpO2View: View {
     private var timelineChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("SpO₂ Timeline")
-                .font(.headline)
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.primaryColor)
+                .padding(.vertical, 8)
             
             if selectedTab == "Day" {
                 dayChart
@@ -524,6 +525,7 @@ struct SpO2View: View {
                 weekChart
             }
         }
+        // Added the white card the chart is on
         .padding()
         .background(Color.white)
         .cornerRadius(12)
@@ -587,7 +589,10 @@ struct SpO2View: View {
         }
         .chartYScale(domain: 0...100)
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) { value in
+                AxisValueLabel()
+                AxisGridLine()
+            }
         }
         .chartXAxis {
             AxisMarks(values: [0, 1, 2, 3, 4, 5, 6]) { value in
