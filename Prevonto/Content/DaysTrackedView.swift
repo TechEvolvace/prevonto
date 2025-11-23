@@ -10,34 +10,62 @@ struct DaysTrackedView: View {
     @State private var selectedPeriod: Period = .month
     @State private var selectedDate = Date()
     
-    // Sample tracked days (for the calendar) - using actual dates
-    // These are sample dates that should be replaced with actual tracked dates from your data source
-    // This is a computed property that returns tracked days for any month being viewed
-    // Only includes dates up to today (no future dates)
-    private var trackedDays: Set<Date> {
+    // Sample metric tracking data - maps dates to sets of metrics tracked on that date
+    // Developer Notes: In a real implementation, this would query your data repository (i.e. a Prevonto backend API)
+    // Format: [Date: Set<MetricName>]
+    private var metricTrackingData: [Date: Set<String>] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let viewedMonth = calendar.component(.month, from: selectedDate)
-        let viewedYear = calendar.component(.year, from: selectedDate)
         
-        // Sample tracked days in the viewed month
-        // In a real implementation, this would query your data repository
-        let allSampleDays = [
-            Date.from(year: 2025, month: 10, day: 12),
-            Date.from(year: 2025, month: 10, day: 15),
-            Date.from(year: 2025, month: 11, day: 16),
-            Date.from(year: 2025, month: 11, day: 17),
-            Date.from(year: 2025, month: 11, day: 18),
-            Date.from(year: 2025, month: 11, day: 19),
-            Date.from(year: 2025, month: 11, day: 24),
-            Date.from(year: 2025, month: 11, day: 25)
+        // Sample data - dates with metrics tracked
+        // Developer Notes: In in a real implementation, this would queried from your data repository (i.e. a Prevonto backend API)
+        let sampleData: [Date: Set<String>] = [
+            Date.from(year: 2025, month: 10, day: 12): ["BP", "Mood"],
+            Date.from(year: 2025, month: 10, day: 15): ["BP"],
+            Date.from(year: 2025, month: 11, day: 16): ["BP", "Mood", "Weight"],
+            Date.from(year: 2025, month: 11, day: 17): ["BP", "Mood"],
+            Date.from(year: 2025, month: 11, day: 18): ["Mood", "Weight"],
+            Date.from(year: 2025, month: 11, day: 19): ["BP", "Mood"],
+            Date.from(year: 2025, month: 11, day: 24): ["BP"],
+            Date.from(year: 2025, month: 11, day: 25): ["BP", "Mood", "Heart Rate"]
         ]
         
-        // Filter out future dates - only include dates that are today or in the past
-        return Set(allSampleDays.filter { date in
-            let dateStartOfDay = calendar.startOfDay(for: date)
-            return dateStartOfDay <= today
+        // Filter out future dates
+        return Dictionary(uniqueKeysWithValues: sampleData.filter { date, _ in
+            calendar.startOfDay(for: date) <= today
         })
+    }
+    
+    // Get all tracked days that have at least one metric tracked
+    private var trackedDays: Set<Date> {
+        Set(metricTrackingData.keys)
+    }
+    
+    // Get the total number of unique days tracked across all time (will be the same for in Week and in Month mode)
+    private var totalDaysTracked: Int {
+        trackedDays.count
+    }
+    
+    // Calculate which metric(s) have the most tracked days
+    private var mostTrackedMetrics: String {
+        // Count days tracked per metric
+        var metricDayCounts: [String: Int] = [:]
+        
+        for (_, metrics) in metricTrackingData {
+            for metric in metrics {
+                metricDayCounts[metric, default: 0] += 1
+            }
+        }
+        
+        // Find the maximum count
+        guard let maxCount = metricDayCounts.values.max(), maxCount > 0 else {
+            return "---"
+        }
+        
+        // Find all metrics with the maximum count
+        let topMetrics = metricDayCounts.filter { $0.value == maxCount }.keys.sorted()
+        
+        return topMetrics.joined(separator: ", ")
     }
     
     private var today: Date {
@@ -64,14 +92,14 @@ struct DaysTrackedView: View {
                 // Main Box
                 VStack(spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("9")
+                        Text("\(totalDaysTracked)")
                             .font(.system(size: 48, weight: .bold))
                             .foregroundColor(Color.secondaryGreen)
                         Text("days")
                             .font(.system(size: 36, weight: .semibold))
                             .foregroundColor(.gray)
                     }
-                    Text("Most tracked: BP, Mood")
+                    Text("Most tracked: \(mostTrackedMetrics)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.gray)
                 }
