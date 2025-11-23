@@ -53,23 +53,23 @@ struct DaysTrackedView: View {
                 .padding(.horizontal, 24)
 
                 // Period Picker
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     ForEach(Period.allCases, id: \.self) { period in
                         Button {
                             selectedPeriod = period
                         } label: {
                             Text(period.rawValue)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.headline)
                                 .foregroundColor(selectedPeriod == period ? .white : .gray)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 20)
+                                .padding(.vertical, 5)
+                                .frame(maxWidth: .infinity)
                                 .background(selectedPeriod == period ? Color.secondaryGreen : Color.white)
                                 .cornerRadius(8)
-                                .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
+                                .shadow(color: selectedPeriod == period ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
                         }
                     }
                 }
-//                .padding(.horizontal)
+                .padding(.horizontal, 24)
 
                 // Calendar
                 calendarView
