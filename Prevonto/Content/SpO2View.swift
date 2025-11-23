@@ -549,7 +549,7 @@ struct SpO2View: View {
                     // Gradient area fill from line to x-axis
                     AreaMark(
                         x: .value("Day", data.index),
-                        yStart: .value("SpO2", 80),
+                        yStart: .value("SpO2", 0),
                         yEnd: .value("SpO2", data.value)
                     )
                     .interpolationMethod(.monotone)
@@ -585,7 +585,7 @@ struct SpO2View: View {
                 }
             }
         }
-        .chartYScale(domain: 80...100)
+        .chartYScale(domain: 0...100)
         .chartYAxis {
             AxisMarks(position: .leading)
         }
