@@ -18,11 +18,11 @@ struct DaysTrackedView: View {
         NavigationStack {
             VStack(spacing: 24) {
                 // Title
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Days tracked\ncounter")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                        .foregroundColor(.proPrimary)
+                        .foregroundColor(Color.primaryGreen)
                     Text("Keep a tab on how frequently you track your metrics on the app.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
@@ -36,20 +36,20 @@ struct DaysTrackedView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("9")
                             .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(.proPrimary)
+                            .foregroundColor(Color.secondaryGreen)
                         Text("days")
-                            .font(.title2)
+                            .font(.system(size: 36, weight: .semibold))
                             .foregroundColor(.gray)
                     }
                     Text("Most tracked: BP, Mood")
-                        .font(.caption)
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.gray)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
                 .background(Color.white)
                 .cornerRadius(12)
-                .shadow(color: .gray.opacity(0.1), radius: 6)
+                .shadow(color: .gray.opacity(0.2), radius: 6)
                 .padding(.horizontal, 24)
 
                 // Period Picker
@@ -63,20 +63,20 @@ struct DaysTrackedView: View {
                                 .foregroundColor(selectedPeriod == period ? .white : .gray)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 20)
-                                .background(selectedPeriod == period ? Color.proPrimary : Color.white)
+                                .background(selectedPeriod == period ? Color.secondaryGreen : Color.white)
                                 .cornerRadius(8)
                                 .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+//                .padding(.horizontal)
 
                 // Calendar
                 calendarView
                 
                 Spacer(minLength: 50)
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(.white)
         }
     }
 
@@ -118,7 +118,7 @@ struct DaysTrackedView: View {
                             ZStack {
                                 if trackedDays.contains(day) {
                                     Circle()
-                                        .fill(Color.proPrimary)
+                                        .fill(Color.completedGreen)
                                         .frame(width: 32, height: 32)
                                 } else if day == today {
                                     Circle()
@@ -147,7 +147,10 @@ struct DaysTrackedView: View {
 
 // MARK: - Color Extension
 private extension Color {
-    static let proPrimary = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+    // Color to mark days tracked, same as primaryGreen
+    static let completedGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
 }
 
 struct DaysTrackedView_Previews: PreviewProvider {
