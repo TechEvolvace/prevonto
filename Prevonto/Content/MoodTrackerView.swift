@@ -55,7 +55,12 @@ struct MoodEntryCard: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.4).ignoresSafeArea()
+            // Enable to exit out the popup by touching anywhere outside the popup
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    show = false
+                }
 
             VStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 8){
@@ -70,7 +75,6 @@ struct MoodEntryCard: View {
                         // Clear button exits out the popup
                         Button("Clear") {
                             selectedMood = .neutral
-                            show = false
                         }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
@@ -145,7 +149,12 @@ struct EnergyEntryCard: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.4).ignoresSafeArea()
+            // Enable to exit out the popup by touching anywhere outside the popup
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    show = false
+                }
 
             VStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 8){
@@ -160,7 +169,6 @@ struct EnergyEntryCard: View {
                         // Clear button exits out the popup
                         Button("Clear") {
                             selectedEnergy = 7
-                            show = false
                         }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
@@ -201,7 +209,7 @@ struct EnergyEntryCard: View {
                 .frame(height: 300)
 
                 Text("\(selectedEnergy)/10")
-                    .font(.headline)
+                    .font(.system(size: 24, weight: .medium))
 
                 // Save button when clicked will log a new recorded energy level for today
                 Button("Save") {
