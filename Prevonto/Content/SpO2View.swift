@@ -209,11 +209,11 @@ struct SpO2View: View {
                 updateWeekDates()
             }
         }
+        .font(.headline)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
         .background(selectedTab == title ? Color.secondaryColor : .white)
         .foregroundColor(selectedTab == title ? .white : .gray)
-        .font(.headline)
         .cornerRadius(8)
         .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
     }

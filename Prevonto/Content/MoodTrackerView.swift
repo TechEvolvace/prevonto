@@ -37,6 +37,7 @@ enum MoodType: String, CaseIterable {
     }
 }
 
+// Mood Entry Card - the first part of the popover that shows up when the user clicks on the Log energy levels button
 struct MoodEntryCard: View {
     @Binding var show: Bool
     var onNext: (MoodType) -> Void
@@ -79,6 +80,7 @@ struct MoodEntryCard: View {
                 Text("I'm feeling \(selectedMood.rawValue.lowercased()).")
                     .font(.subheadline)
 
+                // Clicking on the Next button here takes the user to the second part of the popover: the Energy Entry Card
                 Button("Next") {
                     onNext(selectedMood)
                     show = false
@@ -97,6 +99,7 @@ struct MoodEntryCard: View {
     }
 }
 
+// Energy Entry Card - the second part of the popover
 struct EnergyEntryCard: View {
     @Binding var show: Bool
     var onSave: (Int) -> Void
@@ -265,6 +268,7 @@ struct MoodTrackerView: View {
         .shadow(radius: 1)
     }
 
+    // Week and Month toggle buttons on Mood Tracker page
     private var toggleTabs: some View {
         HStack(spacing: 8) {
             toggleButton("Week")
@@ -276,11 +280,13 @@ struct MoodTrackerView: View {
         Button(title) {
             selectedTab = title
         }
+        .font(.headline)
+        .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(selectedTab == title ? Color.secondaryColor : Color.gray.opacity(0.2))
-        .foregroundColor(selectedTab == title ? .white : .black)
+        .background(selectedTab == title ? Color.secondaryColor : Color.white)
+        .foregroundColor(selectedTab == title ? .white : .gray)
         .cornerRadius(8)
+        .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
     }
 
     private var calendarSection: some View {
