@@ -37,50 +37,86 @@ enum MoodType: String, CaseIterable {
     }
 }
 
-// Mood Entry Card - the first part of the popover that shows up when the user clicks on the Log energy levels button
+// Mood Entry Card - the first part of the popup that shows up when the user clicks on the Log energy levels button
 struct MoodEntryCard: View {
     @Binding var show: Bool
     var onNext: (MoodType) -> Void
     @State private var selectedMood = MoodType.neutral
+
+    private func emotionIconName(for mood: MoodType) -> String {
+        switch mood {
+        case .verySad: return "Emotion depressed"
+        case .sad: return "Emotion sad"
+        case .neutral: return "Emotion neutral"
+        case .happy: return "Emotion happy"
+        case .veryHappy: return "Emotion overjoyed"
+        }
+    }
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.4).ignoresSafeArea()
 
             VStack(spacing: 20) {
-                HStack {
-                    Text(Date(), style: .date)
-                        .font(.footnote)
+                VStack(alignment: .leading, spacing: 8){
+                    HStack {
+                        // Date
+                        Text(Date(), style: .date)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        // Clear button
+                        Button("Clear") {
+                            selectedMood = .neutral
+                        }
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
-                    Spacer()
-                    Button("Clear") {
-                        selectedMood = .neutral
                     }
-                    .font(.footnote)
-                    .foregroundColor(.gray)
+                    
+                    // Horizontal progress bar for popup
+                    ProgressView(value: 0.5)
+                        .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
+
+                    Text("1 of 2")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.gray)
+                        .padding(.bottom, 4)
+
+                    Text("How are you feeling \ntoday?")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
+                .padding()
 
-                ProgressView(value: 0.5)
-                    .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
-
-                Text("1 of 2")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-
-                Text("How are you feeling today?")
-                    .font(.headline)
-
-                Picker("", selection: $selectedMood) {
-                    ForEach(MoodType.allCases, id: \.self) { mood in
-                        Text(mood.icon).tag(mood)
+                // Vertical selection of emotion icon buttons
+                VStack(spacing: 16) {
+                    ForEach(Array(MoodType.allCases.enumerated()), id: \.element) { index, mood in
+                        Button(action: {
+                            selectedMood = mood
+                        }) {
+                            let isNeutral = mood == .neutral
+                            let isSelected = selectedMood == mood
+                            let baseIconSize: CGFloat = isSelected ? 80 : 60
+                            let iconName = emotionIconName(for: mood)
+                            
+                            Image(iconName)
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(isSelected ? Color.secondaryColor : .gray)
+                                .aspectRatio(contentMode: .fit)
+                                .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
+                                .frame(width: baseIconSize, height: baseIconSize)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
-                .pickerStyle(.wheel)
 
                 Text("I'm feeling \(selectedMood.rawValue.lowercased()).")
-                    .font(.subheadline)
+                    .font(.system(size: 24, weight: .medium))
 
-                // Clicking on the Next button here takes the user to the second part of the popover: the Energy Entry Card
+                // Clicking on the Next button here takes the user to the second part of the popup: the Energy Entry Card
                 Button("Next") {
                     onNext(selectedMood)
                     show = false
@@ -88,8 +124,9 @@ struct MoodEntryCard: View {
                 .padding()
                 .frame(maxWidth: .infinity)
                 .background(Color.primaryColor)
+                .font(.headline)
                 .foregroundColor(.white)
-                .cornerRadius(10)
+                .cornerRadius(16)
             }
             .padding()
             .background(Color.white)
@@ -99,7 +136,7 @@ struct MoodEntryCard: View {
     }
 }
 
-// Energy Entry Card - the second part of the popover
+// Energy Entry Card - the second part of the popup
 struct EnergyEntryCard: View {
     @Binding var show: Bool
     var onSave: (Int) -> Void
@@ -110,29 +147,39 @@ struct EnergyEntryCard: View {
             Color.black.opacity(0.4).ignoresSafeArea()
 
             VStack(spacing: 20) {
-                HStack {
-                    Text(Date(), style: .date)
-                        .font(.footnote)
+                VStack(alignment: .leading, spacing: 8){
+                    HStack {
+                        // Date
+                        Text(Date(), style: .date)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        // Clear button
+                        Button("Clear") {
+                            selectedEnergy = 7
+                        }
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
-                    Spacer()
-                    Button("Clear") {
-                        selectedEnergy = 7
                     }
-                    .font(.footnote)
-                    .foregroundColor(.gray)
+                    
+                    // Horizontal progress bar for popup
+                    ProgressView(value: 1.0)
+                        .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
+
+                    Text("2 of 2")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.gray)
+                        .padding(.bottom, 4)
+
+                    Text("What would you rate \nyour energy levels?")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
+                .padding()
 
-                ProgressView(value: 1.0)
-                    .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
-
-                Text("2 of 2")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-
-                Text("What would you rate your energy levels?")
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-
+                // Scrollable, vertical selection of energy levels from 1 through 10
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
                         ForEach(1...10, id: \.self) { val in
@@ -154,6 +201,7 @@ struct EnergyEntryCard: View {
                 Text("\(selectedEnergy)/10")
                     .font(.headline)
 
+                // Save button when clicked will log a new recorded energy level for today
                 Button("Save") {
                     onSave(selectedEnergy)
                     show = false
