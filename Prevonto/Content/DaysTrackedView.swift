@@ -153,7 +153,7 @@ struct DaysTrackedView: View {
                 Spacer()
                 
                 Text(periodHeaderText)
-                    .font(.subheadline)
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.gray)
                 
                 Spacer()
@@ -308,10 +308,11 @@ struct DaysTrackedView: View {
             Text("\(day)")
                 .font(.subheadline)
                 .foregroundColor(
-                    isTracked || isToday ? .white : (isCurrentMonth ? .primary : .gray.opacity(0.5))
+                    isTracked || isToday ? .white : (isCurrentMonth ? .primary : .clear)
                 )
         }
         .frame(maxWidth: .infinity)
+        .padding(.bottom, 4)
     }
     
     // Helper Properties and Functions
