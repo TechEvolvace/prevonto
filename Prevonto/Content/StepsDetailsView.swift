@@ -52,7 +52,10 @@ struct StepsDetailsView: View {
             refreshForTimeFrame()
         }
         .onChange(of: selectedTimeFrame) { _, _ in
-            selectedBarIndex = nil
+            // Animate spacer height change when switching time frames (dismisses any active popover)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
             refreshForTimeFrame()
         }
     }
@@ -137,13 +140,16 @@ struct StepsDetailsView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Chart Card with title inside
             VStack(alignment: .leading, spacing: 0) {
+                // Chart title
                 Text("Steps Tracker")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(.proPrimary)
                 
-                // Space for popover to appear without overlapping title
-                Spacer().frame(height: 60)
+                // Dynamically adjust height of empty space for popover to appear without overlapping any text
+                Spacer()
+                    .frame(height: selectedBarIndex != nil ? 60 : 15)
+                    .animation(.easeInOut(duration: 0.3), value: selectedBarIndex)
                 
                 // Chart with integrated popover
                 stepsChart
@@ -259,7 +265,10 @@ struct StepsDetailsView: View {
         let relativeX = location.x - plotArea.origin.x
         
         guard relativeX >= 0 && relativeX <= plotArea.width else {
-            selectedBarIndex = nil
+            // Animate spacer height change when dismissing popover by tapping outside chart
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
             return
         }
         
@@ -271,14 +280,20 @@ struct StepsDetailsView: View {
         let tappedIndex = Int(relativeX / barWidth)
         
         guard tappedIndex >= 0 && tappedIndex < currentData.count else {
-            selectedBarIndex = nil
+            // Animate spacer height change when dismissing popover for invalid tap index
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
             return
         }
         
-        if selectedBarIndex == tappedIndex {
-            selectedBarIndex = nil
-        } else {
-            selectedBarIndex = tappedIndex
+        // Animate spacer height change when showing/dismissing popover on bar tap
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if selectedBarIndex == tappedIndex {
+                selectedBarIndex = nil
+            } else {
+                selectedBarIndex = tappedIndex
+            }
         }
     }
     
