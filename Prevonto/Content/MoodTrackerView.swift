@@ -67,9 +67,10 @@ struct MoodEntryCard: View {
                         
                         Spacer()
                         
-                        // Clear button
+                        // Clear button exits out the popup
                         Button("Clear") {
                             selectedMood = .neutral
+                            show = false
                         }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
@@ -156,9 +157,10 @@ struct EnergyEntryCard: View {
                         
                         Spacer()
                         
-                        // Clear button
+                        // Clear button exits out the popup
                         Button("Clear") {
                             selectedEnergy = 7
+                            show = false
                         }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.gray)
