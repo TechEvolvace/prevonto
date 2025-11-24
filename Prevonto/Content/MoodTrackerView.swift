@@ -196,7 +196,7 @@ struct MoodTrackerView: View {
                 }
                 .padding()
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color.white)
             .navigationTitle("Mood Tracker")
             .navigationBarTitleDisplayMode(.inline)
 
@@ -220,18 +220,17 @@ struct MoodTrackerView: View {
 
     private var header: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Mood tracker")
-                    .font(.title2)
+                    .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(.primaryColor)
                 Text("Track your mood and energy levels throughout the week to identify patterns.")
-                    .font(.footnote)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundColor(.gray)
             }
             Spacer()
-            Image(systemName: "xmark")
-                .foregroundColor(.gray)
         }
     }
 
@@ -240,10 +239,11 @@ struct MoodTrackerView: View {
             showMoodEntry = true
         }) {
             Text("Log energy levels")
-                .foregroundColor(.white)
+                .font(.system(size: 18))
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
                 .padding()
+                .foregroundColor(.white)
                 .background(Color.primaryColor)
                 .cornerRadius(12)
         }
