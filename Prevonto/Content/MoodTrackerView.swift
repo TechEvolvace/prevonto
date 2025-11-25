@@ -490,21 +490,26 @@ struct MoodTrackerView: View {
     }
 
     private var insightSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Insight")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Insights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
                 .foregroundColor(.primaryColor)
-
-            HStack(alignment: .top) {
-                Circle()
-                    .fill(Color.secondaryColor.opacity(0.2))
-                    .frame(width: 28, height: 28)
-                    .overlay(Text("1").font(.footnote).foregroundColor(.primaryColor))
-                Text("On the days you get more than 8 hours of sleep, you tend to have a 20% increase in energy levels as compared to your average.")
-                    .font(.footnote)
-                    .foregroundColor(.black)
+            
+            // Display insights only if there is data
+            if !entries.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    MoodInsightRow(number: 1, text: "On the days you get more than 8 hours of sleep, you tend to have a 20% increase in energy levels as compared to your average.", isLast: true)
+                }
+            } else {
+                Text("No data available to generate insights")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.grayText)
+                    .padding(.vertical, 12)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 30)
     }
 }
 
@@ -700,6 +705,7 @@ struct ExampleCalendarView: View {
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     
     // Emotion-specific associated colors
     static let depressedColor = Color(red: 0.678, green: 0.098, blue: 0.078)
@@ -707,6 +713,47 @@ private extension Color {
     static let neutralColor = Color(red: 0.905, green: 0.694, blue: 0.329)
     static let happyColor = Color(red: 0.878, green: 0.772, blue: 0.462)
     static let overjoyedColor = Color(red: 0.486, green: 0.619, blue: 0.415)
+}
+
+// MARK: - Insight Row Component
+struct MoodInsightRow: View {
+    let number: Int
+    let text: String
+    let isLast: Bool
+    
+    // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    private let numberColor = Color.primaryColor
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                // Numbered circle bullet point
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                // Insight text
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
+        }
+    }
 }
 
 
