@@ -10,29 +10,19 @@ struct MoodLogEntry: Identifiable {
 }
 
 enum MoodType: String, CaseIterable {
-    case verySad = "Very Sad"
+    case depressed = "Depressed"
     case sad = "Sad"
     case neutral = "Neutral"
     case happy = "Happy"
-    case veryHappy = "Very Happy"
+    case veryHappy = "Overjoyed"
 
     var color: Color {
         switch self {
-        case .verySad: return Color.depressedColor
+        case .depressed: return Color.depressedColor
         case .sad: return Color.sadColor
         case .neutral: return Color.neutralColor
         case .happy: return Color.happyColor
         case .veryHappy: return Color.overjoyedColor
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .verySad: return "😢"
-        case .sad: return "🙁"
-        case .neutral: return "😐"
-        case .happy: return "🙂"
-        case .veryHappy: return "😄"
         }
     }
 }
@@ -63,7 +53,7 @@ struct MoodEntryCard: View {
 
     private func emotionIconName(for mood: MoodType) -> String {
         switch mood {
-        case .verySad: return "Emotion depressed"
+        case .depressed: return "Emotion depressed"
         case .sad: return "Emotion sad"
         case .neutral: return "Emotion neutral"
         case .happy: return "Emotion happy"
@@ -85,7 +75,7 @@ struct MoodEntryCard: View {
                     HStack {
                         // Date
                         Text(Date(), style: .date)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.gray)
                         
                         Spacer()
@@ -94,7 +84,7 @@ struct MoodEntryCard: View {
                         Button("Clear") {
                             selectedMood = .neutral
                         }
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.gray)
                     }
                     
@@ -113,27 +103,31 @@ struct MoodEntryCard: View {
                 .padding()
 
                 // Vertical selection of emotion icon buttons
-                VStack(spacing: 16) {
-                    ForEach(Array(MoodType.allCases.enumerated()), id: \.element) { index, mood in
-                        Button(action: {
-                            selectedMood = mood
-                        }) {
-                            let isNeutral = mood == .neutral
-                            let isSelected = selectedMood == mood
-                            let baseIconSize: CGFloat = isSelected ? 80 : 60
-                            let iconName = emotionIconName(for: mood)
-                            
-                            Image(iconName)
-                                .resizable()
-                                .renderingMode(.template)
-                                .foregroundColor(isSelected ? Color.secondaryColor : .gray)
-                                .aspectRatio(contentMode: .fit)
-                                .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
-                                .frame(width: baseIconSize, height: baseIconSize)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        ForEach(Array(MoodType.allCases.enumerated()), id: \.element) { index, mood in
+                            Button(action: {
+                                selectedMood = mood
+                            }) {
+                                let isNeutral = mood == .neutral
+                                let isSelected = selectedMood == mood
+                                let baseIconSize: CGFloat = isSelected ? 80 : 60
+                                let iconName = emotionIconName(for: mood)
+                                
+                                Image(iconName)
+                                    .resizable()
+                                    .renderingMode(.template)
+                                    .foregroundColor(mood.color)
+                                    .background(.clear)
+                                    .aspectRatio(contentMode: .fit)
+                                    .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
+                                    .frame(width: baseIconSize, height: baseIconSize)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
+                .frame(height: 350)
 
                 Text("I'm feeling \(selectedMood.rawValue.lowercased()).")
                     .font(.system(size: 24, weight: .medium))
@@ -178,7 +172,7 @@ struct EnergyEntryCard: View {
                     HStack {
                         // Date
                         Text(Date(), style: .date)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.gray)
                         
                         Spacer()
@@ -187,7 +181,7 @@ struct EnergyEntryCard: View {
                         Button("Clear") {
                             selectedEnergy = 7
                         }
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.gray)
                     }
                     
@@ -220,9 +214,8 @@ struct EnergyEntryCard: View {
                                 }
                         }
                     }
-                    .padding(.vertical, 40)
                 }
-                .frame(height: 300)
+                .frame(height: 350)
 
                 Text("\(selectedEnergy)/10")
                     .font(.system(size: 24, weight: .medium))
