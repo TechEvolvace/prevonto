@@ -158,6 +158,8 @@ struct EnergyEntryCard: View {
     var onSave: (Int) -> Void
     @State private var selectedEnergy = 7
 
+    let energyRange = Array(0...10)
+
     var body: some View {
         ZStack {
             // Enable to exit out the popup by touching anywhere outside the popup
@@ -199,23 +201,9 @@ struct EnergyEntryCard: View {
                 }
                 .padding()
 
-                // Scrollable, vertical selection of energy levels from 1 through 10
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        ForEach(1...10, id: \.self) { val in
-                            Text("\(val)")
-                                .font(.system(size: val == selectedEnergy ? 48 : 32, weight: .bold))
-                                .frame(width: 80, height: 80)
-                                .background(val == selectedEnergy ? Color.secondaryColor : Color.clear)
-                                .cornerRadius(12)
-                                .foregroundColor(val == selectedEnergy ? .white : .gray)
-                                .onTapGesture {
-                                    selectedEnergy = val
-                                }
-                        }
-                    }
-                }
-                .frame(height: 350)
+                // Picker for user to swipe or drag vertically to specific energy level user chooses
+                CenteredVerticalEnergyPicker(energyLevels: energyRange, selectedEnergy: $selectedEnergy)
+                    .frame(height: 350)
 
                 Text("\(selectedEnergy)/10")
                     .font(.system(size: 24, weight: .medium))
@@ -236,6 +224,108 @@ struct EnergyEntryCard: View {
             .cornerRadius(20)
             .padding(.horizontal, 30)
         }
+    }
+}
+
+// Picker for user to swipe or drag vertically to specific energy level user chooses
+struct CenteredVerticalEnergyPicker: View {
+    let energyLevels: [Int]
+    @Binding var selectedEnergy: Int
+
+    let itemHeight: CGFloat = 80
+    let spacing: CGFloat = 8
+
+    var body: some View {
+        GeometryReader { geo in
+            let totalHeight = itemHeight + spacing
+            let centerY = geo.frame(in: .global).midY
+
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: spacing) {
+                        ForEach(energyLevels, id: \.self) { energy in
+                            EnergyRow(energy: energy,
+                                     selectedEnergy: $selectedEnergy,
+                                     centerY: centerY,
+                                     itemHeight: itemHeight,
+                                     totalHeight: totalHeight)
+                                .id(energy)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, (geo.size.height - itemHeight) / 2)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            proxy.scrollTo(selectedEnergy, anchor: .center)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+}
+
+// Display each energy level number for user to select
+struct EnergyRow: View {
+    let energy: Int
+    @Binding var selectedEnergy: Int
+    let centerY: CGFloat
+    let itemHeight: CGFloat
+    let totalHeight: CGFloat
+    
+    private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+
+    var body: some View {
+        GeometryReader { geo in
+            let itemCenterY = geo.frame(in: .global).midY
+            let distance = abs(itemCenterY - centerY)
+            let maxDistance: CGFloat = totalHeight * 2.5 // Distance for full fade
+            let normalizedDistance = min(distance / maxDistance, 1.0)
+            
+            // Determine if this is the selected energy level
+            let isSelected = distance < totalHeight / 2
+            
+            // Dynamic font size based on distance from center, decreasing smoothly as distance increases
+            let fontSize: CGFloat = {
+                if isSelected {
+                    return 52
+                } else {
+                    // Using normalizedDistance for smooth transition
+                    let minSize: CGFloat = 24
+                    let maxSize: CGFloat = 52
+                    return maxSize - (normalizedDistance * (maxSize - minSize))
+                }
+            }()
+            
+            // Dynamic opacity based on distance
+            let opacity = isSelected ? 1.0 : max(0.3, 1.0 - normalizedDistance * 0.7)
+            
+            // Calculate box width based on number of digits
+            let boxWidth: CGFloat = isSelected ? 140 : 0
+
+            Text("\(energy)")
+                .font(.system(size: fontSize, weight: .bold))
+                .foregroundColor(isSelected ? .white : .gray.opacity(opacity))
+                .frame(width: isSelected ? boxWidth : nil, height: itemHeight)
+                .background(
+                    isSelected ? secondaryGreen : Color.clear
+                )
+                .cornerRadius(isSelected ? 16 : 0)
+                .shadow(color: isSelected ? Color.green.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
+                .frame(maxWidth: .infinity)
+                .onAppear {
+                    if isSelected {
+                        selectedEnergy = energy
+                    }
+                }
+                .onChange(of: distance) {
+                    if isSelected {
+                        selectedEnergy = energy
+                    }
+                }
+        }
+        .frame(height: itemHeight)
     }
 }
 
