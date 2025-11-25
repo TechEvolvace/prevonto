@@ -370,7 +370,16 @@ struct MoodTrackerView: View {
             if showEnergyEntry {
                 EnergyEntryCard(show: $showEnergyEntry) { energy in
                     if let mood = tempMood {
-                        entries.append(MoodLogEntry(date: Date(), mood: mood, energy: energy))
+                        let today = Date()
+                        let calendar = Calendar.current
+                        
+                        // Remove any existing entry for today
+                        entries.removeAll { entry in
+                            calendar.isDate(entry.date, inSameDayAs: today)
+                        }
+                        
+                        // Add the new entry for today
+                        entries.append(MoodLogEntry(date: today, mood: mood, energy: energy))
                         tempMood = nil
                     }
                 }
@@ -447,7 +456,7 @@ struct MoodTrackerView: View {
     }
 
     private var calendarSection: some View {
-        ExampleCalendarView(entries: entries)
+        ExampleCalendarView(entries: entries, selectedTab: selectedTab)
     }
 
     private var energyChart: some View {
@@ -502,7 +511,8 @@ struct MoodTrackerView: View {
 
 struct ExampleCalendarView: View {
     @State private var currentDate = Date()
-    let entries: [MoodLogEntry]  // <- add this
+    let entries: [MoodLogEntry]
+    let selectedTab: String
     
     private var today: Date {
         Calendar.current.startOfDay(for: Date())
@@ -520,38 +530,38 @@ struct ExampleCalendarView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
+            // Header with navigation
             HStack {
-                Button(action: { changeMonth(by: -1) }) {
+                Button(action: {
+                    navigatePeriod(forward: false)
+                }) {
                     Image(systemName: "chevron.left")
+                        .foregroundColor(.gray)
                 }
+                
                 Spacer()
-                Text(monthYearString(for: currentDate))
-                    .font(.headline)
+                
+                Text(periodHeaderText)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+                
                 Spacer()
-                Button(action: { changeMonth(by: 1) }) {
+                
+                Button(action: {
+                    navigatePeriod(forward: true)
+                }) {
                     Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
                 }
             }
             .padding(.horizontal)
-
-            let columns = Array(repeating: GridItem(.flexible()), count: 7)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(["Su", "M", "T", "W", "Th", "F", "Sa"], id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-
-                let firstWeekday = Calendar.current.component(.weekday, from: daysInMonth.first ?? Date()) - 1
-                ForEach(0..<firstWeekday, id: \.self) { _ in
-                    Text("").frame(height: 32)
-                }
-
-                ForEach(daysInMonth, id: \.self) { date in
-                    dayCell(for: date)
-                }
+            
+            // Calendar Grid
+            if selectedTab == "Month" {
+                monthCalendarView
+            } else {
+                weekCalendarView
             }
         }
         .padding()
@@ -559,22 +569,87 @@ struct ExampleCalendarView: View {
         .cornerRadius(12)
         .shadow(radius: 1)
     }
+    
+    // Month Calendar View
+    private var monthCalendarView: some View {
+        let columns = Array(repeating: GridItem(.flexible()), count: 7)
 
-    private func dayCell(for date: Date) -> some View {
-        let day = Calendar.current.component(.day, from: date)
-        let color = moodColor(for: date)
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(["Su", "M", "T", "W", "Th", "F", "Sa"], id: \.self) { day in
+                Text(day)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+
+            let firstWeekday = Calendar.current.component(.weekday, from: daysInMonth.first ?? Date()) - 1
+            ForEach(0..<firstWeekday, id: \.self) { _ in
+                Text("").frame(height: 32)
+            }
+
+            ForEach(daysInMonth, id: \.self) { date in
+                dayCell(for: date, isCurrentMonth: true)
+            }
+        }
+    }
+    
+    // Week Calendar View
+    private var weekCalendarView: some View {
+        VStack(spacing: 10) {
+            // Day headers
+            let columns = ["Su", "M", "T", "W", "Th", "F", "Sa"]
+            HStack {
+                ForEach(columns, id: \.self) {
+                    Text($0)
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            
+            // Week days
+            let calendar = Calendar.current
+            let weekInterval = calendar.dateInterval(of: .weekOfYear, for: currentDate)!
+            let weekStart = weekInterval.start
+            let weekDays = (0..<7).compactMap { offset -> Date? in
+                calendar.date(byAdding: .day, value: offset, to: weekStart)
+            }
+            
+            HStack {
+                ForEach(weekDays, id: \.self) { date in
+                    dayCell(for: date, isCurrentMonth: true)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    private func dayCell(for date: Date, isCurrentMonth: Bool) -> some View {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        let dateStartOfDay = calendar.startOfDay(for: date)
+        let moodColor = moodColor(for: date)
+        let isToday = calendar.isDate(dateStartOfDay, inSameDayAs: today)
+        let hasMoodEntry = moodColor != .clear
 
         return ZStack {
-            if color != .clear {
+            if hasMoodEntry {
                 Circle()
-                    .fill(color)
+                    .fill(moodColor)
+                    .frame(width: 32, height: 32)
+            } else if isToday {
+                Circle()
+                    .fill(Color.blue)
                     .frame(width: 32, height: 32)
             }
 
             Text("\(day)")
-                .foregroundColor(color == .clear ? .black : .white)
+                .font(.subheadline)
+                .foregroundColor(
+                    hasMoodEntry || isToday ? .white : (isCurrentMonth ? .primary : .clear)
+                )
                 .frame(height: 32)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func moodColor(for date: Date) -> Color {
@@ -583,17 +658,42 @@ struct ExampleCalendarView: View {
         }
         return .clear
     }
-
-    private func changeMonth(by value: Int) {
-        if let newDate = Calendar.current.date(byAdding: .month, value: value, to: currentDate) {
-            currentDate = newDate
+    
+    // Helper Properties and Functions
+    private var periodHeaderText: String {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        
+        if selectedTab == "Week" {
+            let weekInterval = calendar.dateInterval(of: .weekOfYear, for: currentDate)!
+            let weekStart = weekInterval.start
+            let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart)!
+            
+            formatter.dateFormat = "MMM d"
+            let startString = formatter.string(from: weekStart)
+            formatter.dateFormat = "MMM d, yyyy"
+            let endString = formatter.string(from: weekEnd)
+            
+            return "\(startString) - \(endString)"
+        } else {
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: currentDate)
         }
     }
-
-    private func monthYearString(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: date)
+    
+    private func navigatePeriod(forward: Bool) {
+        let calendar = Calendar.current
+        let value = forward ? 1 : -1
+        
+        if selectedTab == "Month" {
+            if let newDate = calendar.date(byAdding: .month, value: value, to: currentDate) {
+                currentDate = newDate
+            }
+        } else {
+            if let newDate = calendar.date(byAdding: .weekOfYear, value: value, to: currentDate) {
+                currentDate = newDate
+            }
+        }
     }
 }
 
