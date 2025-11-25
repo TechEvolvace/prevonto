@@ -18,11 +18,11 @@ enum MoodType: String, CaseIterable {
 
     var color: Color {
         switch self {
-        case .verySad: return .red
-        case .sad: return .orange
-        case .neutral: return .yellow
-        case .happy: return .green
-        case .veryHappy: return .blue
+        case .verySad: return Color.depressedColor
+        case .sad: return Color.sadColor
+        case .neutral: return Color.neutralColor
+        case .happy: return Color.happyColor
+        case .veryHappy: return Color.overjoyedColor
         }
     }
 
@@ -454,11 +454,11 @@ struct ExampleCalendarView: View {
                     dayCell(for: date)
                 }
             }
-            .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(radius: 1)
         }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(radius: 1)
     }
 
     private func dayCell(for date: Date) -> some View {
@@ -496,6 +496,18 @@ struct ExampleCalendarView: View {
         formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: date)
     }
+}
+
+private extension Color {
+    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+    
+    // Emotion-specific associated colors
+    static let depressedColor = Color(red: 0.678, green: 0.098, blue: 0.078)
+    static let sadColor = Color(red: 0.756, green: 0.420, blue: 0.196)
+    static let neutralColor = Color(red: 0.905, green: 0.694, blue: 0.329)
+    static let happyColor = Color(red: 0.878, green: 0.772, blue: 0.462)
+    static let overjoyedColor = Color(red: 0.486, green: 0.619, blue: 0.415)
 }
 
 

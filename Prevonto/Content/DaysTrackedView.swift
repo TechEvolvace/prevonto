@@ -310,9 +310,9 @@ struct DaysTrackedView: View {
                 .foregroundColor(
                     isTracked || isToday ? .white : (isCurrentMonth ? .primary : .clear)
                 )
+                .frame(height: 32)
         }
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 4)
     }
     
     // Helper Properties and Functions
