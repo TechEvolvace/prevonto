@@ -37,7 +37,7 @@ struct CenteredVerticalAgePicker: View {
     let ages: [Int]
     @Binding var selectedAge: Int
 
-    let itemHeight: CGFloat = 56
+    let itemHeight: CGFloat = 80
     let spacing: CGFloat = 8
 
     var body: some View {
@@ -91,16 +91,14 @@ struct AgeRow: View {
             // Determine if this is the selected age
             let isSelected = distance < totalHeight / 2
             
-            // Dynamic font size based on distance from center - smooth decrease
-            // Selected: 32pt, decreasing smoothly as distance increases
+            // Dynamic font size based on distance from center, decreasing smoothly as distance increases
             let fontSize: CGFloat = {
                 if isSelected {
-                    return 32
+                    return 52
                 } else {
-                    // Smooth interpolation from 32pt (selected) to 14pt (far away)
                     // Using normalizedDistance for smooth transition
-                    let minSize: CGFloat = 14
-                    let maxSize: CGFloat = 32
+                    let minSize: CGFloat = 24
+                    let maxSize: CGFloat = 52
                     return maxSize - (normalizedDistance * (maxSize - minSize))
                 }
             }()
@@ -108,18 +106,13 @@ struct AgeRow: View {
             // Dynamic opacity based on distance
             let opacity = isSelected ? 1.0 : max(0.3, 1.0 - normalizedDistance * 0.7)
             
-            // Dynamic font weight
-            let fontWeight: Font.Weight = isSelected ? .bold : (normalizedDistance < 0.3 ? .semibold : .regular)
-            
             // Calculate box width based on number of digits
-            let boxWidth: CGFloat = isSelected ? (age >= 100 ? 120 : 100) : 0
+            let boxWidth: CGFloat = isSelected ? (age >= 100 ? 160 : 140) : 0
 
             Text("\(age)")
-                .font(.system(size: fontSize, weight: fontWeight))
+                .font(.system(size: fontSize, weight: .bold))
                 .foregroundColor(isSelected ? .white : .gray.opacity(opacity))
-                .padding(.horizontal, isSelected ? 24 : 0)
-                .padding(.vertical, isSelected ? 12 : 0)
-                .frame(width: isSelected ? boxWidth : nil, height: isSelected ? 56 : itemHeight)
+                .frame(width: isSelected ? boxWidth : nil, height: itemHeight)
                 .background(
                     isSelected ? secondaryGreen : Color.clear
                 )
