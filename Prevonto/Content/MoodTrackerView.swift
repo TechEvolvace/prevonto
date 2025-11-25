@@ -37,6 +37,24 @@ enum MoodType: String, CaseIterable {
     }
 }
 
+// Custom segmented progress bar for the popup
+struct PopupProgressBar: View {
+    let currentStep: Int
+    let totalSteps: Int
+    let segmentSpacing: CGFloat = 8
+    
+    var body: some View {
+        HStack(spacing: segmentSpacing) {
+            ForEach(1...totalSteps, id: \.self) { step in
+                Rectangle()
+                    .fill(step <= currentStep ? Color.primaryColor : Color.gray.opacity(0.3))
+                    .frame(height: 4)
+                    .cornerRadius(2)
+            }
+        }
+    }
+}
+
 // Mood Entry Card - the first part of the popup that shows up when the user clicks on the Log energy levels button
 struct MoodEntryCard: View {
     @Binding var show: Bool
@@ -80,9 +98,8 @@ struct MoodEntryCard: View {
                         .foregroundColor(.gray)
                     }
                     
-                    // Horizontal progress bar for popup
-                    ProgressView(value: 0.5)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
+                    // Horizontal segmented progress bar for popup
+                    PopupProgressBar(currentStep: 1, totalSteps: 2)
 
                     Text("1 of 2")
                         .font(.system(size: 14, weight: .regular))
@@ -174,9 +191,8 @@ struct EnergyEntryCard: View {
                         .foregroundColor(.gray)
                     }
                     
-                    // Horizontal progress bar for popup
-                    ProgressView(value: 1.0)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Color.primaryColor))
+                    // Horizontal segmented progress bar for popup
+                    PopupProgressBar(currentStep: 2, totalSteps: 2)
 
                     Text("2 of 2")
                         .font(.system(size: 14, weight: .regular))
