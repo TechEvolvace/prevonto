@@ -342,6 +342,7 @@ struct MoodTrackerView: View {
     @State private var showEnergyEntry = false
     @State private var tempMood: MoodType? = nil
     @State private var selectedBarIndex: Int? = nil
+    @State private var currentDate = Date()
 
     var body: some View {
         ZStack {
@@ -457,7 +458,7 @@ struct MoodTrackerView: View {
     }
 
     private var calendarSection: some View {
-        ExampleCalendarView(entries: entries, selectedTab: selectedTab)
+        ExampleCalendarView(currentDate: $currentDate, entries: entries, selectedTab: selectedTab)
     }
 
     private var energyChart: some View {
@@ -562,11 +563,10 @@ struct MoodTrackerView: View {
     
     private var energyChartData: [EnergyChartDataPoint] {
         let calendar = Calendar.current
-        let today = Date()
         
         if selectedTab == "Week" {
-            // Get the current week's date range
-            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) else {
+            // Get the current week's date range based on the calendar's currentDate
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: currentDate) else {
                 return []
             }
             let weekStart = weekInterval.start
@@ -590,8 +590,8 @@ struct MoodTrackerView: View {
                 return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date, hasEntry: hasEntry)
             }
         } else {
-            // Month mode - get the current month's date range
-            guard let monthInterval = calendar.dateInterval(of: .month, for: today) else {
+            // Month mode - get the current month's date range based on the calendar's currentDate
+            guard let monthInterval = calendar.dateInterval(of: .month, for: currentDate) else {
                 return []
             }
             
@@ -717,7 +717,7 @@ struct MoodTrackerView: View {
 
 
 struct ExampleCalendarView: View {
-    @State private var currentDate = Date()
+    @Binding var currentDate: Date
     let entries: [MoodLogEntry]
     let selectedTab: String
     
