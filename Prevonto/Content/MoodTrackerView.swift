@@ -483,7 +483,8 @@ struct MoodTrackerView: View {
                     .cornerRadius(4)
                     
                     // Popover annotation and connecting line for selected bar
-                    if isSelected {
+                    // Only show popover if there's a logged entry
+                    if isSelected && point.hasEntry {
                         // Vertical dashed line from popover to bar
                         RuleMark(x: .value("Label", point.label))
                             .foregroundStyle(Color.secondaryColor)
@@ -581,10 +582,12 @@ struct MoodTrackerView: View {
                 dateFormatter.dateFormat = "EEE"
                 let label = String(dateFormatter.string(from: date).prefix(3))
                 
-                // Find energy level for this date, or 0 if no entry
-                let energy = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })?.energy ?? 0
+                // Find entry for this date
+                let entry = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })
+                let energy = entry?.energy ?? 0
+                let hasEntry = entry != nil
                 
-                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date)
+                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date, hasEntry: hasEntry)
             }
         } else {
             // Month mode - get the current month's date range
@@ -605,10 +608,12 @@ struct MoodTrackerView: View {
                 let day = calendar.component(.day, from: date)
                 let label = "\(day)"
                 
-                // Find energy level for this date, or 0 if no entry
-                let energy = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })?.energy ?? 0
+                // Find entry for this date
+                let entry = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })
+                let energy = entry?.energy ?? 0
+                let hasEntry = entry != nil
                 
-                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date)
+                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date, hasEntry: hasEntry)
             }
         }
     }
@@ -660,6 +665,16 @@ struct MoodTrackerView: View {
         
         guard tappedIndex >= 0 && tappedIndex < energyChartData.count else {
             // Animate spacer height change when dismissing popover for invalid tap index
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+            return
+        }
+        
+        // Only allow selection if there's a logged entry
+        let tappedData = energyChartData[tappedIndex]
+        if !tappedData.hasEntry {
+            // If tapping on a bar with no logged entry, just deselect any current selection
             withAnimation(.easeInOut(duration: 0.3)) {
                 selectedBarIndex = nil
             }
@@ -951,6 +966,7 @@ struct EnergyChartDataPoint: Identifiable {
     let label: String
     let energy: Int
     let date: Date
+    let hasEntry: Bool
 }
 
 // MARK: - Popover Arrow Shape
