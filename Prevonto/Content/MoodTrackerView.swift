@@ -341,6 +341,7 @@ struct MoodTrackerView: View {
     @State private var showMoodEntry = false
     @State private var showEnergyEntry = false
     @State private var tempMood: MoodType? = nil
+    @State private var selectedBarIndex: Int? = nil
 
     var body: some View {
         ZStack {
@@ -460,33 +461,219 @@ struct MoodTrackerView: View {
     }
 
     private var energyChart: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             Text("Energy levels")
-                .font(.headline)
-                .foregroundColor(.primaryColor)
-
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.grayText)
+            
+            // Dynamically adjust height of empty space for popover to appear without overlapping any text
+            Spacer()
+                .frame(height: selectedBarIndex != nil ? 60 : 15)
+                .animation(.easeInOut(duration: 0.3), value: selectedBarIndex)
+            
             Chart {
-                ForEach(entries) { entry in
+                ForEach(Array(energyChartData.enumerated()), id: \.element.id) { index, point in
+                    let isSelected = selectedBarIndex == index
+                    
                     BarMark(
-                        x: .value("Date", entry.date, unit: .day),
-                        y: .value("Energy", entry.energy)
+                        x: .value("Label", point.label),
+                        y: .value("Energy", point.energy)
                     )
-                    .foregroundStyle(Color.secondaryColor)
+                    .foregroundStyle(isSelected ? Color.secondaryColor : Color.barDefault)
+                    .cornerRadius(4)
+                    
+                    // Popover annotation and connecting line for selected bar
+                    if isSelected {
+                        // Vertical dashed line from popover to bar
+                        RuleMark(x: .value("Label", point.label))
+                            .foregroundStyle(Color.secondaryColor)
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                            .annotation(position: .top, alignment: .center, spacing: 0) {
+                                energyTooltip(energy: point.energy)
+                            }
+                    }
                 }
             }
+            .frame(height: 260) // Extra height to accommodate popover
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day)) { value in
-                    AxisGridLine()
-                    AxisValueLabel(format: .dateTime.day(.defaultDigits))
+                if selectedTab == "Month" {
+                    // For month mode, only show labels at days 1, 7, 14, 21, 28
+                    AxisMarks { value in
+                        AxisGridLine()
+                        if let label = value.as(String.self) {
+                            let labelsToShow = ["1", "7", "14", "21", "28"]
+                            if labelsToShow.contains(label) {
+                                AxisValueLabel(verticalSpacing: 12)
+                                    .font(.system(size: xAxisFontSize))
+                            }
+                        }
+                    }
+                } else {
+                    // For week mode, show all labels
+                    AxisMarks { value in
+                        AxisValueLabel(verticalSpacing: 12)
+                            .font(.system(size: xAxisFontSize))
+                        AxisGridLine()
+                    }
                 }
             }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: [0, 2, 4, 6, 8, 10]) { value in
+                    AxisGridLine()
+                    AxisValueLabel(horizontalSpacing: 16)
+                }
+            }
+            .fontWeight(.medium)
             .chartYScale(domain: 0...10)
-            .frame(height: 150)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture { location in
+                            handleChartTap(at: location, proxy: proxy, geometry: geometry)
+                        }
+                }
+            }
         }
-        .padding()
+        .padding(16)
         .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 1)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onChange(of: selectedTab) { _, _ in
+            // Dismiss popover when switching tabs
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+        }
+    }
+    
+    private var xAxisFontSize: CGFloat {
+        switch selectedTab {
+        case "Week":
+            return 13
+        case "Month":
+            return 12
+        default:
+            return 12
+        }
+    }
+    
+    private var energyChartData: [EnergyChartDataPoint] {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        if selectedTab == "Week" {
+            // Get the current week's date range
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) else {
+                return []
+            }
+            let weekStart = weekInterval.start
+            
+            // Create data points for each day of the week
+            return (0..<7).compactMap { offset -> EnergyChartDataPoint? in
+                guard let date = calendar.date(byAdding: .day, value: offset, to: weekStart) else {
+                    return nil
+                }
+                
+                // Get day abbreviation (Sun, Mon, Tue, etc.)
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "EEE"
+                let label = String(dateFormatter.string(from: date).prefix(3))
+                
+                // Find energy level for this date, or 0 if no entry
+                let energy = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })?.energy ?? 0
+                
+                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date)
+            }
+        } else {
+            // Month mode - get the current month's date range
+            guard let monthInterval = calendar.dateInterval(of: .month, for: today) else {
+                return []
+            }
+            
+            var dates: [Date] = []
+            var date = monthInterval.start
+            while date < monthInterval.end {
+                dates.append(date)
+                guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+                date = nextDate
+            }
+            
+            // Create data points for each day of the month
+            return dates.map { date in
+                let day = calendar.component(.day, from: date)
+                let label = "\(day)"
+                
+                // Find energy level for this date, or 0 if no entry
+                let energy = entries.first(where: { calendar.isDate($0.date, inSameDayAs: date) })?.energy ?? 0
+                
+                return EnergyChartDataPoint(id: UUID(), label: label, energy: energy, date: date)
+            }
+        }
+    }
+    
+    // MARK: - Energy Tooltip
+    private func energyTooltip(energy: Int) -> some View {
+        VStack(spacing: 0) {
+            // Popover
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(energy)")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.secondaryColor)
+            .cornerRadius(8)
+            
+            // Pointing triangle
+            EnergyPopoverArrow()
+                .fill(Color.secondaryColor)
+                .frame(width: 12, height: 6)
+        }
+        .fixedSize()
+    }
+    
+    // MARK: - Chart Tap Handler
+    private func handleChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        guard let plotFrame = proxy.plotFrame else { return }
+        let plotArea = geometry[plotFrame]
+        
+        // Check if tap is within the plot area
+        let relativeX = location.x - plotArea.origin.x
+        
+        guard relativeX >= 0 && relativeX <= plotArea.width else {
+            // Animate spacer height change when dismissing popover by tapping outside chart
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+            return
+        }
+        
+        // Calculate which bar was tapped based on position
+        let dataCount = CGFloat(energyChartData.count)
+        guard dataCount > 0 else { return }
+        
+        let barWidth = plotArea.width / dataCount
+        let tappedIndex = Int(relativeX / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < energyChartData.count else {
+            // Animate spacer height change when dismissing popover for invalid tap index
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+            return
+        }
+        
+        // Animate spacer height change when showing/dismissing popover on bar tap
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if selectedBarIndex == tappedIndex {
+                selectedBarIndex = nil
+            } else {
+                selectedBarIndex = tappedIndex
+            }
+        }
     }
 
     private var insightSection: some View {
@@ -706,6 +893,7 @@ private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
     
     // Emotion-specific associated colors
     static let depressedColor = Color(red: 0.678, green: 0.098, blue: 0.078)
@@ -756,6 +944,26 @@ struct MoodInsightRow: View {
     }
 }
 
+
+// MARK: - Energy Chart Data Point
+struct EnergyChartDataPoint: Identifiable {
+    let id: UUID
+    let label: String
+    let energy: Int
+    let date: Date
+}
+
+// MARK: - Popover Arrow Shape
+struct EnergyPopoverArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
 
 struct MoodTrackerView_Previews: PreviewProvider {
     static var previews: some View {
