@@ -264,7 +264,7 @@ struct HeartRateView: View {
                         yStart: .value("Min", min),
                         yEnd: .value("Max", max)
                     )
-                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.4))
+                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.barDefault)
                     
                     // Point mark for single values
                     if min == max {
@@ -272,7 +272,7 @@ struct HeartRateView: View {
                             x: .value("Index", data.index),
                             y: .value("Measurement", min)
                         )
-                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.green.opacity(0.6))
+                        .foregroundStyle(isSelected ? Color.selectionGreen : Color .barDefault)
                         .symbolSize(60)
                     }
                     
@@ -302,7 +302,10 @@ struct HeartRateView: View {
             chartXAxisMarks
         }
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) {
+                AxisGridLine()
+                AxisValueLabel(horizontalSpacing: 16)
+            }
         }
         .chartYScale(domain: 0...200)
         .chartOverlay { proxy in
@@ -403,10 +406,11 @@ struct HeartRateView: View {
                 let shouldShow = shouldShowAxisLabel(at: idx)
                 
                 if shouldShow {
-                    AxisValueLabel {
+                    AxisValueLabel(horizontalSpacing: -10, verticalSpacing: 16){
                         Text(chartData[idx].label)
                             .font(.system(size: selectedMode == .week ? 11 : 12))
                     }
+                    AxisTick(length: 12)
                     AxisGridLine()
                 }
             }
@@ -774,6 +778,8 @@ private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
+    
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
