@@ -233,105 +233,179 @@ struct HeartRateView: View {
     
     // MARK: - Chart Section
     var chartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Heart Rate Chart in rounded card with title inside
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Beats Per Minute (BPM) over time")
-                    .foregroundColor(.grayText)
-                    .font(.headline)
-                
-                heartRateChart
-            }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Beats Per Minute (BPM) over time")
+                .foregroundColor(.grayText)
+                .font(.system(size: 18, weight: .semibold))
+            
+            heartRateChart
         }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         .padding(.bottom, 20)
+        .onChange(of: selectedMode) { _, _ in
+            // Dismiss popover when switching modes
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+        }
     }
     
     // MARK: - Heart Rate Chart
     var heartRateChart: some View {
-        Chart {
-            ForEach(chartData.indices, id: \.self) { idx in
-                let data = chartData[idx]
-                let isSelected = selectedBarIndex == idx
-                
-                if let min = data.min, let max = data.max {
-                    // Bar mark
-                    BarMark(
-                        x: .value("Index", data.index),
-                        yStart: .value("Min", min),
-                        yEnd: .value("Max", max)
-                    )
-                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.barDefault)
+        VStack(alignment: .leading, spacing: 0) {
+            // Dynamically adjust height of empty space for popover to appear without overlapping any text
+            Spacer()
+                .frame(height: selectedBarIndex != nil ? 60 : 15)
+                .animation(.easeInOut(duration: 0.3), value: selectedBarIndex)
+            
+            Chart {
+                ForEach(chartData.indices, id: \.self) { idx in
+                    let data = chartData[idx]
+                    let isSelected = selectedBarIndex == idx
                     
-                    // Point mark for single values
-                    if min == max {
-                        PointMark(
-                            x: .value("Index", data.index),
-                            y: .value("Measurement", min)
-                        )
-                        .foregroundStyle(isSelected ? Color.selectionGreen : Color .barDefault)
-                        .symbolSize(60)
-                    }
-                    
-                    // Vertical rule line for selected data
-                    if isSelected {
-                        RuleMark(x: .value("Index", data.index))
-                            .foregroundStyle(Color.selectionGreen)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .annotation(position: .top, alignment: .center, spacing: 0) {
-                                selectionTooltip(for: data, min: min, max: max)
-                                    .offset(y: 20)
+                    if let min = data.min, let max = data.max {
+                        if min == max {
+                            // Point mark for single values (when minimum and maximum values are the same)
+                            if selectedMode == .day {
+                                PointMark(
+                                    x: .value("Index", data.index),
+                                    y: .value("Measurement", min)
+                                )
+                                .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                                .symbolSize(60)
+                            } else {
+                                PointMark(
+                                    x: .value("Label", data.label),
+                                    y: .value("Measurement", min)
+                                )
+                                .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                                .symbolSize(60)
                             }
+                        } else {
+                            // Bar mark extending from min to max
+                            if selectedMode == .day {
+                                BarMark(
+                                    x: .value("Index", data.index),
+                                    yStart: .value("Min", min),
+                                    yEnd: .value("Max", max)
+                                )
+                                .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                                .cornerRadius(4)
+                            } else {
+                                BarMark(
+                                    x: .value("Label", data.label),
+                                    yStart: .value("Min", min),
+                                    yEnd: .value("Max", max)
+                                )
+                                .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                                .cornerRadius(4)
+                            }
+                        }
+                        
+                        // Vertical rule line for selected data
+                        if isSelected {
+                            if selectedMode == .day {
+                                RuleMark(x: .value("Index", data.index))
+                                    .foregroundStyle(Color.secondaryGreen)
+                                    .lineStyle(StrokeStyle(lineWidth: 2))
+                                    .annotation(position: .top, alignment: .center, spacing: 0) {
+                                        selectionTooltip(for: data, min: min, max: max)
+                                    }
+                            } else {
+                                RuleMark(x: .value("Label", data.label))
+                                    .foregroundStyle(Color.secondaryGreen)
+                                    .lineStyle(StrokeStyle(lineWidth: 2))
+                                    .annotation(position: .top, alignment: .center, spacing: 0) {
+                                        selectionTooltip(for: data, min: min, max: max)
+                                    }
+                            }
+                        }
+                    } else {
+                        // When there's no data
+                        if selectedMode == .day {
+                            BarMark(
+                                x: .value("Index", data.index),
+                                yStart: .value("Min", 0),
+                                yEnd: .value("Max", 0)
+                            )
+                            .foregroundStyle(.clear)
+                        } else {
+                            BarMark(
+                                x: .value("Label", data.label),
+                                yStart: .value("Min", 0),
+                                yEnd: .value("Max", 0)
+                            )
+                            .foregroundStyle(.clear)
+                        }
                     }
-                } else {
-                    // When there's no data
-                    BarMark(
-                        x: .value("Index", data.index),
-                        yStart: .value("Min", 0),
-                        yEnd: .value("Max", 0)
-                    )
-                    .foregroundStyle(.clear)
                 }
             }
-        }
-        .frame(height: 250)
-        .chartXAxis {
-            if selectedMode == .day {
-                // Use same x-axis labels as Blood Glucose day mode
-                AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
-                    if let hour = value.as(Int.self) {
-                        AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
-                            Text(hourLabel(for: hour))
-                                .font(.system(size: 11))
+            .frame(height: 260) // Extra height to accommodate popover
+            .chartXAxis {
+                if selectedMode == .day {
+                    AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
+                        if let hour = value.as(Int.self) {
+                            AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
+                                Text(hourLabel(for: hour))
+                                    .font(.system(size: 11))
+                            }
+                            AxisTick(length: 12)
+                            AxisGridLine()
                         }
-                        AxisTick(length: 12)
+                    }
+                } else if selectedMode == .month {
+                    // For month mode, only show labels at days 1, 7, 14, 21, 28
+                    AxisMarks { value in
+                        AxisGridLine()
+                        if let label = value.as(String.self) {
+                            let labelsToShow = ["1", "7", "14", "21", "28"]
+                            if labelsToShow.contains(label) {
+                                AxisValueLabel(verticalSpacing: 12)
+                                    .font(.system(size: xAxisFontSize))
+                            }
+                        }
+                    }
+                } else {
+                    // For week mode, show all labels
+                    AxisMarks { value in
+                        AxisValueLabel(verticalSpacing: 12)
+                            .font(.system(size: xAxisFontSize))
                         AxisGridLine()
                     }
                 }
-            } else {
-                chartXAxisMarks
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) {
+                    AxisGridLine()
+                    AxisValueLabel(horizontalSpacing: 16)
+                }
+            }
+            .chartYScale(domain: 0...200)
+            .modifier(DayModeXScaleModifier(isDayMode: selectedMode == .day))
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture { location in
+                            handleChartTap(at: location, proxy: proxy, geometry: geometry)
+                        }
+                }
             }
         }
-        .chartYAxis {
-            AxisMarks(position: .leading) {
-                AxisGridLine()
-                AxisValueLabel(horizontalSpacing: 16)
-            }
-        }
-        .chartYScale(domain: 0...200)
-        .modifier(DayModeXScaleModifier(isDayMode: selectedMode == .day))
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill(.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        handleChartTap(at: location, proxy: proxy, geometry: geometry)
-                    }
-            }
+    }
+    
+    private var xAxisFontSize: CGFloat {
+        switch selectedMode {
+        case .week:
+            return 13
+        case .month:
+            return 12
+        default:
+            return 12
         }
     }
     
