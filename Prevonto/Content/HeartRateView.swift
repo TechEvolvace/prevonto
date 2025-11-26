@@ -299,7 +299,21 @@ struct HeartRateView: View {
         }
         .frame(height: 250)
         .chartXAxis {
-            chartXAxisMarks
+            if selectedMode == .day {
+                // Use same x-axis labels as Blood Glucose day mode
+                AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
+                    if let hour = value.as(Int.self) {
+                        AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
+                            Text(hourLabel(for: hour))
+                                .font(.system(size: 11))
+                        }
+                        AxisTick(length: 12)
+                        AxisGridLine()
+                    }
+                }
+            } else {
+                chartXAxisMarks
+            }
         }
         .chartYAxis {
             AxisMarks(position: .leading) {
@@ -308,6 +322,7 @@ struct HeartRateView: View {
             }
         }
         .chartYScale(domain: 0...200)
+        .modifier(DayModeXScaleModifier(isDayMode: selectedMode == .day))
         .chartOverlay { proxy in
             GeometryReader { geometry in
                 Rectangle()
@@ -398,6 +413,15 @@ struct HeartRateView: View {
         selectedBarIndex = nil
     }
     
+    
+    // Format hour label for day mode (matches Blood Glucose format)
+    private func hourLabel(for hour: Int) -> String {
+        if hour == 0 { return "12a" }
+        else if hour < 12 { return "\(hour)a" }
+        else if hour == 12 { return "12p" }
+        else { return "\(hour - 12)p" }
+    }
+    
     // MARK: - Chart Components
     @AxisContentBuilder
     private var chartXAxisMarks: some AxisContent {
@@ -406,7 +430,7 @@ struct HeartRateView: View {
                 let shouldShow = shouldShowAxisLabel(at: idx)
                 
                 if shouldShow {
-                    AxisValueLabel(horizontalSpacing: -10, verticalSpacing: 16){
+                    AxisValueLabel(verticalSpacing: 16){
                         Text(chartData[idx].label)
                             .font(.system(size: selectedMode == .week ? 11 : 12))
                     }
@@ -784,6 +808,19 @@ private extension Color {
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
 
+
+// MARK: - View Modifier for Day Mode X-Scale
+struct DayModeXScaleModifier: ViewModifier {
+    let isDayMode: Bool
+    
+    func body(content: Content) -> some View {
+        if isDayMode {
+            content.chartXScale(domain: 0...23)
+        } else {
+            content
+        }
+    }
+}
 
 // MARK: - Data Aggregation with complete axis
 func aggregateHeartRate(for records: [HeartRateRecord],
