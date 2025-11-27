@@ -281,10 +281,11 @@ struct BloodGlucoseView: View {
         .chartXAxis {
             AxisMarks(values: [0, 3, 6, 9, 12, 15, 18, 21]) { value in
                 if let hour = value.as(Int.self) {
-                    AxisValueLabel {
+                    AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
                         Text(hourLabel(for: hour))
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                     }
+                    AxisTick(length: 12)
                     AxisGridLine()
                 }
             }
