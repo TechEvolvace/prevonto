@@ -454,29 +454,52 @@ struct HeartRateView: View {
         }
     }
     
-    // Handle tap on chart
+    // Handle tap on chart using precise plotFrame calculation
     private func handleChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
-        let xPosition = location.x
-        let chartWidth = geometry.size.width
-        let dataCount = CGFloat(chartData.count)
+        guard let plotFrame = proxy.plotFrame else { return }
+        let plotArea = geometry[plotFrame]
         
-        // Calculate which bar was tapped based on position
-        let barWidth = chartWidth / dataCount
-        let tappedIndex = Int(xPosition / barWidth)
+        // Check if tap is within the plot area
+        let relativeX = location.x - plotArea.origin.x
         
-        // Make sure index is within bounds
-        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
-            selectedBarIndex = nil
+        guard relativeX >= 0 && relativeX <= plotArea.width else {
+            // Animate spacer height change when dismissing popover by tapping outside chart
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
             return
         }
         
-        // If tapping the same bar, unselect it
-        if selectedBarIndex == tappedIndex {
-            selectedBarIndex = nil
-        } else {
-            // Check if this data point has data
-            let data = chartData[tappedIndex]
-            if data.min != nil && data.max != nil {
+        // Calculate which bar was tapped based on position
+        let dataCount = CGFloat(chartData.count)
+        guard dataCount > 0 else { return }
+        
+        let barWidth = plotArea.width / dataCount
+        let tappedIndex = Int(relativeX / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
+            // Animate spacer height change when dismissing popover for invalid tap index
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+            return
+        }
+        
+        // Check if this data point has data
+        let data = chartData[tappedIndex]
+        if data.min == nil || data.max == nil {
+            // If tapping on a bar with no data, just deselect any current selection
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedBarIndex = nil
+            }
+            return
+        }
+        
+        // Animate spacer height change when showing/dismissing popover on bar tap
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if selectedBarIndex == tappedIndex {
+                selectedBarIndex = nil
+            } else {
                 selectedBarIndex = tappedIndex
             }
         }
@@ -488,7 +511,7 @@ struct HeartRateView: View {
     }
     
     
-    // Format hour label for day mode (matches Blood Glucose format)
+    // Format hour label for day mode
     private func hourLabel(for hour: Int) -> String {
         if hour == 0 { return "12a" }
         else if hour < 12 { return "\(hour)a" }
