@@ -218,24 +218,29 @@ struct BloodGlucoseView: View {
     
     // MARK: - Chart Section
     private var chartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Blood Glucose (mg/dl) over time")
-                    .foregroundColor(.grayText)
-                    .font(.headline)
-                
-                if selectedMode == .day {
-                    dayLineChart
-                } else {
-                    barChart
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Blood Glucose (mg/dl) over time")
+                .foregroundColor(.grayText)
+                .font(.system(size: 18, weight: .semibold))
+                .padding(.bottom, 16)
+            
+            if selectedMode == .day {
+                dayLineChart
+            } else {
+                barChart
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         .padding(.bottom, 20)
+        .onChange(of: selectedMode) { _, _ in
+            // Dismiss selection when switching modes
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedDataIndex = nil
+            }
+        }
     }
     
     // MARK: - Day Line Chart
@@ -285,7 +290,10 @@ struct BloodGlucoseView: View {
             }
         }
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) {
+                AxisGridLine()
+                AxisValueLabel(horizontalSpacing: 16)
+            }
         }
         .chartXScale(domain: 0...23)
         .chartYScale(domain: 0...200)
@@ -366,79 +374,125 @@ struct BloodGlucoseView: View {
     
     // MARK: - Bar Chart (for Week or Month mode)
     private var barChart: some View {
-        Chart {
-            ForEach(chartData.indices, id: \.self) { idx in
-                let data = chartData[idx]
-                let isSelected = selectedDataIndex == idx
-                
-                if let min = data.min, let max = data.max {
-                    // Main bar mark
-                    BarMark(
-                        x: .value("Index", data.index),
-                        yStart: .value("Min", min),
-                        yEnd: .value("Max", max)
-                    )
-                    .foregroundStyle(isSelected ? Color.selectionGreen : Color.unselectedBar)
+        VStack(alignment: .leading, spacing: 0) {
+            Chart {
+                ForEach(chartData.indices, id: \.self) { idx in
+                    let data = chartData[idx]
+                    let isSelected = selectedDataIndex == idx
                     
-                    // Show max value label above the bar when selected
-                    if isSelected {
-                        PointMark(
-                            x: .value("Index", data.index),
-                            y: .value("Max", max)
+                    if let min = data.min, let max = data.max {
+                        if min == max {
+                            // Point mark for single values (when min == max)
+                            PointMark(
+                                x: .value("Label", data.label),
+                                y: .value("Measurement", min)
+                            )
+                            .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                            .symbolSize(60)
+                            .annotation(position: .top, alignment: .center, spacing: 4) {
+                                if isSelected {
+                                    maxValueLabel(value: min)
+                                }
+                            }
+                            .annotation(position: .bottom, alignment: .center, spacing: 4) {
+                                if isSelected {
+                                    minValueLabel(value: min)
+                                }
+                            }
+                        } else {
+                            // Bar mark extending from min to max
+                            BarMark(
+                                x: .value("Label", data.label),
+                                yStart: .value("Min", min),
+                                yEnd: .value("Max", max)
+                            )
+                            .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
+                            .cornerRadius(4)
+                            
+                            // Show max value label above the bar when selected
+                            if isSelected {
+                                PointMark(
+                                    x: .value("Label", data.label),
+                                    y: .value("Max", max)
+                                )
+                                .foregroundStyle(.clear)
+                                .annotation(position: .top, alignment: .center, spacing: 4) {
+                                    maxValueLabel(value: max)
+                                }
+                                
+                                // Show min value label below the bar when selected
+                                PointMark(
+                                    x: .value("Label", data.label),
+                                    y: .value("Min", min)
+                                )
+                                .foregroundStyle(.clear)
+                                .annotation(position: .bottom, alignment: .center, spacing: 4) {
+                                    minValueLabel(value: min)
+                                }
+                            }
+                        }
+                    } else {
+                        // When there's no data
+                        BarMark(
+                            x: .value("Label", data.label),
+                            yStart: .value("Min", 0),
+                            yEnd: .value("Max", 0)
                         )
                         .foregroundStyle(.clear)
-                        .annotation(position: .top, alignment: .center, spacing: 4) {
-                            maxValueLabel(value: max)
-                        }
-                        
-                        // Show min value label below the bar when selected
-                        PointMark(
-                            x: .value("Index", data.index),
-                            y: .value("Min", min)
-                        )
-                        .foregroundStyle(.clear)
-                        .annotation(position: .bottom, alignment: .center, spacing: 4) {
-                            minValueLabel(value: min)
-                        }
                     }
-                    
-                    // Point mark for single values (when min blood glucose == max blood glucose)
-                    if min == max {
-                        PointMark(
-                            x: .value("Index", data.index),
-                            y: .value("Measurement", min)
-                        )
-                        .foregroundStyle(isSelected ? Color.selectionGreen : Color.unselectedBar)
-                        .symbolSize(60)
+                }
+            }
+            .frame(height: 260) // Extra height to accommodate labels
+            .chartXAxis {
+                if selectedMode == .month {
+                    // For month mode, only show labels at days 1, 7, 14, 21, 28
+                    AxisMarks { value in
+                        AxisGridLine()
+                        if let label = value.as(String.self) {
+                            let labelsToShow = ["1", "7", "14", "21", "28"]
+                            if labelsToShow.contains(label) {
+                                AxisValueLabel(verticalSpacing: 12)
+                                    .font(.system(size: xAxisFontSize))
+                            }
+                        }
                     }
                 } else {
-                    // When there's no data
-                    BarMark(
-                        x: .value("Index", data.index),
-                        yStart: .value("Min", 0),
-                        yEnd: .value("Max", 0)
-                    )
-                    .foregroundStyle(.clear)
+                    // For week mode, show all labels
+                    AxisMarks { value in
+                        AxisValueLabel(verticalSpacing: 12)
+                            .font(.system(size: xAxisFontSize))
+                        AxisGridLine()
+                    }
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) {
+                    AxisGridLine()
+                    AxisValueLabel(horizontalSpacing: 16)
+                }
+            }
+            .chartYScale(domain: 0...200)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .onTapGesture { location in
+                            handleBarChartTap(at: location, proxy: proxy, geometry: geometry)
+                        }
                 }
             }
         }
-        .frame(height: 250)
-        .chartXAxis {
-            barChartXAxisMarks
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading)
-        }
-        .chartYScale(domain: 0...200)
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill(.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        handleBarChartTap(at: location, proxy: proxy, geometry: geometry)
-                    }
-            }
+    }
+    
+    private var xAxisFontSize: CGFloat {
+        switch selectedMode {
+        case .week:
+            return 13
+        case .month:
+            return 12
+        default:
+            return 12
         }
     }
     
@@ -466,52 +520,53 @@ struct BloodGlucoseView: View {
         }
     }
     
-    @AxisContentBuilder
-    private var barChartXAxisMarks: some AxisContent {
-        AxisMarks(values: chartData.map { $0.index }) { value in
-            if let idx = value.as(Int.self), idx >= 0, idx < chartData.count {
-                let shouldShow = shouldShowAxisLabel(at: idx)
-                
-                if shouldShow {
-                    AxisValueLabel {
-                        Text(chartData[idx].label)
-                            .font(.system(size: selectedMode == .week ? 11 : 12))
-                    }
-                    AxisGridLine()
-                }
-            }
-        }
-    }
     
-    private func shouldShowAxisLabel(at index: Int) -> Bool {
-        switch selectedMode {
-        case .day:
-            return index % 4 == 0
-        case .week:
-            return true // Show all 7 days
-        case .month:
-            return index % 4 == 0
-        }
-    }
-    
+    // Handle tap on chart using precise plotFrame calculation
     private func handleBarChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
-        let xPosition = location.x
-        let chartWidth = geometry.size.width
-        let dataCount = CGFloat(chartData.count)
+        guard let plotFrame = proxy.plotFrame else { return }
+        let plotArea = geometry[plotFrame]
         
-        let barWidth = chartWidth / dataCount
-        let tappedIndex = Int(xPosition / barWidth)
+        // Check if tap is within the plot area
+        let relativeX = location.x - plotArea.origin.x
         
-        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
-            selectedDataIndex = nil
+        guard relativeX >= 0 && relativeX <= plotArea.width else {
+            // Animate spacer height change when dismissing selection by tapping outside chart
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedDataIndex = nil
+            }
             return
         }
         
-        if selectedDataIndex == tappedIndex {
-            selectedDataIndex = nil
-        } else {
-            let data = chartData[tappedIndex]
-            if data.min != nil && data.max != nil {
+        // Calculate which bar was tapped based on position
+        let dataCount = CGFloat(chartData.count)
+        guard dataCount > 0 else { return }
+        
+        let barWidth = plotArea.width / dataCount
+        let tappedIndex = Int(relativeX / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < chartData.count else {
+            // Animate spacer height change when dismissing selection for invalid tap index
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedDataIndex = nil
+            }
+            return
+        }
+        
+        // Check if this data point has data
+        let data = chartData[tappedIndex]
+        if data.min == nil || data.max == nil {
+            // If tapping on a bar with no data, just deselect any current selection
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedDataIndex = nil
+            }
+            return
+        }
+        
+        // Animate spacer height change when showing/dismissing selection on bar tap
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if selectedDataIndex == tappedIndex {
+                selectedDataIndex = nil
+            } else {
                 selectedDataIndex = tappedIndex
             }
         }
@@ -868,6 +923,8 @@ private extension Color {
     static let glucoseLineBlue = Color.blue.opacity(0.7)
     // #AEB2C9 for unselected bars in week/month mode
     static let unselectedBar = Color(red: 174/255, green: 178/255, blue: 201/255)
+    // #AEB2C9 equivalent - barDefault color matching HeartRateView
+    static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
 }
 
 // MARK: - Popover Arrow Shape
