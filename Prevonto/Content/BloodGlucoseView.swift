@@ -345,23 +345,41 @@ struct BloodGlucoseView: View {
     
     private func handleDayChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
         guard !dayChartData.isEmpty else { return }
+        guard let plotFrame = proxy.plotFrame else { return }
         
-        let xPosition = location.x
+        let plotArea = geometry[plotFrame]
         
-        // Find closest data point
+        // Check if tap is within the plot area
+        let relativeX = location.x - plotArea.origin.x
+        let relativeY = location.y - plotArea.origin.y
+        
+        guard relativeX >= 0 && relativeX <= plotArea.width &&
+              relativeY >= 0 && relativeY <= plotArea.height else {
+            // Dismissing selection by tapping outside chart
+            selectedDataIndex = nil
+            return
+        }
+        
+        // Find closest data point using precise plot area coordinates
         var closestIndex: Int? = nil
         var closestDistance: CGFloat = .infinity
         
         for data in dayChartData {
+            // Get the x position of this data point in plot coordinates
             if let xPos = proxy.position(forX: data.hour) {
-                let distance = abs(xPos - xPosition)
-                if distance < closestDistance && distance < 30 {
+                // Calculate distance from tap location to data point
+                // Only consider x distance for horizontal precision
+                let distance = abs(xPos - relativeX)
+                
+                // Use a reasonable threshold (40 points) for tap precision
+                if distance < closestDistance && distance < 40 {
                     closestDistance = distance
                     closestIndex = data.index
                 }
             }
         }
         
+        // Handle showing/dismissing selection on point tap
         if let index = closestIndex {
             if selectedDataIndex == index {
                 selectedDataIndex = nil
