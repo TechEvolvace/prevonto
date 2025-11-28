@@ -150,11 +150,11 @@ struct BloodGlucoseView: View {
     private var averageGlucoseCard: some View {
         VStack(spacing: 8) {
             Text("\(averageGlucose)")
-                .font(.system(size: 48, weight: .semibold))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
             + Text(" mg/dl")
-                .font(.system(size: 24, weight: .regular))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 30, weight: .medium))
+                .foregroundColor(Color.gray)
             
             Text(averageLabel)
                 .font(.custom("Noto Sans", size: 16))
@@ -165,6 +165,10 @@ struct BloodGlucoseView: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
         .padding(.bottom, 16)
     }
     
@@ -233,7 +237,7 @@ struct BloodGlucoseView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.bottom, 20)
         .onChange(of: selectedMode) { _, _ in
             // Dismiss selection when switching modes
@@ -435,7 +439,7 @@ struct BloodGlucoseView: View {
                                     y: .value("Max", max)
                                 )
                                 .foregroundStyle(.clear)
-                                .annotation(position: .top, alignment: .center, spacing: 4) {
+                                .annotation(position: .top, alignment: .center, spacing: 8) {
                                     maxValueLabel(value: max)
                                 }
                                 
@@ -519,11 +523,11 @@ struct BloodGlucoseView: View {
     private func maxValueLabel(value: Int) -> some View {
         VStack(spacing: 0) {
             Text("\(value)")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
             Text("mg/dl")
-                .font(.system(size: 9))
-                .foregroundColor(.grayText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
         }
     }
     
@@ -531,11 +535,11 @@ struct BloodGlucoseView: View {
     private func minValueLabel(value: Int) -> some View {
         VStack(spacing: 0) {
             Text("\(value)")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
             Text("mg/dl")
-                .font(.system(size: 9))
-                .foregroundColor(.grayText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
         }
     }
     
@@ -681,9 +685,12 @@ struct BloodGlucoseView: View {
             .frame(width: 50, height: 60)
             .background(isSelected ? Color.secondaryGreen : Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray, lineWidth: 0.3)
+        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -938,6 +945,8 @@ private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let tintedShadow = Color("Pale Slate Shadow")
+    
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
     // Blue color for day mode line chart
@@ -1051,7 +1060,7 @@ struct GlucoseHighlightRow: View {
     
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
-    // Same color as "Blood glucose" title
+    // Numbered bullet point text color
     private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
     
     var body: some View {

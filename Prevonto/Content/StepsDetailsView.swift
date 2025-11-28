@@ -186,7 +186,7 @@ struct StepsDetailsView: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
             .padding(.horizontal, 24)
         }
     }
@@ -604,6 +604,7 @@ private extension Color {
     static let proTertiary = Color(red: 0.23, green: 0.51, blue: 0.36)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 // MARK: - Popover Arrow Shape

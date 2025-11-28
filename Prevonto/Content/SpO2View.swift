@@ -298,9 +298,12 @@ struct SpO2View: View {
             .frame(width: 50, height: 60)
             .background(isSelected ? Color.secondaryColor : Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray, lineWidth: 0.3)
+        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -422,7 +425,7 @@ struct SpO2View: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
         }
         .transition(.asymmetric(

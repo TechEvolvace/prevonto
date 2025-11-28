@@ -157,7 +157,11 @@ struct WeightTrackerView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray, lineWidth: 0.15)
+            }
         }
     }
     
@@ -236,7 +240,7 @@ struct WeightTrackerView: View {
         .padding()
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(radius: 1)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
     }
 
     // Display trends information from weight data
@@ -318,6 +322,7 @@ private extension Color {
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
+    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 // To preview Weight Tracker page, for only developer uses

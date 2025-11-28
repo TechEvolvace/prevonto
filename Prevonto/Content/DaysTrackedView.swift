@@ -93,10 +93,10 @@ struct DaysTrackedView: View {
                 VStack(spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("\(totalDaysTracked)")
-                            .font(.system(size: 48, weight: .bold))
+                            .font(.system(size: 42, weight: .semibold))
                             .foregroundColor(Color.secondaryGreen)
                         Text("days")
-                            .font(.system(size: 36, weight: .semibold))
+                            .font(.system(size: 36, weight: .medium))
                             .foregroundColor(.gray)
                     }
                     Text("Most tracked: \(mostTrackedMetrics)")
@@ -107,7 +107,11 @@ struct DaysTrackedView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.white)
                 .cornerRadius(12)
-                .shadow(color: .gray.opacity(0.2), radius: 6)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray, lineWidth: 0.15)
+                }
                 .padding(.horizontal, 24)
 
                 // Period Picker
@@ -177,7 +181,7 @@ struct DaysTrackedView: View {
         .padding()
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: .gray.opacity(0.1), radius: 4)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.horizontal, 24)
     }
     
@@ -359,6 +363,7 @@ private extension Color {
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     // Color to mark days tracked, same as primaryGreen
     static let completedGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 struct DaysTrackedView_Previews: PreviewProvider {

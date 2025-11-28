@@ -265,6 +265,10 @@ struct BloodPressureView: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
         .padding(.bottom, 8)
     }
     
@@ -404,7 +408,7 @@ struct BloodPressureView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(8)
-            .shadow(color: Color.cardShadow, radius: 6, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
         .overlay {
@@ -423,7 +427,7 @@ struct BloodPressureView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.cardShadow, radius: 8, x: 0, y: 4)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.horizontal, 16)
         .transition(.asymmetric(
             insertion: .scale(scale: 0.95).combined(with: .opacity),
@@ -469,7 +473,7 @@ struct BloodPressureView: View {
                 .padding(.vertical, 8)
                 .background(Color.white)
                 .cornerRadius(8)
-                .shadow(color: Color.cardShadow, radius: 6, x: 0, y: 1)
+                .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
                 .overlay {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.gray, lineWidth: 0.2)
@@ -493,7 +497,7 @@ struct BloodPressureView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.cardShadow, radius: 6, x: 0, y: 2)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.bottom, 16)
     }
     
@@ -737,7 +741,7 @@ struct BloodPressureView: View {
         .padding(.vertical, 20)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.cardShadow, radius: 6, x: 0, y: 2)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
     }
     
     private var averageValue: Int {
@@ -929,6 +933,7 @@ private extension Color {
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
     static let bpLineBlue = Color.blue.opacity(0.7)
     static let cardShadow = Color(red: 0.941, green: 0.945, blue: 0.976)
+    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 // MARK: - Popover Arrow Shape

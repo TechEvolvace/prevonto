@@ -191,11 +191,11 @@ struct HeartRateView: View {
     var averageHeartRateCard: some View {
         VStack(spacing: 8) {
             Text("\(averageHeartRate)")
-                .font(.system(size: 48, weight: .semibold))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundColor(Color.secondaryGreen)
             + Text(" bpm")
-                .font(.system(size: 24, weight: .regular))
-                .foregroundColor(.primaryGreen)
+                .font(.system(size: 30, weight: .medium))
+                .foregroundColor(Color.gray)
             
             Text(averageLabel)
                 .font(.custom("Noto Sans", size: 16))
@@ -206,6 +206,10 @@ struct HeartRateView: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
         .padding(.bottom, 16)
     }
     
@@ -243,7 +247,7 @@ struct HeartRateView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.bottom, 20)
         .onChange(of: selectedMode) { _, _ in
             // Dismiss popover when switching modes
@@ -634,9 +638,12 @@ struct HeartRateView: View {
             .frame(width: 50, height: 60)
             .background(isSelected ? Color.secondaryGreen : Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray, lineWidth: 0.3)
+        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -902,6 +909,7 @@ private extension Color {
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
+    static let tintedShadow = Color("Pale Slate Shadow")
     
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
