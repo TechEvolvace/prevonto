@@ -189,10 +189,25 @@ struct StepsDetailsView: View {
         }
         .frame(height: 260) // Extra height to accommodate popover
         .chartXAxis {
-            AxisMarks { value in
-                AxisValueLabel()
-                    .font(.system(size: xAxisFontSize))
-                AxisGridLine()
+            if selectedTimeFrame == .month {
+                // For month mode, only show labels at days 1, 7, 14, 21, 28
+                AxisMarks { value in
+                    AxisGridLine()
+                    if let label = value.as(String.self) {
+                        let labelsToShow = ["1", "7", "14", "21", "28"]
+                        if labelsToShow.contains(label) {
+                            AxisValueLabel(verticalSpacing: 12)
+                                .font(.system(size: xAxisFontSize))
+                        }
+                    }
+                }
+            } else {
+                // For other modes, show all labels
+                AxisMarks { value in
+                    AxisValueLabel()
+                        .font(.system(size: xAxisFontSize))
+                    AxisGridLine()
+                }
             }
         }
         .chartYAxis {
@@ -449,12 +464,33 @@ struct StepsDetailsView: View {
             ChartDataPoint(id: UUID(), label: "Fri", steps: 9876, date: Date()),
             ChartDataPoint(id: UUID(), label: "Sat", steps: 4321, date: Date())
         ]
-        monthChartData = [
-            ChartDataPoint(id: UUID(), label: "Week 1", steps: 45321, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Week 2", steps: 52145, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Week 3", steps: 48967, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Week 4", steps: 51234, date: Date())
-        ]
+        // Month mode: create data points for each day of the current month
+        let calendar = Calendar.current
+        let currentDate = Date()
+        guard let monthInterval = calendar.dateInterval(of: .month, for: currentDate) else {
+            monthChartData = []
+            return
+        }
+        
+        var dates: [Date] = []
+        var date = monthInterval.start
+        while date < monthInterval.end {
+            dates.append(date)
+            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+            date = nextDate
+        }
+        
+        // Create data points for each day of the month with sample step data
+        monthChartData = dates.map { date in
+            let day = calendar.component(.day, from: date)
+            let label = "\(day)"
+            // Generate deterministic sample step data based on day (for consistency)
+            let baseSteps = 8000
+            let variation = (day % 7) * 300 - 900 // Creates a pattern based on day
+            let steps = max(0, baseSteps + variation)
+            
+            return ChartDataPoint(id: UUID(), label: label, steps: steps, date: date)
+        }
         yearChartData = [
             ChartDataPoint(id: UUID(), label: "Jan", steps: 198765, date: Date()),
             ChartDataPoint(id: UUID(), label: "Feb", steps: 176543, date: Date()),
