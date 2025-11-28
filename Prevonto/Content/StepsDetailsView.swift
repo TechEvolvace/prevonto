@@ -2,6 +2,13 @@
 import SwiftUI
 import Charts
 
+// Properties of Steps data recorded from users
+struct StepsRecord: Identifiable {
+    let id = UUID()
+    let date: Date
+    let steps: Int
+}
+
 struct StepsDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -18,6 +25,28 @@ struct StepsDetailsView: View {
     // Performance optimizations with cached values
     @State private var maxYValue: Int = 1000
     @State private var currentData: [ChartDataPoint] = []
+    
+    // Sample Steps data for the Steps chart
+    @State private var allStepsRecords: [StepsRecord] = [
+        // From a specific day
+        StepsRecord(date: Date.from(year: 2025, month: 11, day: 28, hour: 16, minute: 0), steps: 10234),
+        StepsRecord(date: Date.from(year: 2025, month: 11, day: 28, hour: 17, minute: 45), steps: 11876),
+        // From other days
+        StepsRecord(date: Date.from(year: 2025, month: 12, day: 30, hour: 14, minute: 0), steps: 8765),
+        StepsRecord(date: Date.from(year: 2025, month: 12, day: 31, hour: 15, minute: 30), steps: 7432),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 0, minute: 30), steps: 45),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 1, minute: 15), steps: 12),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 3, minute: 0), steps: 8),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 5, minute: 45), steps: 234),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 7, minute: 30), steps: 567),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 9, minute: 20), steps: 432),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 11, minute: 10), steps: 678),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 13, minute: 0), steps: 543),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 15, minute: 30), steps: 789),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 17, minute: 45), steps: 921),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 19, minute: 20), steps: 654),
+        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 21, minute: 10), steps: 321),
+    ]
     
     // Activity ring values
     let caloriesCurrent: Double = 4790
@@ -441,33 +470,82 @@ struct StepsDetailsView: View {
     }
     
     private func initializeChartData() {
-        dayChartData = [
-            ChartDataPoint(id: UUID(), label: "12a", steps: 45, date: Date()),
-            ChartDataPoint(id: UUID(), label: "2a", steps: 12, date: Date()),
-            ChartDataPoint(id: UUID(), label: "4a", steps: 8, date: Date()),
-            ChartDataPoint(id: UUID(), label: "6a", steps: 234, date: Date()),
-            ChartDataPoint(id: UUID(), label: "8a", steps: 567, date: Date()),
-            ChartDataPoint(id: UUID(), label: "10a", steps: 432, date: Date()),
-            ChartDataPoint(id: UUID(), label: "12p", steps: 678, date: Date()),
-            ChartDataPoint(id: UUID(), label: "2p", steps: 543, date: Date()),
-            ChartDataPoint(id: UUID(), label: "4p", steps: 789, date: Date()),
-            ChartDataPoint(id: UUID(), label: "6p", steps: 921, date: Date()),
-            ChartDataPoint(id: UUID(), label: "8p", steps: 654, date: Date()),
-            ChartDataPoint(id: UUID(), label: "10p", steps: 321, date: Date())
-        ]
-        weekChartData = [
-            ChartDataPoint(id: UUID(), label: "Sun", steps: 5432, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Mon", steps: 7834, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Tue", steps: 6542, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Wed", steps: 8765, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Thu", steps: 5432, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Fri", steps: 9876, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Sat", steps: 4321, date: Date())
-        ]
-        // Month mode: create data points for each day of the current month
         let calendar = Calendar.current
-        let currentDate = Date()
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentDate) else {
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        
+        // Get all records for today with timestamps to be used for the Day mode of steps chart
+        let todayRecords = allStepsRecords.filter { calendar.isDate($0.date, inSameDayAs: today) }
+        
+        // Day mode: hourly breakdown for today
+        if !todayRecords.isEmpty {
+            // Break up array literals for time-efficient compiler type-checks
+            let hourLabelsPart1: [String] = ["12a", "2a", "4a", "6a"]
+            let hourLabelsPart2: [String] = ["8a", "10a", "12p", "2p"]
+            let hourLabelsPart3: [String] = ["4p", "6p", "8p", "10p"]
+            let hourLabels = hourLabelsPart1 + hourLabelsPart2 + hourLabelsPart3
+            
+            // Each x-axis label in day mode chart defined in 2-hour intervals [startHour, endHour), with startHour and endHour both using 24-hour time format.
+            // 12a = 0-2, 2a = 2-4, 4a = 4-6, 6a = 6-8, 8a = 8-10, 10a = 10-12,
+            // 12p = 12-14, 2p = 14-16, 4p = 16-18, 6p = 18-20, 8p = 20-22, 10p = 22-24
+            let intervalHours: [(start: Int, end: Int)] = [
+                (0, 2), (2, 4), (4, 6), (6, 8), (8, 10), (10, 12),
+                (12, 14), (14, 16), (16, 18), (18, 20), (20, 22), (22, 24)
+            ]
+            
+            dayChartData = hourLabels.enumerated().map { index, label in
+                let interval = intervalHours[index]
+                // Sum all steps in this 2-hour interval
+                let intervalSteps = todayRecords
+                    .filter { record in
+                        let hour = calendar.component(.hour, from: record.date)
+                        return hour >= interval.start && hour < interval.end
+                    }
+                    .reduce(0) { $0 + $1.steps }
+                
+                return ChartDataPoint(id: UUID(), label: label, steps: intervalSteps, date: startOfToday)
+            }
+        } else {
+            // Default placeholder data for day mode chart if today has no entry
+            dayChartData = [
+                ChartDataPoint(id: UUID(), label: "12a", steps: 45, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "2a", steps: 12, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "4a", steps: 8, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "6a", steps: 234, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "8a", steps: 567, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "10a", steps: 432, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "12p", steps: 678, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "2p", steps: 543, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "4p", steps: 789, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "6p", steps: 921, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "8p", steps: 654, date: startOfToday),
+                ChartDataPoint(id: UUID(), label: "10p", steps: 321, date: startOfToday)
+            ]
+        }
+        
+        // Week mode: current week is last 7 days, including today
+        guard let weekStart = calendar.date(byAdding: .day, value: -6, to: startOfToday) else {
+            weekChartData = []
+            return
+        }
+        
+        let weekLabels = calendar.shortWeekdaySymbols
+        weekChartData = (0..<7).compactMap { dayOffset in
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: weekStart) else {
+                return nil
+            }
+            let weekdayIndex = calendar.component(.weekday, from: currentDate) - 1
+            let label = weekLabels[weekdayIndex]
+            
+            // Sum all records for this date
+            let dayRecords = allStepsRecords.filter { calendar.isDate($0.date, inSameDayAs: currentDate) }
+            let daySteps = dayRecords.reduce(0) { $0 + $1.steps }
+            
+            return ChartDataPoint(id: UUID(), label: label, steps: daySteps, date: currentDate)
+        }
+        
+        // Month mode: all days in current month
+        guard let monthInterval = calendar.dateInterval(of: .month, for: today) else {
             monthChartData = []
             return
         }
@@ -480,36 +558,43 @@ struct StepsDetailsView: View {
             date = nextDate
         }
         
-        // Create data points for each day of the month with sample step data
         monthChartData = dates.map { date in
             let day = calendar.component(.day, from: date)
             let label = "\(day)"
-            // Generate deterministic sample step data based on day (for consistency)
-            let baseSteps = 8000
-            let variation = (day % 7) * 300 - 900 // Creates a pattern based on day
-            let steps = max(0, baseSteps + variation)
             
-            return ChartDataPoint(id: UUID(), label: label, steps: steps, date: date)
+            // Sum all records for this date
+            let dayRecords = allStepsRecords.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            let daySteps = dayRecords.reduce(0) { $0 + $1.steps }
+            
+            return ChartDataPoint(id: UUID(), label: label, steps: daySteps, date: date)
         }
-        yearChartData = [
-            ChartDataPoint(id: UUID(), label: "Jan", steps: 198765, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Feb", steps: 176543, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Mar", steps: 203456, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Apr", steps: 187654, date: Date()),
-            ChartDataPoint(id: UUID(), label: "May", steps: 214567, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Jun", steps: 195432, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Jul", steps: 189876, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Aug", steps: 0, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Sep", steps: 0, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Oct", steps: 0, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Nov", steps: 0, date: Date()),
-            ChartDataPoint(id: UUID(), label: "Dec", steps: 0, date: Date())
-        ]
+        
+        // Year mode: monthly aggregates for current year
+        let months = calendar.shortMonthSymbols
+        let currentYear = calendar.component(.year, from: today)
+        yearChartData = (1...12).compactMap { monthNum in
+            guard let monthDate = calendar.date(from: DateComponents(year: currentYear, month: monthNum, day: 1)) else {
+                return nil
+            }
+            let label = months[monthNum - 1]
+            
+            // Sum all steps for this month
+            guard let monthInterval = calendar.dateInterval(of: .month, for: monthDate) else {
+                return ChartDataPoint(id: UUID(), label: label, steps: 0, date: monthDate)
+            }
+            
+            let monthSteps = allStepsRecords
+                .filter { record in
+                    record.date >= monthInterval.start && record.date < monthInterval.end
+                }
+                .reduce(0) { $0 + $1.steps }
+            
+            return ChartDataPoint(id: UUID(), label: label, steps: monthSteps, date: monthDate)
+        }
     }
 }
 
 // MARK: - Supporting Structures & Extensions
-
 private extension Color {
     static let proPrimary = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let proSecondary = Color(red: 0.39, green: 0.59, blue: 0.38)
