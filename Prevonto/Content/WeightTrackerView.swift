@@ -3,6 +3,7 @@ import Foundation
 import SwiftUI
 import Charts
 
+// Weight chart
 struct WeightChartView: View {
     let data: [(String, Double)]
 
@@ -13,18 +14,19 @@ struct WeightChartView: View {
                     x: .value("Day", day),
                     y: .value("Weight", value)
                 )
-                .foregroundStyle(Color(red: 0.01, green: 0.33, blue: 0.18)) // Dark green line
+                .foregroundStyle(Color.primaryGreen)
                 .interpolationMethod(.monotone)
             }
         }
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) {
+                AxisGridLine()
+                AxisValueLabel(horizontalSpacing: 16)
+            }
         }
         .chartYScale(domain: 100...120)
-        .frame(height: 150)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 1)
+        .frame(height: 250)
+        .padding(.vertical, 12)
     }
 }
 
@@ -52,9 +54,8 @@ class WeightTrackerManager: ObservableObject {
 
 
 // MARK: - WeightTrackerView
-
 struct WeightTrackerView: View {
-    @State private var selectedUnit: String = "Lb"
+    @State private var selectedUnit: String = "Lbs"
     @State private var selectedTab: String = "Week"
     @State private var inputWeight: String = ""
     @ObservedObject private var manager = WeightTrackerManager()
@@ -79,14 +80,21 @@ struct WeightTrackerView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Subviews
-
+    // Weight Tracker page header
     private var headerSection: some View {
-        Text("Weight Tracker")
-            .font(.largeTitle)
-            .fontWeight(.bold)
-            .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 4){
+            Text("Weight Tracker")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(Color.primaryGreen)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("Your weight will need to be recorded manually by you on a daily/weekly basis.")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(Color.darkGrayText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineSpacing(4)
+        }
     }
 
     private var inputSection: some View {
@@ -108,7 +116,7 @@ struct WeightTrackerView: View {
                     Text("Add for Today")
                 }
                 .font(.subheadline)
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                .foregroundColor(Color.primaryGreen)
             }
         }
         .padding()
@@ -118,19 +126,30 @@ struct WeightTrackerView: View {
         )
     }
 
+    // Displaying the weekly average or monthly averages
     private var averageSection: some View {
         let avg = manager.averageWeightLb
         let displayWeight = selectedUnit == "Kg" ? avg * 0.453592 : avg
 
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Weekly Average")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-
-            VStack(spacing: 8) {
-                Text("\(String(format: "%.1f", displayWeight)) \(selectedUnit.lowercased()).")
-                    .font(.system(size: 40, weight: .bold))
-                    .foregroundColor(.gray)
+            VStack(spacing: 0) {
+                HStack(spacing: 6){
+                    Text("\(String(format: "%.1f", displayWeight))")
+                        .font(.system(size: 48, weight:  .bold))
+                        .foregroundColor(Color.secondaryGreen)
+                    
+                    Text("\(selectedUnit.lowercased()).")
+                        .font(.system(size: 36, weight:  .semibold))
+                        .foregroundColor(Color.gray.opacity(0.8))
+                        .padding(.top, 8)
+                }
+                
+                Text("\(selectedTab)ly Average")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Color.gray)
+                
+                Spacer()
+                    .frame(height: 16)
 
                 unitToggle
             }
@@ -138,20 +157,26 @@ struct WeightTrackerView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(radius: 1)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
         }
-        .padding(.horizontal) // Padding around the entire section
     }
+    
+    // Buttons to toggle between lbs and kg units for weights
     private var unitToggle: some View {
         HStack(spacing: 0) {
-            Button(action: { selectedUnit = "Lb" }) {
+            Button(action: { selectedUnit = "Lbs" }) {
                 Text("Lb")
                     .padding(.vertical, 6)
                     .padding(.horizontal, 20)
-                    .background(selectedUnit == "Lb" ? Color.secondaryColor : Color.gray.opacity(0.2))
-                    .foregroundColor(selectedUnit == "Lb" ? .white : .black)
+                    .background(selectedUnit == "Lbs" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .foregroundColor(selectedUnit == "Lbs" ? .white : .black)
             }
-            .cornerRadius(6)
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: 8,
+                bottomLeadingRadius: 8,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0
+            ))
 
             Button(action: { selectedUnit = "Kg" }) {
                 Text("Kg")
@@ -160,33 +185,43 @@ struct WeightTrackerView: View {
                     .background(selectedUnit == "Kg" ? Color.secondaryColor : Color.gray.opacity(0.2))
                     .foregroundColor(selectedUnit == "Kg" ? .white : .black)
             }
-            .cornerRadius(6)
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 8,
+                topTrailingRadius: 8
+            ))
         }
     }
 
+    // Buttons to toggle between Week mode or Month mode
     private var weekMonthToggle: some View {
         HStack {
             Button("Week") {
                 selectedTab = "Week"
             }
-            .padding()
+            .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(selectedTab == "Week" ? Color.secondaryColor : Color.gray.opacity(0.2))
-            .foregroundColor(selectedTab == "Week" ? .white : .black)
+            .background(selectedTab == "Week" ? Color.secondaryColor : Color.white)
+            .foregroundColor(selectedTab == "Week" ? .white : Color.gray)
             .cornerRadius(8)
+            .shadow(color: selectedTab == "Week" ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
 
             Button("Month") {
                 selectedTab = "Month"
             }
-            .padding()
+            .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(selectedTab == "Month" ? Color.secondaryColor : Color.gray.opacity(0.2))
-            .foregroundColor(selectedTab == "Month" ? .white : .black)
+            .background(selectedTab == "Month" ? Color.secondaryColor : Color.white)
+            .foregroundColor(selectedTab == "Month" ? .white : Color.gray)
             .cornerRadius(8)
+            .shadow(color: selectedTab == "Month" ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
         }
     }
 
     private var graphPlaceholder: some View {
+        // Card containing the weight chart, with fixed placeholder weight data.
+        // Unfortunately, will need to restructure weight data to have dynamic chart for weight data (in lbs vs kg) in Week vs Month mode.
         VStack {
             WeightChartView(data: [
                 ("Su", 113),
@@ -204,16 +239,18 @@ struct WeightTrackerView: View {
         .shadow(radius: 1)
     }
 
+    // Display trends information from weight data
     private var trendsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Trends")
-                .font(.headline)
-                .foregroundColor(.black)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(Color.gray)
 
-            HStack {
+            HStack{
                 Rectangle()
-                    .fill(Color(red: 0.39, green: 0.59, blue: 0.38))
+                    .fill(Color.secondaryGreen)
                     .frame(width: 20, height: 20)
+                
                 Text("No significant change in weight today—great consistency!")
                     .font(.footnote)
             }
@@ -227,6 +264,7 @@ struct WeightTrackerView: View {
                 Rectangle()
                     .fill(Color.yellow)
                     .frame(width: 20, height: 20)
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("This BMI falls outside the typical range. Tracking your health over time can offer helpful insight.")
                         .font(.footnote)
@@ -243,12 +281,13 @@ struct WeightTrackerView: View {
         }
     }
 
+    // Logged Entries dropped button to display recent added weight entries
     private var loggedEntriesSection: some View {
         VStack(alignment: .leading) {
             HStack {
                 Text("Logged Entries")
                     .font(.headline)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                 Spacer()
                 Image(systemName: "chevron.down")
             }
@@ -256,8 +295,10 @@ struct WeightTrackerView: View {
             ForEach(manager.entries) { entry in
                 HStack {
                     Text(entry.formattedDate)
+                        .foregroundStyle(Color.gray)
                     Spacer()
                     Text(String(format: "%.1f", entry.weight(in: selectedUnit)))
+                        .foregroundStyle(Color.gray)
                 }
                 .padding(.vertical, 4)
                 Divider()
@@ -271,8 +312,15 @@ struct WeightTrackerView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: Some custom-defined colors
+private extension Color {
+    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
+    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
+}
 
+// To preview Weight Tracker page, for only developer uses
 struct WeightTrackerView_Previews: PreviewProvider {
     static var previews: some View {
         WeightTrackerView()
