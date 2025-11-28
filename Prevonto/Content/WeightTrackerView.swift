@@ -59,25 +59,37 @@ struct WeightTrackerView: View {
     @State private var selectedTab: String = "Week"
     @State private var inputWeight: String = ""
     @ObservedObject private var manager = WeightTrackerManager()
+    
+    // State for popup
+    @State private var showingAddPopup: Bool = false
+    @State private var popupSelectedUnit: String = "Lbs"
+    @State private var popupSelectedWeight: Int = 0
 
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                headerSection
-                inputSection
-                averageSection
-                weekMonthToggle
-                graphPlaceholder
-                trendsSection
-                loggedEntriesSection
+        ZStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    headerSection
+                    inputSection
+                    averageSection
+                    weekMonthToggle
+                    graphPlaceholder
+                    trendsSection
+                    loggedEntriesSection
+                }
+                .padding(.horizontal)  // Add padding once here
+                .padding(.top)
             }
-            .padding(.horizontal)  // Add padding once here
-            .padding(.top)
+            .background(Color.white)
+            .navigationTitle("Weight Full Page")
+            .navigationBarTitleDisplayMode(.inline)
+            
+            // Add for Today Popup Overlay
+            if showingAddPopup {
+                addForTodayPopup
+            }
         }
-        .background(Color.white)
-        .navigationTitle("Weight Full Page")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     // Weight Tracker page header
@@ -99,31 +111,39 @@ struct WeightTrackerView: View {
 
     private var inputSection: some View {
         HStack {
-            TextField("Current Weight", text: $inputWeight)
-                .keyboardType(.decimalPad)
-                .padding(.vertical, 12)
-
+            Text("Current Weight")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.primaryGreen)
+            
             Spacer()
-
+            
             Button(action: {
-                if let value = Double(inputWeight) {
-                    manager.addEntry(weight: value)
-                    inputWeight = ""
-                }
+                // Reset to default values
+                popupSelectedUnit = "Lbs"
+                popupSelectedWeight = 0
+                showingAddPopup = true
             }) {
-                HStack(spacing: 4) {
+                HStack(spacing: 2) {
                     Image(systemName: "plus.circle")
+                        .font(.system(size: 16, weight: .regular))
                     Text("Add for Today")
+                        .font(.system(size: 16, weight: .regular))
                 }
-                .font(.subheadline)
                 .foregroundColor(Color.primaryGreen)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.3))
+                .stroke(Color.gray, lineWidth: 0.15)
         )
+        .padding(.bottom, 8)
     }
 
     // Displaying the weekly average or monthly averages
@@ -313,6 +333,119 @@ struct WeightTrackerView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.gray.opacity(0.3))
         )
+    }
+    
+    // MARK: - Add for Today Popup
+    private var addForTodayPopup: some View {
+        ZStack {
+            // Background overlay
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    showingAddPopup = false
+                }
+            
+            // Popup content
+            VStack(spacing: 0) {
+                // Lb/Kg toggle buttons
+                popupUnitToggle
+                    .padding(.bottom, 20)
+                
+                // Display weight amount in current unit
+                HStack(spacing: 8) {
+                    Text("\(popupSelectedWeight)")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(Color.secondaryGreen)
+                    Text(popupSelectedUnit.lowercased())
+                        .foregroundColor(.gray)
+                        .font(.system(size: 24))
+                        .offset(y: 8)
+                }
+                .padding(.bottom, 8)
+                
+                // Weight picker
+                WeightPickerView(
+                    values: popupSelectedUnit == "Lbs" ? Array(0...500) : Array(0...227),
+                    selected: $popupSelectedWeight,
+                    unit: popupSelectedUnit
+                )
+                .frame(height: 320)
+                .padding(.bottom, -200)
+                
+                // Save button
+                Button(action: saveNewWeight) {
+                    Text("Save")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.primaryGreen)
+                        .cornerRadius(10)
+                }
+            }
+            .padding(24)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, 40)
+        }
+    }
+    
+    private var popupUnitToggle: some View {
+        HStack(spacing: 0) {
+            Button(action: {
+                if popupSelectedUnit != "Lbs" {
+                    let converted = Int(Double(popupSelectedWeight) * 2.205)
+                    popupSelectedWeight = min(max(converted, 0), 500)
+                    popupSelectedUnit = "Lbs"
+                }
+            }) {
+                Text("Lb")
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 20)
+                    .background(popupSelectedUnit == "Lbs" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .foregroundColor(popupSelectedUnit == "Lbs" ? .white : .black)
+            }
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: 8,
+                bottomLeadingRadius: 8,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0
+            ))
+            
+            Button(action: {
+                if popupSelectedUnit != "Kg" {
+                    let converted = Int(Double(popupSelectedWeight) * 0.45359237)
+                    popupSelectedWeight = min(max(converted, 0), 227)
+                    popupSelectedUnit = "Kg"
+                }
+            }) {
+                Text("Kg")
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 20)
+                    .background(popupSelectedUnit == "Kg" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .foregroundColor(popupSelectedUnit == "Kg" ? .white : .black)
+            }
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 8,
+                topTrailingRadius: 8
+            ))
+        }
+    }
+    
+    private func saveNewWeight() {
+        // Convert to lbs for storage (since WeightEntry stores in lbs)
+        let weightInLbs: Double
+        if popupSelectedUnit == "Kg" {
+            weightInLbs = Double(popupSelectedWeight) * 2.205
+        } else {
+            weightInLbs = Double(popupSelectedWeight)
+        }
+        
+        manager.addEntry(weight: weightInLbs)
+        showingAddPopup = false
     }
 }
 
