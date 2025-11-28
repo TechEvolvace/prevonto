@@ -350,7 +350,9 @@ struct MoodTrackerView: View {
                 VStack(spacing: 20) {
                     header
                     logButton
-                    moodSummary
+                    if !filteredEntries.isEmpty {
+                        moodTrackerSummary
+                    }
                     toggleTabs
                     calendarSection
                     energyChart
@@ -420,20 +422,105 @@ struct MoodTrackerView: View {
         }
     }
 
-    private var moodSummary: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "face.smiling")
-                .font(.largeTitle)
-            Text("Neutral")
-                .font(.headline)
-            Text("Avg energy level: 7.5/10")
-                .font(.footnote)
-                .foregroundColor(.gray)
+    // Helper function to get entries for the current week or month based on selectedTab
+    private var filteredEntries: [MoodLogEntry] {
+        let calendar = Calendar.current
+        
+        if selectedTab == "Week" {
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: currentDate) else {
+                return []
+            }
+            let weekStart = weekInterval.start
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekInterval.end
+            
+            return entries.filter { entry in
+                entry.date >= weekStart && entry.date < weekEnd
+            }
+        } else {
+            guard let monthInterval = calendar.dateInterval(of: .month, for: currentDate) else {
+                return []
+            }
+            let monthStart = monthInterval.start
+            let monthEnd = monthInterval.end
+            
+            return entries.filter { entry in
+                entry.date >= monthStart && entry.date < monthEnd
+            }
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 1)
+    }
+    
+    // Helper function to calculate median mood from filtered entries
+    private var medianMood: MoodType {
+        guard !filteredEntries.isEmpty else { return .neutral }
+        
+        // Assign numeric values to moods for median calculation
+        let moodValues: [MoodType: Int] = [
+            .depressed: 1,
+            .sad: 2,
+            .neutral: 3,
+            .happy: 4,
+            .veryHappy: 5
+        ]
+        
+        let sortedMoods = filteredEntries.map { $0.mood }.sorted { mood1, mood2 in
+            (moodValues[mood1] ?? 3) < (moodValues[mood2] ?? 3)
+        }
+        
+        let medianIndex = sortedMoods.count / 2
+        return sortedMoods[medianIndex]
+    }
+    
+    // Helper function to calculate average energy level from filtered entries
+    private var averageEnergyLevel: Double {
+        guard !filteredEntries.isEmpty else { return 0 }
+        let totalEnergy = filteredEntries.reduce(0) { $0 + $1.energy }
+        return Double(totalEnergy) / Double(filteredEntries.count)
+    }
+    
+    // Helper function to get emotion icon name for a mood
+    private func emotionIconName(for mood: MoodType) -> String {
+        switch mood {
+        case .depressed: return "Emotion depressed"
+        case .sad: return "Emotion sad"
+        case .neutral: return "Emotion neutral"
+        case .happy: return "Emotion happy"
+        case .veryHappy: return "Emotion overjoyed"
+        }
+    }
+    
+    // Median mood and Average energy levels summary card section
+    private var moodTrackerSummary: some View {
+        ZStack(alignment: .top) {
+            // Card background
+            VStack(spacing: 8) {
+                // Median mood label inside the card
+                Text(medianMood.rawValue)
+                    .font(.custom("Noto Sans", size: 48))
+                    .foregroundColor(Color.secondaryGreen)
+                
+                // Average energy level inside the card
+                Text("Avg energy level: \(String(format: "%.1f", averageEnergyLevel))/10")
+                    .font(.custom("Noto Sans", size: 15))
+                    .foregroundColor(Color.grayText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 20)
+            .padding(.bottom, 24)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            
+            // Emotion icon above the top edge of the card
+            Image(emotionIconName(for: medianMood))
+                .resizable()
+                .renderingMode(.template)
+                .foregroundColor(Color.secondaryGreen)
+                .aspectRatio(contentMode: .fit)
+                .scaleEffect(medianMood == .neutral ? 2.6 : 1.0, anchor: .center)
+                .frame(width: 80, height: 80)
+                .offset(y: -50) // Position icon above the card
+        }
+        .padding(.top, 50)
     }
 
     // Week and Month toggle buttons on Mood Tracker page
@@ -442,6 +529,7 @@ struct MoodTrackerView: View {
             toggleButton("Week")
             toggleButton("Month")
         }
+        .padding(.vertical, 10)
     }
 
     private func toggleButton(_ title: String) -> some View {
@@ -457,10 +545,12 @@ struct MoodTrackerView: View {
         .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
     }
 
+    // Calendar section users can navigate on
     private var calendarSection: some View {
-        ExampleCalendarView(currentDate: $currentDate, entries: entries, selectedTab: selectedTab)
+        MoodCalendarView(currentDate: $currentDate, entries: entries, selectedTab: selectedTab)
     }
 
+    // Energy levels chart
     private var energyChart: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Energy levels")
@@ -715,8 +805,8 @@ struct MoodTrackerView: View {
     }
 }
 
-
-struct ExampleCalendarView: View {
+// Calendar interface with each day recorded with a mood marked
+struct MoodCalendarView: View {
     @Binding var currentDate: Date
     let entries: [MoodLogEntry]
     let selectedTab: String
