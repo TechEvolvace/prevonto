@@ -219,9 +219,9 @@ struct BloodGlucoseView: View {
     // MARK: - Chart Section
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Blood Glucose (mg/dl) over time")
-                .foregroundColor(.grayText)
-                .font(.system(size: 18, weight: .semibold))
+            Text("Blood glucose (mg/dl) over time")
+                .foregroundColor(Color.grayText)
+                .font(.system(size: 18, weight: .medium))
                 .padding(.bottom, 16)
             
             if selectedMode == .day {
@@ -285,19 +285,19 @@ struct BloodGlucoseView: View {
                         Text(hourLabel(for: hour))
                             .font(.system(size: 12))
                     }
-                    AxisTick(length: 12)
-                    AxisGridLine()
+                    AxisTick(length: 12, stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                 }
             }
         }
         .chartYAxis {
             AxisMarks(position: .leading) {
-                AxisGridLine()
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                 AxisValueLabel(horizontalSpacing: 16)
             }
         }
         .chartXScale(domain: 0...23)
-        .chartYScale(domain: 0...200)
+        .chartYScale(domain: 0...220)
         .chartOverlay { proxy in
             GeometryReader { geometry in
                 Rectangle()
@@ -466,11 +466,11 @@ struct BloodGlucoseView: View {
                 if selectedMode == .month {
                     // For month mode, only show labels at days 1, 7, 14, 21, 28
                     AxisMarks { value in
-                        AxisGridLine()
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                         if let label = value.as(String.self) {
                             let labelsToShow = ["1", "7", "14", "21", "28"]
                             if labelsToShow.contains(label) {
-                                AxisValueLabel(verticalSpacing: 12)
+                                AxisValueLabel(verticalSpacing: 8)
                                     .font(.system(size: xAxisFontSize))
                             }
                         }
@@ -480,17 +480,17 @@ struct BloodGlucoseView: View {
                     AxisMarks { value in
                         AxisValueLabel(verticalSpacing: 12)
                             .font(.system(size: xAxisFontSize))
-                        AxisGridLine()
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                     }
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .leading) {
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                     AxisValueLabel(horizontalSpacing: 16)
                 }
             }
-            .chartYScale(domain: 0...200)
+            .chartYScale(domain: 0...220)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle()
@@ -605,8 +605,10 @@ struct BloodGlucoseView: View {
             switch selectedMode {
             case .day:
                 daySelector
+                    .padding(.bottom, 16)
             case .week:
                 weekSelector
+                    .padding(.bottom, 16)
             case .month:
                 EmptyView()
             }

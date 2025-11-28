@@ -27,20 +27,20 @@ struct SpO2View: View {
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 6, minute: 0), spO2Level: 95),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 9, minute: 30), spO2Level: 96),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 12, minute: 0), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 15, minute: 45), spO2Level: 94),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 19, minute: 0), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 15, minute: 45), spO2Level: 90),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 19, minute: 0), spO2Level: 92),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 7, minute: 45), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 13, minute: 30), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 13, minute: 30), spO2Level: 99),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 8, minute: 15), spO2Level: 94),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 14, minute: 0), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 7, minute: 30), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 13, minute: 15), spO2Level: 94),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 7, minute: 30), spO2Level: 98),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 13, minute: 15), spO2Level: 98),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 8, minute: 0), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 12, minute: 45), spO2Level: 95),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 12, minute: 45), spO2Level: 92),
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 9, minute: 20), spO2Level: 94),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 15, minute: 10), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 7, minute: 0), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 11, minute: 30), spO2Level: 95)
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 15, minute: 10), spO2Level: 91),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 7, minute: 0), spO2Level: 88),
+        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 11, minute: 30), spO2Level: 85)
     ]
     
     // Computed property for average SpO2
@@ -590,18 +590,18 @@ struct SpO2View: View {
         .chartYScale(domain: 0...100)
         .chartYAxis {
             AxisMarks(position: .leading) { value in
-                AxisValueLabel()
-                AxisGridLine()
+                AxisValueLabel(horizontalSpacing: 12)
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
             }
         }
         .chartXAxis {
             AxisMarks(values: [0, 1, 2, 3, 4, 5, 6]) { value in
                 if let idx = value.as(Int.self), idx >= 0, idx < weekChartData.count {
-                    AxisValueLabel {
+                    AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 8) {
                         Text(weekChartData[idx].label)
                             .font(.system(size: 11))
                     }
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                 }
             }
         }
@@ -635,7 +635,7 @@ struct SpO2View: View {
                 // Gradient area fill from line to x-axis
                 AreaMark(
                     x: .value("Hour", data.hour),
-                    yStart: .value("SpO2", 80),
+                    yStart: .value("SpO2", 0),
                     yEnd: .value("SpO2", data.value)
                 )
                 .interpolationMethod(.monotone)
@@ -670,18 +670,21 @@ struct SpO2View: View {
                 }
             }
         }
-        .chartYScale(domain: 80...100)
+        .chartYScale(domain: 0...100)
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) {
+                AxisValueLabel(horizontalSpacing: 12)
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+            }
         }
         .chartXAxis {
             AxisMarks(values: [0, 4, 8, 12, 16, 20, 24]) { value in
                 if let hour = value.as(Int.self) {
-                    AxisValueLabel {
+                    AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 8){
                         Text(hourLabel(for: hour))
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                     }
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                 }
             }
         }

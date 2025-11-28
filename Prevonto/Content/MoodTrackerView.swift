@@ -356,6 +356,7 @@ struct MoodTrackerView: View {
                     toggleTabs
                     calendarSection
                     energyChart
+                        .padding(.bottom, 20)
                     insightSection
                 }
                 .padding()
@@ -591,7 +592,7 @@ struct MoodTrackerView: View {
                 if selectedTab == "Month" {
                     // For month mode, only show labels at days 1, 7, 14, 21, 28
                     AxisMarks { value in
-                        AxisGridLine()
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                         if let label = value.as(String.self) {
                             let labelsToShow = ["1", "7", "14", "21", "28"]
                             if labelsToShow.contains(label) {
@@ -605,13 +606,13 @@ struct MoodTrackerView: View {
                     AxisMarks { value in
                         AxisValueLabel(verticalSpacing: 12)
                             .font(.system(size: xAxisFontSize))
-                        AxisGridLine()
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                     }
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .leading, values: [0, 2, 4, 6, 8, 10]) { value in
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                     AxisValueLabel(horizontalSpacing: 16)
                 }
             }

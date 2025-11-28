@@ -559,8 +559,10 @@ struct HeartRateView: View {
             switch selectedMode {
             case .day:
                 daySelector
+                    .padding(.bottom, 16)
             case .week:
                 weekSelector
+                    .padding(.bottom, 16)
             case .month:
                 EmptyView()
             }

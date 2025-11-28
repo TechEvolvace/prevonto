@@ -221,11 +221,11 @@ struct StepsDetailsView: View {
             if selectedTimeFrame == .month {
                 // For month mode, only show labels at days 1, 7, 14, 21, 28
                 AxisMarks { value in
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                     if let label = value.as(String.self) {
                         let labelsToShow = ["1", "7", "14", "21", "28"]
                         if labelsToShow.contains(label) {
-                            AxisValueLabel(verticalSpacing: 12)
+                            AxisValueLabel(verticalSpacing: 6)
                                 .font(.system(size: xAxisFontSize))
                         }
                     }
@@ -233,14 +233,17 @@ struct StepsDetailsView: View {
             } else {
                 // For other modes, show all labels
                 AxisMarks { value in
-                    AxisValueLabel()
+                    AxisValueLabel(verticalSpacing: 8)
                         .font(.system(size: xAxisFontSize))
-                    AxisGridLine()
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
                 }
             }
         }
         .chartYAxis {
-            AxisMarks(position: .leading)
+            AxisMarks(position: .leading) {
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                AxisValueLabel(horizontalSpacing: 8)
+            }
         }
         .chartYScale(domain: 0...(maxYValue + Int(Double(maxYValue) * 0.15))) // Extra space at top for popover
         .chartOverlay { proxy in
@@ -258,13 +261,13 @@ struct StepsDetailsView: View {
     private var xAxisFontSize: CGFloat {
         switch selectedTimeFrame {
         case .day:
-            return 8
-        case .week:
             return 10
+        case .week:
+            return 12
         case .month:
-            return 9
+            return 12
         case .year:
-            return 8
+            return 10
         }
     }
     
