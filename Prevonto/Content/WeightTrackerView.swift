@@ -72,6 +72,7 @@ struct WeightTrackerView: View {
     @State private var inputWeight: String = ""
     @ObservedObject private var manager = WeightTrackerManager()
     @State private var selectedChartIndex: Int? = nil
+    @State private var isLoggedEntriesExpanded: Bool = false
     
     // State for popup
     @State private var showingAddPopup: Bool = false
@@ -376,23 +377,43 @@ struct WeightTrackerView: View {
                 .foregroundColor(Color.gray)
 
             HStack{
-                Rectangle()
-                    .fill(Color.secondaryGreen)
-                    .frame(width: 20, height: 20)
+                VStack {
+                    Text("Stable")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .frame(width: 60)
+                .padding(.vertical, 8)
+                .foregroundStyle(Color.white)
+                .background(Color.secondaryGreen)
+                .cornerRadius(8)
                 
                 Text("No significant change in weight today—great consistency!")
                     .font(.footnote)
+                
+                Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.3))
+                    .stroke(Color.gray, lineWidth: 0.15)
             )
 
             HStack {
-                Rectangle()
-                    .fill(Color.yellow)
-                    .frame(width: 20, height: 20)
+                VStack {
+                    Text("BMI")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("22")
+                        .font(.system(size: 22, weight: .bold))
+                }
+                .frame(width: 60)
+                .padding(.vertical, 8)
+                .foregroundStyle(Color.white)
+                .background(Color.yellow)
+                .cornerRadius(8)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("This BMI falls outside the typical range. Tracking your health over time can offer helpful insight.")
@@ -401,42 +422,62 @@ struct WeightTrackerView: View {
                         .font(.footnote)
                         .foregroundColor(.blue)
                 }
+                
+                Spacer()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.3))
+                    .stroke(Color.gray, lineWidth: 0.15)
             )
         }
     }
 
-    // Logged Entries dropped button to display recent added weight entries
+    // Logged Entries dropdown button to display recent added weight entries
     private var loggedEntriesSection: some View {
         VStack(alignment: .leading) {
-            HStack {
-                Text("Logged Entries")
-                    .font(.headline)
-                    .foregroundColor(Color.primaryGreen)
-                Spacer()
-                Image(systemName: "chevron.down")
-            }
-
-            ForEach(manager.entries) { entry in
-                HStack {
-                    Text(entry.formattedDate)
-                        .foregroundStyle(Color.gray)
-                    Spacer()
-                    Text(String(format: "%.1f", entry.weight(in: selectedUnit)))
-                        .foregroundStyle(Color.gray)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isLoggedEntriesExpanded.toggle()
                 }
-                .padding(.vertical, 4)
-                Divider()
+            }) {
+                HStack {
+                    Text("Logged Entries")
+                        .font(.headline)
+                        .foregroundColor(Color.primaryGreen)
+                    Spacer()
+                    Image(systemName: isLoggedEntriesExpanded ? "chevron.down" : "chevron.left")
+                        .foregroundColor(Color.primaryGreen)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            if isLoggedEntriesExpanded {
+                ForEach(manager.entries) { entry in
+                    HStack {
+                        Text(entry.formattedDate)
+                            .foregroundStyle(Color.gray)
+                        Spacer()
+                        Text(String(format: "%.1f", entry.weight(in: selectedUnit)))
+                            .foregroundStyle(Color.gray)
+                    }
+                    .padding(.vertical, 4)
+                    Divider()
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.3))
+                .stroke(Color.gray, lineWidth: 0.15)
         )
     }
     
