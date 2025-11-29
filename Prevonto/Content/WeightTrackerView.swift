@@ -164,6 +164,7 @@ struct WeightTrackerView: View {
     private var averageSection: some View {
         // Calculate average based on selected period
         let avg: Double
+        let hasData = !manager.entries.isEmpty
         if selectedTab == "Week" {
             let weekStart = currentWeekStart
             let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart) ?? Date()
@@ -182,15 +183,21 @@ struct WeightTrackerView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             VStack(spacing: 0) {
-                HStack(spacing: 6){
-                    Text("\(String(format: "%.1f", displayWeight))")
-                        .font(.system(size: 48, weight:  .bold))
-                        .foregroundColor(Color.secondaryGreen)
-                    
-                    Text("\(selectedUnit.lowercased()).")
-                        .font(.system(size: 36, weight:  .semibold))
-                        .foregroundColor(Color.gray.opacity(0.8))
-                        .padding(.top, 8)
+                if hasData {
+                    HStack(spacing: 6){
+                        Text("\(String(format: "%.1f", displayWeight))")
+                            .font(.system(size: 48, weight:  .bold))
+                            .foregroundColor(Color.secondaryGreen)
+                        
+                        Text("\(selectedUnit.lowercased()).")
+                            .font(.system(size: 36, weight:  .semibold))
+                            .foregroundColor(Color.gray.opacity(0.8))
+                            .padding(.top, 8)
+                    }
+                } else {
+                    Text("No data yet")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundColor(Color.darkGrayText)
                 }
                 
                 Text("\(selectedTab)ly Average")

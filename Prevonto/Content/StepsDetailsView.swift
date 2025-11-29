@@ -401,7 +401,7 @@ struct StepsDetailsView: View {
                         .foregroundColor(.proSecondary)
                     Text(unit)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                 }
                 
                 Spacer()
@@ -413,7 +413,7 @@ struct StepsDetailsView: View {
             
             Text(description)
                 .font(.system(size: 12))
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -603,7 +603,7 @@ private extension Color {
     static let proSecondary = Color(red: 0.39, green: 0.59, blue: 0.38)
     static let proTertiary = Color(red: 0.23, green: 0.51, blue: 0.36)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
-    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let tintedShadow = Color("Pale Slate Shadow")
 }
 

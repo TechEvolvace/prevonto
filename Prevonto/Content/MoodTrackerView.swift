@@ -350,9 +350,7 @@ struct MoodTrackerView: View {
                 VStack(spacing: 20) {
                     header
                     logButton
-                    if !filteredEntries.isEmpty {
-                        moodTrackerSummary
-                    }
+                    moodTrackerSummary
                     toggleTabs
                     calendarSection
                     energyChart
@@ -450,9 +448,13 @@ struct MoodTrackerView: View {
         }
     }
     
+    private var hasMoodData: Bool {
+        !filteredEntries.isEmpty
+    }
+    
     // Helper function to calculate median mood from filtered entries
     private var medianMood: MoodType {
-        guard !filteredEntries.isEmpty else { return .neutral }
+        guard hasMoodData else { return .neutral }
         
         // Assign numeric values to moods for median calculation
         let moodValues: [MoodType: Int] = [
@@ -473,7 +475,7 @@ struct MoodTrackerView: View {
     
     // Helper function to calculate average energy level from filtered entries
     private var averageEnergyLevel: Double {
-        guard !filteredEntries.isEmpty else { return 0 }
+        guard hasMoodData else { return 0 }
         let totalEnergy = filteredEntries.reduce(0) { $0 + $1.energy }
         return Double(totalEnergy) / Double(filteredEntries.count)
     }
@@ -494,15 +496,27 @@ struct MoodTrackerView: View {
         ZStack(alignment: .top) {
             // Card background
             VStack(spacing: 8) {
-                // Median mood label inside the card
-                Text(medianMood.rawValue)
-                    .font(.custom("Noto Sans", size: 48))
-                    .foregroundColor(Color.secondaryGreen)
-                
-                // Average energy level inside the card
-                Text("Avg energy level: \(String(format: "%.1f", averageEnergyLevel))/10")
-                    .font(.custom("Noto Sans", size: 15))
-                    .foregroundColor(Color.grayText)
+                if hasMoodData {
+                    // Median mood label inside the card
+                    Text(medianMood.rawValue)
+                        .font(.custom("Noto Sans", size: 48))
+                        .foregroundColor(Color.secondaryGreen)
+                    
+                    // Average energy level inside the card
+                    Text("Avg energy level: \(String(format: "%.1f", averageEnergyLevel))/10")
+                        .font(.custom("Noto Sans", size: 15))
+                        .foregroundColor(Color.darkGrayText)
+                } else {
+                    Text("No data yet")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundColor(Color.darkGrayText)
+                    
+                    Text("Log your mood and energy to see your weekly or monthly summary.")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 20)
@@ -511,17 +525,19 @@ struct MoodTrackerView: View {
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             
-            // Emotion icon above the top edge of the card
-            Image(emotionIconName(for: medianMood))
-                .resizable()
-                .renderingMode(.template)
-                .foregroundColor(Color.secondaryGreen)
-                .aspectRatio(contentMode: .fit)
-                .scaleEffect(medianMood == .neutral ? 2.6 : 1.0, anchor: .center)
-                .frame(width: 80, height: 80)
-                .offset(y: -50) // Position icon above the card
+            // Emotion icon above the top edge of the card (only when there is data)
+            if hasMoodData {
+                Image(emotionIconName(for: medianMood))
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(Color.secondaryGreen)
+                    .aspectRatio(contentMode: .fit)
+                    .scaleEffect(medianMood == .neutral ? 2.6 : 1.0, anchor: .center)
+                    .frame(width: 80, height: 80)
+                    .offset(y: -50) // Position icon above the card
+            }
         }
-        .padding(.top, 50)
+        .padding(.top, hasMoodData ? 50 : 0)
     }
 
     // Week and Month toggle buttons on Mood Tracker page
@@ -556,7 +572,7 @@ struct MoodTrackerView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Energy levels")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
             
             // Dynamically adjust height of empty space for popover to appear without overlapping any text
             Spacer()
@@ -632,7 +648,7 @@ struct MoodTrackerView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .onChange(of: selectedTab) { _, _ in
             // Dismiss popover when switching tabs
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -797,7 +813,7 @@ struct MoodTrackerView: View {
             } else {
                 Text("No data available to generate insights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -865,7 +881,7 @@ struct MoodCalendarView: View {
         .padding()
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(radius: 1)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
     }
     
     // Month Calendar View
@@ -998,8 +1014,9 @@ struct MoodCalendarView: View {
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
+    static let tintedShadow = Color("Pale Slate Shadow")
     
     // Emotion-specific associated colors
     static let depressedColor = Color(red: 0.678, green: 0.098, blue: 0.078)

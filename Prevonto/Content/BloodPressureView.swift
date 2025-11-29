@@ -148,11 +148,9 @@ struct BloodPressureView: View {
                         // Current BP + Add Button
                         currentBPSection
                         
-                        // Weekly Average Card (only show if there's data)
-                        if hasWeeklyData {
-                            weeklyAverageCard
-                                .onTapGesture { unselectChartData() }
-                        }
+                        // Weekly Average Card (always visible, shows "No data yet" when there's no data)
+                        weeklyAverageCard
+                            .onTapGesture { unselectChartData() }
                         
                         // Date Navigation
                         dateNavigationSection
@@ -184,7 +182,7 @@ struct BloodPressureView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .foregroundColor(.grayText)
+                            .foregroundColor(.darkGrayText)
                     }
                 }
             }
@@ -204,7 +202,7 @@ struct BloodPressureView: View {
             
             Text("Your blood pressure must be recorded by you on a weekly basis.")
                 .font(.subheadline)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 15)
@@ -247,18 +245,24 @@ struct BloodPressureView: View {
     // MARK: - Weekly Average Card
     private var weeklyAverageCard: some View {
         VStack(spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text("\(weeklyAverageSystolic)/\(weeklyAverageDiastolic)")
-                    .font(.system(size: 42, weight: .semibold))
-                    .foregroundColor(Color.secondaryGreen)
-                Text(" mmHg")
+            if hasWeeklyData {
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("\(weeklyAverageSystolic)/\(weeklyAverageDiastolic)")
+                        .font(.system(size: 42, weight: .semibold))
+                        .foregroundColor(Color.secondaryGreen)
+                    Text(" mmHg")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundColor(Color.gray)
+                }
+            } else {
+                Text("No data yet")
                     .font(.system(size: 30, weight: .medium))
-                    .foregroundColor(Color.gray)
+                    .foregroundColor(Color.darkGrayText)
             }
             
-            Text("Weekly Average")
+            Text("Weekly average")
                 .font(.custom("Noto Sans", size: 16))
-                .foregroundColor(Color.grayText)
+                .foregroundColor(Color.darkGrayText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -296,7 +300,7 @@ struct BloodPressureView: View {
             Text(monthYearText)
                 .font(.custom("Noto Sans", size: 18))
                 .fontWeight(.semibold)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
             
             Spacer()
             
@@ -327,7 +331,7 @@ struct BloodPressureView: View {
                 
                 Text("to")
                     .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 weekDateButton(
                     title: "end date",
@@ -392,12 +396,12 @@ struct BloodPressureView: View {
             HStack {
                 Image(systemName: "calendar")
                     .font(.system(size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 11))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                     Text(weekDateFormatter.string(from: date))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primaryGreen)
@@ -464,10 +468,10 @@ struct BloodPressureView: View {
                 HStack(spacing: 6) {
                     Text(selectedMeasurement.rawValue)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 12))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -489,7 +493,7 @@ struct BloodPressureView: View {
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(selectedMeasurement.chartLabel)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
                 .font(.headline)
             
             bloodPressureChart
@@ -572,7 +576,7 @@ struct BloodPressureView: View {
                     .foregroundColor(.primaryGreen)
                 Text(selectedMeasurement.unit)
                     .font(.system(size: 10))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -631,7 +635,7 @@ struct BloodPressureView: View {
                 
                 Text("Higher \(selectedMeasurement.chartLabel) by 25% this week as compared to your average metrics")
                     .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.bottom, 8)
@@ -692,7 +696,7 @@ struct BloodPressureView: View {
                         y: .value("Avg", averageValue),
                         series: .value("Type", "Avg")
                     )
-                    .foregroundStyle(Color.grayText.opacity(0.5))
+                    .foregroundStyle(Color.darkGrayText.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
                     
                     // Add "Avg" label above the last point of average line
@@ -705,7 +709,7 @@ struct BloodPressureView: View {
                         .annotation(position: .top, alignment: .trailing, spacing: 4) {
                             Text("Avg")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.grayText)
+                                .foregroundColor(.darkGrayText)
                         }
                     }
                 }
@@ -734,7 +738,7 @@ struct BloodPressureView: View {
         .chartYScale(domain: 0...220)
         .chartForegroundStyleScale([
             "Current": Color.bpLineBlue,
-            "Avg": Color.grayText.opacity(0.5)
+            "Avg": Color.darkGrayText.opacity(0.5)
         ])
         .chartLegend(.hidden)
         .padding(.horizontal, 16)
@@ -771,7 +775,7 @@ struct BloodPressureView: View {
             } else {
                 Text("No data available to generate insights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -799,7 +803,7 @@ struct BloodPressureView: View {
                 HStack {
                     Text(todayDateString)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                     
                     Spacer()
                     
@@ -810,7 +814,7 @@ struct BloodPressureView: View {
                     }) {
                         Text("Clear")
                             .font(.system(size: 14))
-                            .foregroundColor(.grayText)
+                            .foregroundColor(.darkGrayText)
                     }
                 }
                 
@@ -848,7 +852,7 @@ struct BloodPressureView: View {
                     .foregroundColor(.primaryGreen)
                 Text(unit)
                     .font(.system(size: 12))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
             }
             
             Spacer()
@@ -864,7 +868,7 @@ struct BloodPressureView: View {
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.grayText.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.darkGrayText.opacity(0.3), lineWidth: 1)
                 )
         }
     }
@@ -929,7 +933,7 @@ struct BloodPressureView: View {
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
     static let bpLineBlue = Color.blue.opacity(0.7)
     static let cardShadow = Color(red: 0.941, green: 0.945, blue: 0.976)

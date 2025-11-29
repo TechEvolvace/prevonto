@@ -117,7 +117,7 @@ struct BloodGlucoseView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .foregroundColor(.grayText)
+                            .foregroundColor(.darkGrayText)
                     }
                 }
             }
@@ -137,7 +137,7 @@ struct BloodGlucoseView: View {
             
             Text("Your blood glucose levels must be recorded by you on a bi-weekly basis.")
                 .font(.subheadline)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 15)
@@ -149,16 +149,22 @@ struct BloodGlucoseView: View {
     // MARK: - Average Glucose Card
     private var averageGlucoseCard: some View {
         VStack(spacing: 8) {
-            Text("\(averageGlucose)")
-                .font(.system(size: 42, weight: .semibold))
-                .foregroundColor(Color.secondaryGreen)
-            + Text(" mg/dl")
-                .font(.system(size: 30, weight: .medium))
-                .foregroundColor(Color.gray)
+            if hasData {
+                Text("\(averageGlucose)")
+                    .font(.system(size: 42, weight: .semibold))
+                    .foregroundColor(Color.secondaryGreen)
+                + Text(" mg/dl")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(Color.gray)
+            } else {
+                Text("No data yet")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(Color.darkGrayText)
+            }
             
             Text(averageLabel)
                 .font(.custom("Noto Sans", size: 16))
-                .foregroundColor(.grayText)
+                .foregroundColor(Color.darkGrayText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -224,7 +230,7 @@ struct BloodGlucoseView: View {
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Blood glucose (mg/dl) over time")
-                .foregroundColor(Color.grayText)
+                .foregroundColor(Color.darkGrayText)
                 .font(.system(size: 18, weight: .medium))
                 .padding(.bottom, 16)
             
@@ -331,7 +337,7 @@ struct BloodGlucoseView: View {
                     .foregroundColor(.primaryGreen)
                 Text("mg/dl")
                     .font(.system(size: 10))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -634,7 +640,7 @@ struct BloodGlucoseView: View {
             Text(monthYearText)
                 .font(.custom("Noto Sans", size: 18))
                 .fontWeight(.semibold)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
             
             Spacer()
             
@@ -676,7 +682,7 @@ struct BloodGlucoseView: View {
             VStack(spacing: 4) {
                 Text(weekdaySymbol)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : .grayText)
+                    .foregroundColor(isSelected ? .white : .darkGrayText)
                 
                 Text("\(day)")
                     .font(.system(size: 16, weight: .semibold))
@@ -725,7 +731,7 @@ struct BloodGlucoseView: View {
                 
                 Text("to")
                     .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 weekDateButton(
                     title: "end date",
@@ -792,12 +798,12 @@ struct BloodGlucoseView: View {
             HStack {
                 Image(systemName: "calendar")
                     .font(.system(size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 11))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                     Text(weekDateFormatter.string(from: date))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primaryGreen)
@@ -808,7 +814,7 @@ struct BloodGlucoseView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(8)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -823,7 +829,7 @@ struct BloodGlucoseView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.horizontal, 16)
         .transition(.asymmetric(
             insertion: .scale(scale: 0.95).combined(with: .opacity),
@@ -860,7 +866,7 @@ struct BloodGlucoseView: View {
             } else {
                 Text("No data available to generate highlights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -884,7 +890,7 @@ struct BloodGlucoseView: View {
             } else {
                 Text("No data available to generate insights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -944,7 +950,7 @@ struct BloodGlucoseView: View {
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let tintedShadow = Color("Pale Slate Shadow")
     
     // #608E61 for selection highlight

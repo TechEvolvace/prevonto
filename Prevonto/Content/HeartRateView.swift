@@ -125,7 +125,7 @@ struct HeartRateView: View {
                         
                         Text("Your heart rate is monitored through your watch when in sync with the app.")
                             .font(.subheadline)
-                            .foregroundColor(.grayText)
+                            .foregroundColor(.darkGrayText)
                     }
                     .padding(.vertical, 15)
                     .onTapGesture {
@@ -190,16 +190,22 @@ struct HeartRateView: View {
     // MARK: - Average Heart Rate Card
     var averageHeartRateCard: some View {
         VStack(spacing: 8) {
-            Text("\(averageHeartRate)")
-                .font(.system(size: 42, weight: .semibold))
-                .foregroundColor(Color.secondaryGreen)
-            + Text(" bpm")
-                .font(.system(size: 30, weight: .medium))
-                .foregroundColor(Color.gray)
+            if hasHeartRateData {
+                Text("\(averageHeartRate)")
+                    .font(.system(size: 42, weight: .semibold))
+                    .foregroundColor(Color.secondaryGreen)
+                + Text(" bpm")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(Color.gray)
+            } else {
+                Text("No data yet")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(Color.darkGrayText)
+            }
             
             Text(averageLabel)
                 .font(.custom("Noto Sans", size: 16))
-                .foregroundColor(.grayText)
+                .foregroundColor(Color.darkGrayText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -239,7 +245,7 @@ struct HeartRateView: View {
     var chartSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Beats Per Minute (BPM) over time")
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
                 .font(.system(size: 18, weight: .semibold))
             
             heartRateChart
@@ -588,7 +594,7 @@ struct HeartRateView: View {
             Text(monthYearText)
                 .font(.custom("Noto Sans", size: 18))
                 .fontWeight(.semibold)
-                .foregroundColor(.grayText)
+                .foregroundColor(.darkGrayText)
             
             Spacer()
             
@@ -629,7 +635,7 @@ struct HeartRateView: View {
             VStack(spacing: 4) {
                 Text(weekdaySymbol)
                     .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : .grayText)
+                    .foregroundColor(isSelected ? .white : .darkGrayText)
                 
                 Text("\(day)")
                     .font(.system(size: 16, weight: .semibold))
@@ -678,7 +684,7 @@ struct HeartRateView: View {
                 
                 Text("to")
                     .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 weekDateButton(
                     title: "end date",
@@ -747,12 +753,12 @@ struct HeartRateView: View {
             HStack {
                 Image(systemName: "calendar")
                     .font(.system(size: 14))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 11))
-                        .foregroundColor(.grayText)
+                        .foregroundColor(.darkGrayText)
                     Text(weekDateFormatter.string(from: date))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primaryGreen)
@@ -763,7 +769,7 @@ struct HeartRateView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(8)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -780,7 +786,7 @@ struct HeartRateView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         .padding(.horizontal, 16)
         .transition(.asymmetric(
             insertion: .scale(scale: 0.95).combined(with: .opacity),
@@ -820,7 +826,7 @@ struct HeartRateView: View {
             } else {
                 Text("No data available to generate highlights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -844,7 +850,7 @@ struct HeartRateView: View {
             } else {
                 Text("No data available to generate insights")
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(.grayText)
+                    .foregroundColor(.darkGrayText)
                     .padding(.vertical, 12)
             }
         }
@@ -854,12 +860,16 @@ struct HeartRateView: View {
     
     private var hasHighlightsData: Bool {
         // Check if there's any actual heart rate data in the selected period
-        return chartData.contains { $0.min != nil && $0.max != nil }
+        return hasHeartRateData
     }
     
     private var hasInsightsData: Bool {
         // Check if there's any actual heart rate data in the selected period
-        return chartData.contains { $0.min != nil && $0.max != nil }
+        return hasHeartRateData
+    }
+    
+    private var hasHeartRateData: Bool {
+        chartData.contains { $0.min != nil && $0.max != nil }
     }
     
     // MARK: - Helper Functions
@@ -907,7 +917,7 @@ struct HeartRateView: View {
 private extension Color {
     static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
     static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let grayText = Color(red: 0.25, green: 0.33, blue: 0.44)
+    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
     static let tintedShadow = Color("Pale Slate Shadow")
     
