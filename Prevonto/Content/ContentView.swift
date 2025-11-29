@@ -384,31 +384,78 @@ struct ContentView: View {
     
     // MARK: - Health Highlights Section
     var healthHighlightsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let cardCount = 3
+        
+        return VStack(alignment: .leading, spacing: 16) {
             Text("Health highlights")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
                 .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
             
-            // Carousel of cards, where each card contains a specific health summary information for user
-            TabView(selection: $healthHighlightsCurrentIndex) {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(red: 0.96, green: 0.97, blue: 0.98))
-                        .frame(width: 280, height: 120)
-                        .scaleEffect(index == healthHighlightsCurrentIndex ? 1.0 : 0.9)
-                        .animation(.easeInOut(duration: 0.3), value: healthHighlightsCurrentIndex)
-                        .tag(index)
+            // Custom stacked carousel of highlights cards
+            GeometryReader { geo in
+                let width = geo.size.width
+                
+                ZStack {
+                    // Center card is the current index; neighbours are smaller and behind.
+                    ForEach(0..<cardCount, id: \.self) { index in
+                        let offsetIndex = index - healthHighlightsCurrentIndex
+                        let isCenter = offsetIndex == 0
+                        
+                        // Only show up to one neighbour on each side in view
+                        if abs(offsetIndex) <= 1 {
+                            let baseX: CGFloat = CGFloat(offsetIndex) * (width * 0.35)
+                            let scale: CGFloat = isCenter ? 1.0 : 0.9
+                            let opacity: Double = isCenter ? 1.0 : 0.7
+                            let shadowOpacity: Double = isCenter ? 0.12 : 0.06
+                            let shadowRadius: CGFloat = isCenter ? 16 : 10
+                            
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white)
+                                .frame(width: width * 0.72, height: 120)
+                                .overlay(
+                                    Text("Highlight \(index + 1)")
+                                        .font(.custom("Noto Sans", size: 16))
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color(red: 0.19, green: 0.21, blue: 0.24))
+                                )
+                                .scaleEffect(scale)
+                                .opacity(opacity)
+                                .shadow(color: Color.black.opacity(shadowOpacity),
+                                        radius: shadowRadius,
+                                        x: 0,
+                                        y: 8)
+                                .offset(x: baseX)
+                                .zIndex(isCenter ? 2 : 1)
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            let threshold: CGFloat = 40
+                            if value.translation.width < -threshold && healthHighlightsCurrentIndex < cardCount - 1 {
+                                // Swipe left -> next
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                    healthHighlightsCurrentIndex += 1
+                                }
+                            } else if value.translation.width > threshold && healthHighlightsCurrentIndex > 0 {
+                                // Swipe right -> previous
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                    healthHighlightsCurrentIndex -= 1
+                                }
+                            }
+                        }
+                )
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 140)
             
             // Carousel progress bar for the Health Highlights section
             HStack {
                 Spacer()
                 HStack(spacing: 8) {
-                    ForEach(0..<3, id: \.self) { index in
+                    ForEach(0..<cardCount, id: \.self) { index in
                         RoundedRectangle(cornerRadius: 4)
                             .fill(index == healthHighlightsCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
                             .frame(width: index == healthHighlightsCurrentIndex ? 24 : 8, height: 8)
