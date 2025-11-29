@@ -43,50 +43,38 @@ struct SpO2View: View {
         SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 11, minute: 30), spO2Level: 85)
     ]
     
-    // Computed property for average SpO2
-    private var avgSpO2: Double {
+    // Helper to get filtered records for current period
+    private var filteredSpO2Records: [SpO2Record] {
+        let calendar = Calendar.current
         if selectedTab == "Day" {
-            // Average of SpO2 for the selected day
-            let calendar = Calendar.current
             let startOfDay = calendar.startOfDay(for: selectedDate)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-            
-            let filtered = allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
-            guard !filtered.isEmpty else { return 0 }
-            
-            let sum = filtered.reduce(0.0) { $0 + $1.spO2Level }
-            return sum / Double(filtered.count)
+            return allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
         } else {
-            // Average of SpO2 for all days within the current selected week
-            let calendar = Calendar.current
             let startOfWeek = calendar.startOfDay(for: weekStartDate)
             let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
-            
-            let filtered = allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
-            guard !filtered.isEmpty else { return 0 }
-            
-            let sum = filtered.reduce(0.0) { $0 + $1.spO2Level }
-            return sum / Double(filtered.count)
+            return allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
         }
+    }
+    
+    // Check if there's data for the current period
+    private var hasSpO2Data: Bool {
+        !filteredSpO2Records.isEmpty
+    }
+    
+    // Computed property for average SpO2
+    private var avgSpO2: Double {
+        let filtered = filteredSpO2Records
+        guard !filtered.isEmpty else { return 0 }
+        
+        let sum = filtered.reduce(0.0) { $0 + $1.spO2Level }
+        return sum / Double(filtered.count)
     }
     
     // Computed property for lowest SpO2
     private var computedLowestSpO2: Double {
-        if selectedTab == "Day" {
-            let calendar = Calendar.current
-            let startOfDay = calendar.startOfDay(for: selectedDate)
-            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-            
-            let filtered = allSpO2Records.filter { $0.timestamp >= startOfDay && $0.timestamp < endOfDay }
-            return filtered.map(\.spO2Level).min() ?? 0
-        } else {
-            let calendar = Calendar.current
-            let startOfWeek = calendar.startOfDay(for: weekStartDate)
-            let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: weekEndDate)!)
-            
-            let filtered = allSpO2Records.filter { $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek }
-            return filtered.map(\.spO2Level).min() ?? 0
-        }
+        let filtered = filteredSpO2Records
+        return filtered.map(\.spO2Level).min() ?? 0
     }
     
     // Week mode chart data
@@ -487,7 +475,7 @@ struct SpO2View: View {
     }
     
     private var gaugeSection: some View {
-        SegmentedSpO2Gauge(value: avgSpO2)
+        SegmentedSpO2Gauge(value: avgSpO2, hasData: hasSpO2Data)
     }
 
     
@@ -495,7 +483,10 @@ struct SpO2View: View {
         VStack(spacing: 8) {
             Divider()
             HStack {
-                summaryItem(title: "Lowest SpO₂", value: "\(Int(computedLowestSpO2))%")
+                summaryItem(
+                    title: "Lowest SpO₂",
+                    value: hasSpO2Data ? "\(Int(computedLowestSpO2))%" : "No data yet"
+                )
                 summaryItem(title: "Avg Heart Rate", value: "\(Int(avgHeartRate)) bpm")
             }
             Divider()
@@ -576,11 +567,18 @@ struct SpO2View: View {
                     .foregroundStyle(Color.secondaryColor)
                     .interpolationMethod(.monotone)
                     
+                    // Vertical dashed line for the selected point
+                    if isSelected {
+                        RuleMark(x: .value("Day", data.index))
+                            .foregroundStyle(Color.gray)
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    }
+                    
                     PointMark(
                         x: .value("Day", data.index),
                         y: .value("SpO2", data.value)
                     )
-                    .foregroundStyle(isSelected ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                    .foregroundStyle(isSelected ? Color.gray : Color.secondaryColor)
                     .symbolSize(isSelected ? 100 : 60)
                     .annotation(position: .top, alignment: .center, spacing: 4) {
                         if isSelected {
@@ -615,7 +613,7 @@ struct SpO2View: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        handleWeekChartTap(at: location, geometry: geometry)
+                        handleWeekChartTap(at: location, proxy: proxy, geometry: geometry)
                     }
             }
         }
@@ -660,11 +658,18 @@ struct SpO2View: View {
                 .foregroundStyle(Color.secondaryColor)
                 .interpolationMethod(.monotone)
                 
+                // Vertical dashed line for the selected point
+                if isSelected {
+                    RuleMark(x: .value("Hour", data.hour))
+                        .foregroundStyle(Color.gray)
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                }
+                
                 PointMark(
                     x: .value("Hour", data.hour),
                     y: .value("SpO2", data.value)
                 )
-                .foregroundStyle(isSelected ? Color(red: 96/255, green: 142/255, blue: 97/255) : Color.secondaryColor)
+                .foregroundStyle(isSelected ? Color.gray : Color.secondaryColor)
                 .symbolSize(isSelected ? 100 : 60)
                 .annotation(position: .top, alignment: .center, spacing: 4) {
                     if isSelected {
@@ -726,56 +731,77 @@ struct SpO2View: View {
         }
     }
     
-    private func handleWeekChartTap(at location: CGPoint, geometry: GeometryProxy) {
-        let chartWidth = geometry.size.width
-        let dataCount = CGFloat(weekChartData.count)
-        let barWidth = chartWidth / dataCount
-        let tappedIndex = Int(location.x / barWidth)
+    private func handleWeekChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        guard let plotFrame = proxy.plotFrame else { return }
+        let plotArea = geometry[plotFrame]
         
-        guard tappedIndex >= 0 && tappedIndex < weekChartData.count else {
-            selectedDataIndex = nil
+        let relativeX = location.x - plotArea.origin.x
+        guard relativeX >= 0 && relativeX <= plotArea.width else {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedDataIndex = nil }
             return
         }
         
-        // Only allow selection if there's data for that day
-        if weekChartData[tappedIndex].value > 0 {
-            if selectedDataIndex == tappedIndex {
-                selectedDataIndex = nil
-            } else {
-                selectedDataIndex = tappedIndex
+        let data = weekChartData
+        let count = max(data.count, 1)
+        if count == 1 {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedDataIndex = data.first?.value ?? 0 > 0 ? data.first?.index : nil
             }
-        } else {
-            selectedDataIndex = nil
+            return
+        }
+        
+        let normalized = relativeX / plotArea.width
+        let rawIndex = normalized * CGFloat(count - 1)
+        let tappedPosition = Int(round(rawIndex))
+        
+        guard tappedPosition >= 0 && tappedPosition < count else {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedDataIndex = nil }
+            return
+        }
+        
+        let point = data[tappedPosition]
+        guard point.value > 0 else {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedDataIndex = nil }
+            return
+        }
+        
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedDataIndex = (selectedDataIndex == point.index) ? nil : point.index
         }
     }
     
     private func handleDayChartTap(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
-        guard !dayChartData.isEmpty else { return }
+        guard let plotFrame = proxy.plotFrame else { return }
+        let plotArea = geometry[plotFrame]
         
-        let xPosition = location.x
-        
-        // Find closest data point
-        var closestIndex: Int? = nil
-        var closestDistance: CGFloat = .infinity
-        
-        for data in dayChartData {
-            if let xPos = proxy.position(forX: data.hour) {
-                let distance = abs(xPos - xPosition)
-                if distance < closestDistance && distance < 30 {
-                    closestDistance = distance
-                    closestIndex = data.index
-                }
-            }
+        let relativeX = location.x - plotArea.origin.x
+        guard relativeX >= 0 && relativeX <= plotArea.width else {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedDataIndex = nil }
+            return
         }
         
-        if let index = closestIndex {
-            if selectedDataIndex == index {
-                selectedDataIndex = nil
-            } else {
-                selectedDataIndex = index
+        let data = dayChartData
+        let count = max(data.count, 1)
+        if count == 1 {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedDataIndex = data.first?.index
             }
-        } else {
-            selectedDataIndex = nil
+            return
+        }
+        
+        let normalized = relativeX / plotArea.width
+        let rawIndex = normalized * CGFloat(count - 1)
+        let tappedPosition = Int(round(rawIndex))
+        
+        guard tappedPosition >= 0 && tappedPosition < count else {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedDataIndex = nil }
+            return
+        }
+        
+        let point = data[tappedPosition]
+        
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedDataIndex = (selectedDataIndex == point.index) ? nil : point.index
         }
     }
     
@@ -787,6 +813,7 @@ struct SpO2View: View {
 
 struct SegmentedSpO2Gauge: View {
     var value: Double  // 0 to 100
+    var hasData: Bool = true  // Whether there's actual data to display
     
     // Initializing segment colors for this SpO2 gauge
     var firstSegmentColor = Color(red: 0.427, green: 0.243, blue: 0.058)
@@ -813,6 +840,19 @@ struct SegmentedSpO2Gauge: View {
         return normalizedValue * 0.75  // Map to 0-0.75 range
     }
     
+    // Determine which segment color to use based on the value position
+    private var indicatorColor: Color {
+        if valuePosition <= segment1End {
+            return firstSegmentColor
+        } else if valuePosition <= segment2End {
+            return secondSegmentColor
+        } else if valuePosition <= segment3End {
+            return thirdSegmentColor
+        } else {
+            return fourthSegmentColor
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Background colors for the 4 SpO2 gauge segments
@@ -822,50 +862,63 @@ struct SegmentedSpO2Gauge: View {
             CircleSegment(start: segment4Start, end: segment4End, color: fourthSegmentColor)
             
             // Foreground segments (filled based on value)
-            // First segment: fill from 0 to either valuePosition or segment1End, whichever is smaller
-            if valuePosition > 0 {
-                let firstSegmentFill = min(segment1End, valuePosition)
-                if firstSegmentFill > 0 {
-                    CircleSegment(start: 0.00, end: firstSegmentFill, color: firstSegmentColor)
+            // Only show filled segments if there's data
+            if hasData {
+                // First segment: fill from 0 to either valuePosition or segment1End, whichever is smaller
+                if valuePosition > 0 {
+                    let firstSegmentFill = min(segment1End, valuePosition)
+                    if firstSegmentFill > 0 {
+                        CircleSegment(start: 0.00, end: firstSegmentFill, color: firstSegmentColor)
+                    }
                 }
-            }
-            // Second segment: only show if valuePosition has passed segment2Start
-            if valuePosition >= segment2Start {
-                let secondSegmentFill = min(segment2End, valuePosition)
-                if secondSegmentFill > segment2Start {
-                    CircleSegment(start: segment2Start, end: secondSegmentFill, color: secondSegmentColor)
+                // Second segment: only show if valuePosition has passed segment2Start
+                if valuePosition >= segment2Start {
+                    let secondSegmentFill = min(segment2End, valuePosition)
+                    if secondSegmentFill > segment2Start {
+                        CircleSegment(start: segment2Start, end: secondSegmentFill, color: secondSegmentColor)
+                    }
                 }
-            }
-            // Third segment: only show if valuePosition has passed segment3Start
-            if valuePosition >= segment3Start {
-                let thirdSegmentFill = min(segment3End, valuePosition)
-                if thirdSegmentFill > segment3Start {
-                    CircleSegment(start: segment3Start, end: thirdSegmentFill, color: thirdSegmentColor)
+                // Third segment: only show if valuePosition has passed segment3Start
+                if valuePosition >= segment3Start {
+                    let thirdSegmentFill = min(segment3End, valuePosition)
+                    if thirdSegmentFill > segment3Start {
+                        CircleSegment(start: segment3Start, end: thirdSegmentFill, color: thirdSegmentColor)
+                    }
                 }
-            }
-            // Fourth segment: only show if valuePosition has passed segment4Start
-            if valuePosition >= segment4Start {
-                let fourthSegmentFill = min(segment4End, valuePosition)
-                if fourthSegmentFill > segment4Start {
-                    CircleSegment(start: segment4Start, end: fourthSegmentFill, color: fourthSegmentColor)
+                // Fourth segment: only show if valuePosition has passed segment4Start
+                if valuePosition >= segment4Start {
+                    let fourthSegmentFill = min(segment4End, valuePosition)
+                    if fourthSegmentFill > segment4Start {
+                        CircleSegment(start: segment4Start, end: fourthSegmentFill, color: fourthSegmentColor)
+                    }
                 }
             }
             
             // Circle indicator showing the current SpO2 value position
             // The indicator is positioned at the end of the filled portion of the gauge
-            if valuePosition >= 0 && valuePosition <= 0.75 {
-                CircleIndicator(position: valuePosition)
+            if hasData && valuePosition >= 0 && valuePosition <= 0.75 {
+                CircleIndicator(position: valuePosition, color: indicatorColor)
             }
             
             // Center text
             VStack(spacing: 4) {
-                Text("\(Int(value))%")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primaryColor)
-                Text("Avg SpO₂")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+                if hasData {
+                    Text("\(Int(value))%")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primaryColor)
+                    Text("Avg SpO₂")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                } else {
+                    Text("No data yet")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.gray)
+                    Text("Avg SpO₂")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
             }
         }
         .frame(width: 240, height: 240)
@@ -887,13 +940,14 @@ struct CircleSegment: View {
 
 struct CircleIndicator: View {
     var position: Double  // Position on the circle (0 to 0.75)
+    var color: Color  // Color based on which segment the value falls into
     
     var body: some View {
         GeometryReader { geometry in
             IndicatorPointShadow(position: position)
                 .fill(Color.white)
             IndicatorPointShape(position: position)
-                .fill(Color.secondaryColor)
+                .fill(color)
         }
     }
 }
