@@ -71,7 +71,7 @@ struct ContentView: View {
                                 .frame(width: 56, height: 56)
                                 .background(.white)
                                 .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                         }
                         .padding(.trailing, 20)
                         .padding(.bottom, 34)
@@ -138,7 +138,7 @@ struct ContentView: View {
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
+                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
                 }
                 
                 // New Settings Button
@@ -149,7 +149,7 @@ struct ContentView: View {
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
+                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -236,7 +236,7 @@ struct ContentView: View {
                     .padding(16)
                     .background(Color.white)
                     .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                 }
             }
         }
@@ -288,7 +288,7 @@ struct ContentView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Heart Rate Card
@@ -379,7 +379,7 @@ struct ContentView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Health Highlights Section
@@ -432,7 +432,6 @@ struct ContentView: View {
             TabView(selection: $medicationCurrentIndex) {
                 ForEach(medications.indices, id: \.self) { index in
                     medicationCard(medication: medications[index])
-                        .frame(width: 280)
                         .tag(index)
                 }
             }
@@ -508,11 +507,12 @@ struct ContentView: View {
                 .cornerRadius(8)
             }
         }
-        .frame(width: 325)
-        .padding(20)
+        .padding(16)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
     }
     
     // MARK: - Reminders Card
@@ -549,16 +549,17 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 80)
-        .padding(16)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 12)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Adherence Card
     var adherenceCard: some View {
         // Progress ring for display user's medication adherence percentage
-        HStack(spacing: 12) {
+        HStack(spacing: 0) {
             ZStack {
                 Circle()
                     .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
@@ -573,29 +574,31 @@ struct ContentView: View {
                     .fontWeight(.bold)
                     .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
             }
+            .padding(.trailing, 12)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Adherence")
-                    .font(.custom("Noto Sans", size: 13))
+                    .font(.custom("Noto Sans", size: 16))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
                 // Days of the Week
                 Text("21 to 28")
-                    .font(.custom("Noto Sans", size: 12))
+                    .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 // Display Selected Month
                 Text("September 2025")
-                    .font(.custom("Noto Sans", size: 12))
+                    .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 80)
-        .padding(16)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 12)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Mood Tracker Section
@@ -621,7 +624,7 @@ struct ContentView: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -720,7 +723,7 @@ struct FloatingActionMenu: View {
                     .frame(width: 60, height: 60)
                     .background(Color.white)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 6)
+                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 6)
             }
         }
     }

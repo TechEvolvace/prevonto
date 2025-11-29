@@ -152,7 +152,7 @@ struct WeightTrackerView: View {
         .padding(.vertical, 12)
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.gray, lineWidth: 0.15)
@@ -213,7 +213,7 @@ struct WeightTrackerView: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.gray, lineWidth: 0.15)
@@ -228,7 +228,7 @@ struct WeightTrackerView: View {
                 Text("Lb")
                     .padding(.vertical, 6)
                     .padding(.horizontal, 20)
-                    .background(selectedUnit == "Lbs" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .background(selectedUnit == "Lbs" ? Color.secondaryGreen : Color.gray.opacity(0.2))
                     .foregroundColor(selectedUnit == "Lbs" ? .white : .black)
             }
             .clipShape(UnevenRoundedRectangle(
@@ -242,7 +242,7 @@ struct WeightTrackerView: View {
                 Text("Kg")
                     .padding(.vertical, 6)
                     .padding(.horizontal, 20)
-                    .background(selectedUnit == "Kg" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .background(selectedUnit == "Kg" ? Color.secondaryGreen : Color.gray.opacity(0.2))
                     .foregroundColor(selectedUnit == "Kg" ? .white : .black)
             }
             .clipShape(UnevenRoundedRectangle(
@@ -263,10 +263,10 @@ struct WeightTrackerView: View {
             }
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(selectedTab == "Week" ? Color.secondaryColor : Color.white)
+            .background(selectedTab == "Week" ? Color.secondaryGreen : Color.white)
             .foregroundColor(selectedTab == "Week" ? .white : Color.gray)
             .cornerRadius(8)
-            .shadow(color: selectedTab == "Week" ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+            .shadow(color: selectedTab == "Week" ? .clear : Color.neutralShadow, radius: 4, x: 0, y: 4)
 
             Button("Month") {
                 selectedTab = "Month"
@@ -274,10 +274,10 @@ struct WeightTrackerView: View {
             }
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(selectedTab == "Month" ? Color.secondaryColor : Color.white)
+            .background(selectedTab == "Month" ? Color.secondaryGreen : Color.white)
             .foregroundColor(selectedTab == "Month" ? .white : Color.gray)
             .cornerRadius(8)
-            .shadow(color: selectedTab == "Month" ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+            .shadow(color: selectedTab == "Month" ? .clear : Color.neutralShadow, radius: 4, x: 0, y: 4)
         }
     }
 
@@ -556,7 +556,7 @@ struct WeightTrackerView: View {
                 Text("Lb")
                     .padding(.vertical, 6)
                     .padding(.horizontal, 20)
-                    .background(popupSelectedUnit == "Lbs" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .background(popupSelectedUnit == "Lbs" ? Color.secondaryGreen : Color.gray.opacity(0.2))
                     .foregroundColor(popupSelectedUnit == "Lbs" ? .white : .black)
             }
             .clipShape(UnevenRoundedRectangle(
@@ -576,7 +576,7 @@ struct WeightTrackerView: View {
                 Text("Kg")
                     .padding(.vertical, 6)
                     .padding(.horizontal, 20)
-                    .background(popupSelectedUnit == "Kg" ? Color.secondaryColor : Color.gray.opacity(0.2))
+                    .background(popupSelectedUnit == "Kg" ? Color.secondaryGreen : Color.gray.opacity(0.2))
                     .foregroundColor(popupSelectedUnit == "Kg" ? .white : .black)
             }
             .clipShape(UnevenRoundedRectangle(
@@ -677,7 +677,7 @@ struct WeightTrackerView: View {
             BPPopoverArrow()
                 .fill(Color.white)
                 .frame(width: 12, height: 6)
-                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.neutralShadow, radius: 1, x: 0, y: 1)
         }
     }
     
@@ -731,11 +731,7 @@ struct WeightTrackerView: View {
 
 // MARK: Some custom-defined colors
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
-    static let tintedShadow = Color("Pale Slate Shadow")
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
 

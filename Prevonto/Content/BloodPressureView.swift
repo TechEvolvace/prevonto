@@ -268,7 +268,7 @@ struct BloodPressureView: View {
         .padding(.vertical, 24)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         .overlay {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.gray, lineWidth: 0.15)
@@ -588,7 +588,7 @@ struct BloodPressureView: View {
             BPPopoverArrow()
                 .fill(Color.white)
                 .frame(width: 12, height: 6)
-                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.neutralShadow, radius: 1, x: 0, y: 1)
         }
     }
     
@@ -931,13 +931,8 @@ struct BloodPressureView: View {
 
 // MARK: - Colors
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
     static let bpLineBlue = Color.blue.opacity(0.7)
-    static let cardShadow = Color(red: 0.941, green: 0.945, blue: 0.976)
-    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 // MARK: - Popover Arrow Shape
@@ -959,7 +954,7 @@ struct BPInsightRow: View {
     let isLast: Bool
     
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -974,7 +969,7 @@ struct BPInsightRow: View {
                 
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()

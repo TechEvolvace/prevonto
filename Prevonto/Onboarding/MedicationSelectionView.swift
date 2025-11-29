@@ -70,12 +70,12 @@ struct MedicationSelectionView: View {
                                             if isSelected {
                                                 Image(systemName: "checkmark")
                                                     .font(.system(size: 14, weight: .semibold))
-                                                    .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                                                    .foregroundColor(Color.secondaryGreen)
                                             }
                                         }
                                     }
                                     .padding()
-                                    .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                                    .background(isSelected ? Color.secondaryGreen : Color.white)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
@@ -134,7 +134,7 @@ struct MedicationSelectionView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }

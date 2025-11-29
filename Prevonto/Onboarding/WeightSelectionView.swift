@@ -38,7 +38,7 @@ struct WeightSelectionView: View {
                 HStack(spacing: 8) {
                     Text("\(selectedWeight)")
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                        .foregroundColor(Color.secondaryGreen)
                     Text(selectedUnit)
                         .foregroundColor(.gray)
                         .font(.title3)
@@ -56,7 +56,7 @@ struct WeightSelectionView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }
@@ -107,13 +107,13 @@ struct WeightPickerView: View {
                                 VStack(spacing: 8) {
                                     Rectangle()
                                         .frame(width: 2.5, height: val % 10 == 0 ? 40 : val % 5 == 0 ? 40 : 30)
-                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : val % 5 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
+                                        .foregroundColor(isSelected ? Color.secondaryGreen : val % 5 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
                                         .padding(.top, val % 5 == 0 ? 5 : 10)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
                                             .font(.system(size: 16, weight: .medium))
-                                            .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6))
+                                            .foregroundColor(isSelected ? Color.secondaryGreen : Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6))
                                     }
                                 }
                                 .frame(width: itemWidth)
@@ -157,7 +157,7 @@ struct WeightPickerView: View {
                 RoundedTriangle()
                     .frame(width: 10, height: 10)
             }
-            .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+            .foregroundColor(Color.secondaryGreen)
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(height: 320)
@@ -226,7 +226,7 @@ struct UnitButton: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 10)
                 .frame(minWidth: 80)
-                .background(selected == title ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.clear)
+                .background(selected == title ? Color.secondaryGreen : Color.clear)
                 .foregroundColor(selected == title ? .white : .gray)
                 .cornerRadius(12)
                 .shadow(color: selected == title ? Color.green.opacity(0.25) : .clear, radius: 8, x: 0, y: 4)

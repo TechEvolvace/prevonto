@@ -56,14 +56,14 @@ struct FitnessLevelSelectionView: View {
 
                                 if selectedLevel == option.id {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                                        .foregroundColor(Color.primaryGreen)
                                         .font(.system(size: 10, weight: .bold))
                                 }
                             }
                         }
                         .padding()
                         .background(
-                            selectedLevel == option.id ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white
+                            selectedLevel == option.id ? Color.secondaryGreen : Color.white
                         )
                         .foregroundColor(selectedLevel == option.id ? .white : .black)
                         .cornerRadius(12)
@@ -85,7 +85,7 @@ struct FitnessLevelSelectionView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .foregroundColor(selectedLevel != nil ? .white : .gray)
-                        .background(selectedLevel != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
+                        .background(selectedLevel != nil ? Color.primaryGreen : .gray.opacity(0.3))
                         .cornerRadius(12)
                 }
             }

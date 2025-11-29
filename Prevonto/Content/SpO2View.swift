@@ -178,7 +178,7 @@ struct SpO2View: View {
         Text("SpO₂")
             .font(.largeTitle)
             .fontWeight(.bold)
-            .foregroundColor(.primaryColor)
+            .foregroundColor(.primaryGreen)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
     
@@ -200,10 +200,10 @@ struct SpO2View: View {
         .font(.headline)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
-        .background(selectedTab == title ? Color.secondaryColor : .white)
+        .background(selectedTab == title ? Color.secondaryGreen : .white)
         .foregroundColor(selectedTab == title ? .white : .gray)
         .cornerRadius(8)
-        .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+        .shadow(color: selectedTab == title ? .clear : Color.neutralShadow, radius: 4, x: 0, y: 4)
     }
     
     private var calendarSection: some View {
@@ -227,7 +227,7 @@ struct SpO2View: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.primaryColor)
+                    .foregroundColor(.primaryGreen)
             }
             
             Spacer()
@@ -244,7 +244,7 @@ struct SpO2View: View {
             }) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.primaryColor)
+                    .foregroundColor(.primaryGreen)
             }
         }
         .padding(.horizontal, 40)
@@ -281,17 +281,19 @@ struct SpO2View: View {
                 
                 Text("\(day)")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(isSelected ? .white : .primaryColor)
+                    .foregroundColor(isSelected ? .white : .primaryGreen)
             }
             .frame(width: 50, height: 60)
-            .background(isSelected ? Color.secondaryColor : Color.white)
+            .background(isSelected ? Color.secondaryGreen : Color.white)
             .cornerRadius(12)
+            .shadow(color: Color.tintedShadow, radius: 2, x: 0, y: 1)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray, lineWidth: 0.15)
+            }
+            .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray, lineWidth: 0.3)
-        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -389,7 +391,7 @@ struct SpO2View: View {
                         .foregroundColor(.gray)
                     Text(weekDateFormatter.string(from: date))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.primaryColor)
+                        .foregroundColor(.primaryGreen)
                 }
             }
             .padding(.horizontal, 12)
@@ -397,9 +399,13 @@ struct SpO2View: View {
             .frame(maxWidth: .infinity)
             .background(Color.white)
             .cornerRadius(8)
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
     }
     
     private func weekDatePickerView(for binding: Binding<Date>, isStartDate: Bool) -> some View {
@@ -413,7 +419,7 @@ struct SpO2View: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
         }
         .transition(.asymmetric(
@@ -498,7 +504,7 @@ struct SpO2View: View {
         VStack(alignment: .leading) {
             Text(value)
                 .font(.title2)
-                .foregroundColor(.primaryColor)
+                .foregroundColor(.primaryGreen)
             Text(title)
                 .font(.caption)
                 .foregroundColor(.gray)
@@ -510,7 +516,7 @@ struct SpO2View: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("SpO₂ Timeline")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.primaryColor)
+                .foregroundColor(.primaryGreen)
                 .padding(.vertical, 8)
             
             if selectedTab == "Day" {
@@ -564,7 +570,7 @@ struct SpO2View: View {
                         x: .value("Day", data.index),
                         y: .value("SpO2", data.value)
                     )
-                    .foregroundStyle(Color.secondaryColor)
+                    .foregroundStyle(Color.secondaryGreen)
                     .interpolationMethod(.monotone)
                     
                     // Vertical dashed line for the selected point
@@ -578,7 +584,7 @@ struct SpO2View: View {
                         x: .value("Day", data.index),
                         y: .value("SpO2", data.value)
                     )
-                    .foregroundStyle(isSelected ? Color.gray : Color.secondaryColor)
+                    .foregroundStyle(isSelected ? Color.gray : Color.secondaryGreen)
                     .symbolSize(isSelected ? 100 : 60)
                     .annotation(position: .top, alignment: .center, spacing: 4) {
                         if isSelected {
@@ -655,7 +661,7 @@ struct SpO2View: View {
                     x: .value("Hour", data.hour),
                     y: .value("SpO2", data.value)
                 )
-                .foregroundStyle(Color.secondaryColor)
+                .foregroundStyle(Color.secondaryGreen)
                 .interpolationMethod(.monotone)
                 
                 // Vertical dashed line for the selected point
@@ -669,7 +675,7 @@ struct SpO2View: View {
                     x: .value("Hour", data.hour),
                     y: .value("SpO2", data.value)
                 )
-                .foregroundStyle(isSelected ? Color.gray : Color.secondaryColor)
+                .foregroundStyle(isSelected ? Color.gray : Color.secondaryGreen)
                 .symbolSize(isSelected ? 100 : 60)
                 .annotation(position: .top, alignment: .center, spacing: 4) {
                     if isSelected {
@@ -715,7 +721,7 @@ struct SpO2View: View {
             VStack(spacing: 0) {
                 Text("\(Int(value))%")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.primaryColor)
+                    .foregroundColor(.primaryGreen)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -727,7 +733,7 @@ struct SpO2View: View {
             SpO2PopoverArrow()
                 .fill(Color.white)
                 .frame(width: 12, height: 6)
-                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.neutralShadow, radius: 1, x: 0, y: 1)
         }
     }
     
@@ -819,7 +825,7 @@ struct SegmentedSpO2Gauge: View {
     var firstSegmentColor = Color(red: 0.427, green: 0.243, blue: 0.058)
     var secondSegmentColor = Color(red: 0.776, green: 0.525, blue: 0.278)
     var thirdSegmentColor = Color(red: 0.949, green: 0.796, blue: 0.368)
-    var fourthSegmentColor = Color.secondaryColor
+    var fourthSegmentColor = Color.secondaryGreen
     
     // 4 segments evenly spaced at 16%, 50%, 84% with gaps
     // The gauge goes from 0 to 0.75 (because 75% of full circle = 270 degrees)
@@ -906,7 +912,7 @@ struct SegmentedSpO2Gauge: View {
                     Text("\(Int(value))%")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                        .foregroundColor(.primaryColor)
+                        .foregroundColor(.primaryGreen)
                     Text("Avg SpO₂")
                         .font(.subheadline)
                         .foregroundColor(.gray)

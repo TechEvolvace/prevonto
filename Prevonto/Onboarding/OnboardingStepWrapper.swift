@@ -7,9 +7,6 @@ struct OnboardingStepWrapper<Content: View>: View {
     let totalSteps: Int
     let title: String
     let content: Content
-    
-    private let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
 
     init(step: Int, totalSteps: Int = 10, title: String, @ViewBuilder content: () -> Content) {
         self.step = step
@@ -25,7 +22,7 @@ struct OnboardingStepWrapper<Content: View>: View {
                 SegmentedProgressBar(
                     currentStep: step + 1,
                     totalSteps: totalSteps,
-                    activeColor: primaryGreen,
+                    activeColor: Color.primaryGreen,
                     inactiveColor: Color.gray.opacity(0.3)
                 )
                 
@@ -38,7 +35,7 @@ struct OnboardingStepWrapper<Content: View>: View {
             Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(primaryGreen)
+                .foregroundColor(Color.primaryGreen)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             content

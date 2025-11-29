@@ -24,7 +24,7 @@ struct AgeSelectionView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }
@@ -78,8 +78,6 @@ struct AgeRow: View {
     let centerY: CGFloat
     let itemHeight: CGFloat
     let totalHeight: CGFloat
-    
-    private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
 
     var body: some View {
         GeometryReader { geo in
@@ -114,7 +112,7 @@ struct AgeRow: View {
                 .foregroundColor(isSelected ? .white : .gray.opacity(opacity))
                 .frame(width: isSelected ? boxWidth : nil, height: itemHeight)
                 .background(
-                    isSelected ? secondaryGreen : Color.clear
+                    isSelected ? Color.secondaryGreen : Color.clear
                 )
                 .cornerRadius(isSelected ? 16 : 0)
                 .shadow(color: isSelected ? Color.green.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)

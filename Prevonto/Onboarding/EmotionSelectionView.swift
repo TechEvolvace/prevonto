@@ -31,7 +31,7 @@ struct EmotionSelectionView: View {
                             Image(emotions[index].iconName)
                                 .resizable()
                                 .renderingMode(.template)
-                                .foregroundColor(selectedEmotionIndex == index ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
+                                .foregroundColor(selectedEmotionIndex == index ? Color.secondaryGreen : .gray)
                                 .aspectRatio(contentMode: .fit)
                                 .scaleEffect(isNeutral ? 2.6 : 1.0, anchor: .center)
                                 .frame(width: baseIconSize, height: baseIconSize)
@@ -56,7 +56,7 @@ struct EmotionSelectionView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }

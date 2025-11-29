@@ -11,12 +11,12 @@ struct WelcomeView: View {
             // Prevonto title
             Text("Prevonto")
                 .font(.system(size: 80, weight: .bold))
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                .foregroundColor(Color.primaryGreen)
             
             // Prevonto app slogan
             Text("Let’s Take Control...")
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                .foregroundColor(Color.darkGrayText)
                 
             Spacer()
                 
@@ -32,7 +32,7 @@ struct WelcomeView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .background(Color.primaryGreen)
                     .cornerRadius(16)
                     .padding(.horizontal, 32)
             }

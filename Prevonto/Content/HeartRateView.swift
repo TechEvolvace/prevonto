@@ -211,7 +211,7 @@ struct HeartRateView: View {
         .padding(.vertical, 24)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         .overlay {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.gray, lineWidth: 0.15)
@@ -644,12 +644,14 @@ struct HeartRateView: View {
             .frame(width: 50, height: 60)
             .background(isSelected ? Color.secondaryGreen : Color.white)
             .cornerRadius(12)
+            .shadow(color: Color.tintedShadow, radius: 2, x: 0, y: 1)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray, lineWidth: 0.15)
+            }
+            .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray, lineWidth: 0.3)
-        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -915,11 +917,7 @@ struct HeartRateView: View {
 
 // Colors used for the Heart Rate page
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
-    static let tintedShadow = Color("Pale Slate Shadow")
     
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
@@ -1063,7 +1061,7 @@ struct HighlightRow: View {
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Same color as "Heart Rate" title
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1080,7 +1078,7 @@ struct HighlightRow: View {
                 // Highlight text
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()
@@ -1105,7 +1103,7 @@ struct InsightRow: View {
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Same color as "Heart Rate" title
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1122,7 +1120,7 @@ struct InsightRow: View {
                 // Insight text
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()

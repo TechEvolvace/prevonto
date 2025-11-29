@@ -61,7 +61,7 @@ struct DevicesView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(Color.primaryGreen)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -72,7 +72,7 @@ struct DevicesView: View {
                 Text("Devices")
                     .font(.custom("Noto Sans", size: 28))
                     .fontWeight(.black)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                 
                 Spacer()
                 
@@ -103,9 +103,9 @@ struct DevicesView: View {
                 Spacer()
             }
             .padding(20)
-            .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+            .background(Color.primaryGreen)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -189,7 +189,7 @@ struct DevicesView: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
     
@@ -211,7 +211,7 @@ struct DevicesView: View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
 }

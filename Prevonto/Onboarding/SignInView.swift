@@ -35,7 +35,7 @@ struct SignInView: View {
                 Text("Welcome Back")
                     .font(.title)
                     .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                     .padding(.bottom, 0)
 
                 // Display a randomly chosen quote
@@ -88,7 +88,7 @@ struct SignInView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
 
@@ -112,7 +112,7 @@ struct SignInView: View {
                         }
                     }) {
                         Text("Sign Up")
-                            .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                            .foregroundColor(Color.primaryGreen)
                             .font(.footnote)
                             .fontWeight(.semibold)
                     }

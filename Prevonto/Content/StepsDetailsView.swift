@@ -100,7 +100,7 @@ struct StepsDetailsView: View {
                         .foregroundColor(.proPrimary)
                     Text("Your Steps & Activities is monitored through your watch which is in sync with the app.")
                         .font(.subheadline)
-                        .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                        .foregroundColor(Color.darkGrayText)
                         .multilineTextAlignment(.leading)
                 }
                 Spacer()
@@ -421,7 +421,7 @@ struct StepsDetailsView: View {
         .frame(width: 180)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Helper Methods
@@ -599,12 +599,10 @@ struct StepsDetailsView: View {
 
 // MARK: - Supporting Structures & Extensions
 private extension Color {
-    static let proPrimary = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let proSecondary = Color(red: 0.39, green: 0.59, blue: 0.38)
+    static let proPrimary = Color.primaryGreen
+    static let proSecondary = Color.secondaryGreen
     static let proTertiary = Color(red: 0.23, green: 0.51, blue: 0.36)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
-    static let tintedShadow = Color("Pale Slate Shadow")
 }
 
 // MARK: - Popover Arrow Shape
@@ -640,7 +638,7 @@ struct StepsInsightRow: View {
     let isLast: Bool
     
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -655,7 +653,7 @@ struct StepsInsightRow: View {
                 
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()

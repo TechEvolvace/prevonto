@@ -37,13 +37,13 @@ struct SelectGenderView: View {
 
                                 if selectedGender == gender {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                                        .foregroundColor(Color.primaryGreen)
                                         .font(.system(size: 10, weight: .bold))
                                 }
                             }
                         }
                         .padding()
-                        .background(selectedGender == gender ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                        .background(selectedGender == gender ? Color.secondaryGreen : Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
@@ -65,7 +65,7 @@ struct SelectGenderView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .foregroundColor(selectedGender != nil ? .white : .gray)
-                    .background(selectedGender != nil ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
+                    .background(selectedGender != nil ? Color.primaryGreen : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
         }.navigationBarBackButtonHidden(true)

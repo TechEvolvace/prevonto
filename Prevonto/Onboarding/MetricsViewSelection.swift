@@ -57,10 +57,10 @@ struct MetricsSelectionView: View {
                             .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
                             .background(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .fill(selectedMetrics.contains(metric.label) ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                                    .fill(selectedMetrics.contains(metric.label) ? Color.secondaryGreen : Color.white)
                             )
                             .foregroundColor(selectedMetrics.contains(metric.label) ? .white : Color(red: 0.14, green: 0.16, blue: 0.20).opacity(0.6))
-                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
                         }
                     }
                 }
@@ -77,7 +77,7 @@ struct MetricsSelectionView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .foregroundColor(!selectedMetrics.isEmpty ? .white : .gray)
-                    .background(!selectedMetrics.isEmpty ? Color(red: 0.01, green: 0.33, blue: 0.18) : .gray.opacity(0.3))
+                    .background(!selectedMetrics.isEmpty ? Color.primaryGreen : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
         }

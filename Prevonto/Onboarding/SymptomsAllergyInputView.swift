@@ -114,7 +114,7 @@ struct SymptomsAllergyInputView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }
@@ -238,7 +238,7 @@ struct TagPill: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(selected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                .background(selected ? Color.secondaryGreen : Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(selected ? Color.clear : Color.gray.opacity(0.3), lineWidth: 1)
@@ -409,7 +409,7 @@ struct AllergyDetailPopup: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
             }

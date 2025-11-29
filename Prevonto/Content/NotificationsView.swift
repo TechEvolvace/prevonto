@@ -15,12 +15,11 @@ class NotificationSettings: ObservableObject {
     }
     
     // Read-only toggles (grayed out)
-    let bodyMetrics: Bool = false
+    let bloodPressure: Bool = false
     let bloodGlucose: Bool = false
     let spo2: Bool = false
     let mood: Bool = false
     let weight: Bool = false
-    let trackers: Bool = false
     let medication: Bool = false
     
     init() {
@@ -76,7 +75,7 @@ struct NotificationsView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(Color.primaryGreen)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -87,7 +86,7 @@ struct NotificationsView: View {
                 Text("Notifications")
                     .font(.custom("Noto Sans", size: 28))
                     .fontWeight(.black)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                 
                 Spacer()
                 
@@ -115,7 +114,7 @@ struct NotificationsView: View {
             }
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
     
@@ -130,8 +129,8 @@ struct NotificationsView: View {
             
             VStack(spacing: 0) {
                 NotificationToggleRow(
-                    title: "Body Metrics",
-                    isOn: .constant(settings.bodyMetrics),
+                    title: "Blood Pressure",
+                    isOn: .constant(settings.bloodPressure),
                     isEnabled: false
                 )
                 
@@ -143,7 +142,7 @@ struct NotificationsView: View {
                     isEnabled: false
                 )
                 
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "SpO2",
@@ -151,41 +150,17 @@ struct NotificationsView: View {
                     isEnabled: false
                 )
                 
-                Divider().padding(.leading, 16)
+                Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "Heart Rate",
                     isOn: $settings.heartRate,
                     isEnabled: true
                 )
-                
-                Divider().padding(.leading, 16)
-                
-                NotificationToggleRow(
-                    title: "Mood",
-                    isOn: .constant(settings.mood),
-                    isEnabled: false
-                )
-                
-                Divider().padding(.leading, 16)
-                
-                NotificationToggleRow(
-                    title: "Weight",
-                    isOn: .constant(settings.weight),
-                    isEnabled: false
-                )
-                
-                Divider().padding(.leading, 16)
-                
-                NotificationToggleRow(
-                    title: "Steps & Activity",
-                    isOn: $settings.stepsAndActivity,
-                    isEnabled: true
-                )
             }
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
     
@@ -200,22 +175,38 @@ struct NotificationsView: View {
             
             VStack(spacing: 0) {
                 NotificationToggleRow(
-                    title: "Trackers",
-                    isOn: .constant(settings.trackers),
-                    isEnabled: false
-                )
-                
-                Divider().padding(.leading, 16)
-                
-                NotificationToggleRow(
                     title: "Medication",
                     isOn: .constant(settings.medication),
                     isEnabled: false
                 )
+                
+                Divider().padding(.leading, 0)
+                
+                NotificationToggleRow(
+                    title: "Weight",
+                    isOn: .constant(settings.weight),
+                    isEnabled: false
+                )
+                
+                Divider().padding(.leading, 0)
+                
+                NotificationToggleRow(
+                    title: "Mood",
+                    isOn: .constant(settings.mood),
+                    isEnabled: false
+                )
+                
+                Divider().padding(.leading, 0)
+                
+                NotificationToggleRow(
+                    title: "Steps & Activity",
+                    isOn: $settings.stepsAndActivity,
+                    isEnabled: true
+                )
             }
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
 }
@@ -263,7 +254,7 @@ struct CustomToggleStyle: ToggleStyle {
                         .foregroundColor(.white)
                         .frame(width: 26, height: 26)
                         .offset(x: configuration.isOn ? 10 : -10)
-                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        .shadow(color: Color.neutralShadow, radius: 2, x: 0, y: 1)
                         .animation(.easeInOut(duration: 0.2), value: configuration.isOn)
                 )
                 .onTapGesture {

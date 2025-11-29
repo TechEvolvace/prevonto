@@ -107,7 +107,7 @@ struct DaysTrackedView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.white)
                 .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.gray, lineWidth: 0.15)
@@ -127,7 +127,7 @@ struct DaysTrackedView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(selectedPeriod == period ? Color.secondaryGreen : Color.white)
                                 .cornerRadius(8)
-                                .shadow(color: selectedPeriod == period ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+                                .shadow(color: selectedPeriod == period ? .clear : Color.neutralShadow, radius: 4, x: 0, y: 4)
                         }
                     }
                 }
@@ -359,11 +359,8 @@ struct DaysTrackedView: View {
 
 // MARK: - Color Extension
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    // Color to mark days tracked, same as primaryGreen
-    static let completedGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let tintedShadow = Color("Pale Slate Shadow")
+    // Color to mark days tracked
+    static let completedGreen = Color.primaryGreen
 }
 
 struct DaysTrackedView_Previews: PreviewProvider {

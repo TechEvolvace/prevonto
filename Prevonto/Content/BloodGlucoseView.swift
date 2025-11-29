@@ -170,7 +170,7 @@ struct BloodGlucoseView: View {
         .padding(.vertical, 24)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         .overlay {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.gray, lineWidth: 0.15)
@@ -349,7 +349,7 @@ struct BloodGlucoseView: View {
             GlucosePopoverArrow()
                 .fill(Color.white)
                 .frame(width: 12, height: 6)
-                .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+                .shadow(color: Color.neutralShadow, radius: 1, x: 0, y: 1)
         }
     }
     
@@ -691,12 +691,14 @@ struct BloodGlucoseView: View {
             .frame(width: 50, height: 60)
             .background(isSelected ? Color.secondaryGreen : Color.white)
             .cornerRadius(12)
+            .shadow(color: Color.tintedShadow, radius: 2, x: 0, y: 1)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray, lineWidth: 0.15)
+            }
+            .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray, lineWidth: 0.3)
-        }
     }
     
     private var daysInCurrentMonth: [Date] {
@@ -948,11 +950,6 @@ struct BloodGlucoseView: View {
 
 // MARK: - Colors used for the Blood Glucose page
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
-    static let tintedShadow = Color("Pale Slate Shadow")
-    
     // #608E61 for selection highlight
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
     // Blue color for day mode line chart
@@ -1067,7 +1064,7 @@ struct GlucoseHighlightRow: View {
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Numbered bullet point text color
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1084,7 +1081,7 @@ struct GlucoseHighlightRow: View {
                 // Highlight text
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()
@@ -1109,7 +1106,7 @@ struct GlucoseInsightRow: View {
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
     // Same color as "Blood glucose" title
-    private let numberColor = Color(red: 0.01, green: 0.33, blue: 0.18)
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1126,7 +1123,7 @@ struct GlucoseInsightRow: View {
                 // Insight text
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()

@@ -37,7 +37,7 @@ struct PopupProgressBar: View {
         HStack(spacing: segmentSpacing) {
             ForEach(1...totalSteps, id: \.self) { step in
                 Rectangle()
-                    .fill(step <= currentStep ? Color.primaryColor : Color.gray.opacity(0.3))
+                    .fill(step <= currentStep ? Color.primaryGreen : Color.gray.opacity(0.3))
                     .frame(height: 4)
                     .cornerRadius(2)
             }
@@ -139,7 +139,7 @@ struct MoodEntryCard: View {
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.primaryColor)
+                .background(Color.primaryGreen)
                 .font(.headline)
                 .foregroundColor(.white)
                 .cornerRadius(16)
@@ -215,7 +215,7 @@ struct EnergyEntryCard: View {
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.primaryColor)
+                .background(Color.primaryGreen)
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }
@@ -273,8 +273,6 @@ struct EnergyRow: View {
     let centerY: CGFloat
     let itemHeight: CGFloat
     let totalHeight: CGFloat
-    
-    private let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
 
     var body: some View {
         GeometryReader { geo in
@@ -309,7 +307,7 @@ struct EnergyRow: View {
                 .foregroundColor(isSelected ? .white : .gray.opacity(opacity))
                 .frame(width: isSelected ? boxWidth : nil, height: itemHeight)
                 .background(
-                    isSelected ? secondaryGreen : Color.clear
+                    isSelected ? Color.secondaryGreen : Color.clear
                 )
                 .cornerRadius(isSelected ? 16 : 0)
                 .shadow(color: isSelected ? Color.green.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
@@ -396,7 +394,7 @@ struct MoodTrackerView: View {
                 Text("Mood tracker")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                    .foregroundColor(.primaryColor)
+                    .foregroundColor(.primaryGreen)
                 Text("Track your mood and energy levels throughout the week to identify patterns.")
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -416,7 +414,7 @@ struct MoodTrackerView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .foregroundColor(.white)
-                .background(Color.primaryColor)
+                .background(Color.primaryGreen)
                 .cornerRadius(12)
         }
     }
@@ -523,7 +521,7 @@ struct MoodTrackerView: View {
             .padding(.bottom, 24)
             .background(Color.white)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
             
             // Emotion icon above the top edge of the card (only when there is data)
             if hasMoodData {
@@ -556,10 +554,10 @@ struct MoodTrackerView: View {
         .font(.headline)
         .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
-        .background(selectedTab == title ? Color.secondaryColor : Color.white)
+        .background(selectedTab == title ? Color.secondaryGreen : Color.white)
         .foregroundColor(selectedTab == title ? .white : .gray)
         .cornerRadius(8)
-        .shadow(color: selectedTab == title ? .clear : Color.black.opacity(0.1), radius: 4, x: 0, y: 4)
+        .shadow(color: selectedTab == title ? .clear : Color.neutralShadow, radius: 4, x: 0, y: 4)
     }
 
     // Calendar section users can navigate on
@@ -587,7 +585,7 @@ struct MoodTrackerView: View {
                         x: .value("Label", point.label),
                         y: .value("Energy", point.energy)
                     )
-                    .foregroundStyle(isSelected ? Color.secondaryColor : Color.barDefault)
+                    .foregroundStyle(isSelected ? Color.secondaryGreen : Color.barDefault)
                     .cornerRadius(4)
                     
                     // Popover annotation and connecting line for selected bar
@@ -595,7 +593,7 @@ struct MoodTrackerView: View {
                     if isSelected && point.hasEntry {
                         // Vertical dashed line from popover to bar
                         RuleMark(x: .value("Label", point.label))
-                            .foregroundStyle(Color.secondaryColor)
+                            .foregroundStyle(Color.secondaryGreen)
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))
                             .annotation(position: .top, alignment: .center, spacing: 0) {
                                 energyTooltip(energy: point.energy)
@@ -736,12 +734,12 @@ struct MoodTrackerView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.secondaryColor)
+            .background(Color.secondaryGreen)
             .cornerRadius(8)
             
             // Pointing triangle
             EnergyPopoverArrow()
-                .fill(Color.secondaryColor)
+                .fill(Color.secondaryGreen)
                 .frame(width: 12, height: 6)
         }
         .fixedSize()
@@ -803,7 +801,7 @@ struct MoodTrackerView: View {
             Text("Insights")
                 .font(.custom("Noto Sans", size: 22))
                 .fontWeight(.semibold)
-                .foregroundColor(.primaryColor)
+                .foregroundColor(.primaryGreen)
             
             // Display insights only if there is data
             if !entries.isEmpty {
@@ -1012,11 +1010,7 @@ struct MoodCalendarView: View {
 }
 
 private extension Color {
-    static let primaryGreen = Color(red: 0.01, green: 0.33, blue: 0.18)
-    static let secondaryGreen = Color(red: 0.39, green: 0.59, blue: 0.38)
-    static let darkGrayText = Color(red: 0.25, green: 0.33, blue: 0.44)
     static let barDefault = Color(red: 0.682, green: 0.698, blue: 0.788)
-    static let tintedShadow = Color("Pale Slate Shadow")
     
     // Emotion-specific associated colors
     static let depressedColor = Color(red: 0.678, green: 0.098, blue: 0.078)
@@ -1034,7 +1028,7 @@ struct MoodInsightRow: View {
     
     // #F0F1F9 converted to RGB (240/255, 241/255, 249/255)
     private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
-    private let numberColor = Color.primaryColor
+    private let numberColor = Color.primaryGreen
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1051,7 +1045,7 @@ struct MoodInsightRow: View {
                 // Insight text
                 Text(text)
                     .font(.custom("Noto Sans", size: 16))
-                    .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                    .foregroundColor(Color.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Spacer()

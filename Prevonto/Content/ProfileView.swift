@@ -62,7 +62,7 @@ struct ProfileView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(Color.primaryGreen)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -73,7 +73,7 @@ struct ProfileView: View {
                 Text("My Profile")
                     .font(.custom("Noto Sans", size: 28))
                     .fontWeight(.black)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                 
                 Spacer()
                 
@@ -324,7 +324,7 @@ struct GenderButton: View {
                 .foregroundColor(isSelected ? .white : Color(red: 0.404, green: 0.420, blue: 0.455))
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                .background(isSelected ? Color.secondaryGreen : Color.white)
                 .cornerRadius(8)
                 .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
                 .overlay(
