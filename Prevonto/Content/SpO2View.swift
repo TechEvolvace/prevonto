@@ -10,38 +10,22 @@ struct SpO2Record {
 
 struct SpO2View: View {
     @State private var selectedTab = "Week"
-    @State private var selectedDate: Date = Date.from(year: 2025, month: 11, day: 14)
+    @State private var selectedDate: Date = Date()
     @State private var avgHeartRate = 60.0
     @State private var selectedDataIndex: Int? = nil
     // Week mode start and end date pickers
     @State private var showingStartDatePicker: Bool = false
     @State private var showingEndDatePicker: Bool = false
-    @State private var weekStartDate: Date = Date.from(year: 2025, month: 11, day: 14)
-    @State private var weekEndDate: Date = Date.from(year: 2025, month: 11, day: 14)
+    @State private var weekStartDate: Date = Date()
+    @State private var weekEndDate: Date = Date()
     
-    // Sample SpO2 data for November 2025
-    private let allSpO2Records: [SpO2Record] = [
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 7, minute: 30), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 12, minute: 15), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 18, minute: 45), spO2Level: 94),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 6, minute: 0), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 9, minute: 30), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 12, minute: 0), spO2Level: 95),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 15, minute: 45), spO2Level: 90),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 19, minute: 0), spO2Level: 92),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 7, minute: 45), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 13, minute: 30), spO2Level: 99),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 8, minute: 15), spO2Level: 94),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 14, minute: 0), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 7, minute: 30), spO2Level: 98),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 13, minute: 15), spO2Level: 98),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 8, minute: 0), spO2Level: 96),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 12, minute: 45), spO2Level: 92),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 9, minute: 20), spO2Level: 94),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 19, hour: 15, minute: 10), spO2Level: 91),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 7, minute: 0), spO2Level: 88),
-        SpO2Record(timestamp: Date.from(year: 2025, month: 11, day: 20, hour: 11, minute: 30), spO2Level: 85)
-    ]
+    // SpO2 data from API
+    @State private var allSpO2Records: [SpO2Record] = []
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
     
     // Helper to get filtered records for current period
     private var filteredSpO2Records: [SpO2Record] {
@@ -166,6 +150,54 @@ struct SpO2View: View {
         .background(.white)
         .onAppear {
             updateWeekDates()
+            loadSpO2Data()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    // Helper function to get SpO2 data from API
+    private func loadSpO2Data() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .spo2,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                // Convert API metrics to SpO2Record
+                let records = response.metrics.compactMap { metric -> SpO2Record? in
+                    guard let spo2 = metric.extractSpO2() else { return nil }
+                    return SpO2Record(
+                        timestamp: metric.measuredAt,
+                        spO2Level: spo2.value
+                    )
+                }
+                
+                await MainActor.run {
+                    allSpO2Records = records.sorted { $0.timestamp < $1.timestamp }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
     

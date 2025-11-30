@@ -10,30 +10,27 @@ struct DaysTrackedView: View {
     @State private var selectedPeriod: Period = .month
     @State private var selectedDate = Date()
     
-    // Sample metric tracking data - maps dates to sets of metrics tracked on that date
-    // Developer Notes: In a real implementation, this would query your data repository (i.e. a Prevonto backend API)
-    // Format: [Date: Set<MetricName>]
-    private var metricTrackingData: [Date: Set<String>] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        
-        // Sample data - dates with metrics tracked
-        // Developer Notes: In in a real implementation, this would queried from your data repository (i.e. a Prevonto backend API)
-        let sampleData: [Date: Set<String>] = [
-            Date.from(year: 2025, month: 10, day: 12): ["BP", "Mood"],
-            Date.from(year: 2025, month: 10, day: 15): ["BP"],
-            Date.from(year: 2025, month: 11, day: 16): ["BP", "Mood", "Weight"],
-            Date.from(year: 2025, month: 11, day: 17): ["BP", "Mood"],
-            Date.from(year: 2025, month: 11, day: 18): ["Mood", "Weight"],
-            Date.from(year: 2025, month: 11, day: 19): ["BP", "Mood"],
-            Date.from(year: 2025, month: 11, day: 24): ["BP"],
-            Date.from(year: 2025, month: 11, day: 25): ["BP", "Mood", "Heart Rate"]
-        ]
-        
-        // Filter out future dates
-        return Dictionary(uniqueKeysWithValues: sampleData.filter { date, _ in
-            calendar.startOfDay(for: date) <= today
-        })
+    // Metric tracking data from API - maps dates to sets of metrics tracked on that date
+    @State private var metricTrackingData: [Date: Set<String>] = [:]
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
+    
+    // Map API metric types to display names
+    private func metricDisplayName(_ metricType: MetricType) -> String {
+        switch metricType {
+        case .bloodPressure: return "BP"
+        case .bloodGlucose: return "Blood Glucose"
+        case .spo2: return "SpO2"
+        case .weight: return "Weight"
+        case .stepsActivity: return "Steps"
+        case .energyMood: return "Mood"
+        case .heartRate: return "Heart Rate"
+        case .medication: return "Medications"
+        default: return ""
+        }
     }
     
     // Get all tracked days that have at least one metric tracked
@@ -137,6 +134,70 @@ struct DaysTrackedView: View {
             }
             .padding(.horizontal, 16)
             .background(.white)
+        }
+        .onAppear {
+            loadDaysTrackedData()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    private func loadDaysTrackedData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .year, value: -1, to: endDate) ?? endDate
+                
+                // Fetch all metric types
+                let metricTypes: [MetricType] = [.bloodPressure, .bloodGlucose, .spo2, .weight, .stepsActivity, .energyMood, .heartRate, .medication]
+                
+                var allMetrics: [MetricResponse] = []
+                
+                // Fetch metrics for each type
+                for metricType in metricTypes {
+                    let response = try await metricsService.listMetrics(
+                        metricType: metricType,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 100
+                    )
+                    allMetrics.append(contentsOf: response.metrics)
+                }
+                
+                // Group metrics by date
+                var trackingData: [Date: Set<String>] = [:]
+                
+                for metric in allMetrics {
+                    let dateStartOfDay = calendar.startOfDay(for: metric.measuredAt)
+                    let displayName = metricDisplayName(metric.metricType)
+                    
+                    if !displayName.isEmpty {
+                        if trackingData[dateStartOfDay] == nil {
+                            trackingData[dateStartOfDay] = Set<String>()
+                        }
+                        trackingData[dateStartOfDay]?.insert(displayName)
+                    }
+                }
+                
+                await MainActor.run {
+                    metricTrackingData = trackingData
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
 

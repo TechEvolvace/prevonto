@@ -26,27 +26,13 @@ struct StepsDetailsView: View {
     @State private var maxYValue: Int = 1000
     @State private var currentData: [ChartDataPoint] = []
     
-    // Sample Steps data for the Steps chart
-    @State private var allStepsRecords: [StepsRecord] = [
-        // From a specific day
-        StepsRecord(date: Date.from(year: 2025, month: 11, day: 28, hour: 16, minute: 0), steps: 10234),
-        StepsRecord(date: Date.from(year: 2025, month: 11, day: 28, hour: 17, minute: 45), steps: 11876),
-        // From other days
-        StepsRecord(date: Date.from(year: 2025, month: 12, day: 30, hour: 14, minute: 0), steps: 8765),
-        StepsRecord(date: Date.from(year: 2025, month: 12, day: 31, hour: 15, minute: 30), steps: 7432),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 0, minute: 30), steps: 45),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 1, minute: 15), steps: 12),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 3, minute: 0), steps: 8),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 5, minute: 45), steps: 234),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 7, minute: 30), steps: 567),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 9, minute: 20), steps: 432),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 11, minute: 10), steps: 678),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 13, minute: 0), steps: 543),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 15, minute: 30), steps: 789),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 17, minute: 45), steps: 921),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 19, minute: 20), steps: 654),
-        StepsRecord(date: Date.from(year: 2026, month: 1, day: 1, hour: 21, minute: 10), steps: 321),
-    ]
+    // Steps data from API
+    @State private var allStepsRecords: [StepsRecord] = []
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
     
     // Activity ring values
     let caloriesCurrent: Double = 4790
@@ -77,15 +63,63 @@ struct StepsDetailsView: View {
             .background(Color.white)
         }
         .onAppear {
+            loadStepsData()
             initializeChartData()
             refreshForTimeFrame()
         }
         .onChange(of: selectedTimeFrame) { _, _ in
-            // Animate spacer height change when switching time frames (dismisses any active popover)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                selectedBarIndex = nil
-            }
+            // Recompute chart dataset + axis labels when the user switches Day/Week/Month/Year.
+            // Also clear any selected bar so the tooltip doesn't get stuck on an index from a different dataset.
+            selectedBarIndex = nil
             refreshForTimeFrame()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    private func loadStepsData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .stepsActivity,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                // Convert API metrics to StepsRecord
+                let records = response.metrics.compactMap { metric -> StepsRecord? in
+                    guard let stepsValue = metric.extractStepsActivity() else { return nil }
+                    return StepsRecord(
+                        date: metric.measuredAt,
+                        steps: stepsValue.steps
+                    )
+                }
+                
+                await MainActor.run {
+                    allStepsRecords = records.sorted { $0.date < $1.date }
+                    isLoading = false
+                    initializeChartData()
+                    refreshForTimeFrame()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
     

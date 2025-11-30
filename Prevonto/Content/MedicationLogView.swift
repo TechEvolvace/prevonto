@@ -4,6 +4,7 @@ import SwiftUI
 // Properties of Medication Log data
 struct MedicationEntry {
     let id: UUID
+    let metricId: Int? // nil means "not taken" (no API record)
     let medicationName: String
     let instructions: String
     let scheduledTime: Date
@@ -28,24 +29,15 @@ struct MedicationLogView: View {
     @State private var weekStartDate: Date = Date()
     @State private var weekEndDate: Date = Date()
     
-    // Sample medication entries data
-    @State private var medicationEntries: [MedicationEntry] = [
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 9, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 10, minute: 0), status: .skipped),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 11, minute: 0), status: nil),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 14, hour: 9, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 14, hour: 10, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 14, hour: 11, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 14, hour: 12, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 9, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 10, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 11, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 15, hour: 12, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 16, hour: 9, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 16, hour: 10, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 16, hour: 11, minute: 0), status: .taken),
-        MedicationEntry(id: UUID(), medicationName: "Medicine", instructions: "Instructions for intake", scheduledTime: Date.from(year: 2025, month: 11, day: 16, hour: 12, minute: 0), status: .taken),
-    ]
+    // Medication entries from API
+    @State private var medicationEntries: [MedicationEntry] = []
+    @State private var isLoading = false
+    @State private var isSaving = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
+    private let onboardingService = OnboardingService.shared
     
     // Filtered entries for the selected day
     private var dayEntries: [MedicationEntry] {
@@ -121,6 +113,171 @@ struct MedicationLogView: View {
         }
         .onAppear {
             updateWeekDates()
+            loadMedicationData()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    private func loadMedicationData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                // Get medications from onboarding
+                let onboarding = try await onboardingService.getOnboarding()
+                let onboardingMedications = onboarding.medications ?? []
+                
+                // Fetch medication logs from API
+                let calendar = Calendar.current
+                let endDate = calendar.date(byAdding: .day, value: 3, to: Date()) ?? Date()
+                let startDate = calendar.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .medication,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                // Map taken logs from API by (name + scheduled slot components).
+                // We treat existence of a metric record as "taken".
+                func slotKey(name: String, scheduledTime: Date) -> String {
+                    let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: scheduledTime)
+                    let y = comps.year ?? 0
+                    let m = comps.month ?? 0
+                    let d = comps.day ?? 0
+                    let h = comps.hour ?? 0
+                    let min = comps.minute ?? 0
+                    return "\(name.lowercased())|\(y)-\(m)-\(d)|\(h):\(min)"
+                }
+                
+                var takenByKey: [String: Int] = [:] // key -> metricId
+                for metric in response.metrics {
+                    guard let med = metric.extractMedication() else { continue }
+                    takenByKey[slotKey(name: med.name, scheduledTime: metric.measuredAt)] = metric.id
+                }
+                
+                // Build scheduled slots locally (9AM + 3PM each day) for onboarding medications,
+                // then overlay taken status based on the API records.
+                let scheduledHours = [9, 15]
+                var entries: [MedicationEntry] = []
+                
+                guard !onboardingMedications.isEmpty else {
+                    await MainActor.run {
+                        medicationEntries = []
+                        isLoading = false
+                    }
+                    return
+                }
+                
+                var day = calendar.startOfDay(for: startDate)
+                let endDay = calendar.startOfDay(for: endDate)
+                
+                while day <= endDay {
+                    for hour in scheduledHours {
+                        guard let scheduledTime = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) else { continue }
+                        for med in onboardingMedications {
+                            let metricId = takenByKey[slotKey(name: med.name, scheduledTime: scheduledTime)]
+                            
+                            let status: MedicationStatus?
+                            if metricId != nil {
+                                status = .taken
+                            } else {
+                                // If there's no API record for this scheduled slot, treat it as skipped.
+                                // This makes "Skipped" selectable even for future slots.
+                                status = .skipped
+                            }
+                            
+                            entries.append(MedicationEntry(
+                                id: UUID(),
+                                metricId: metricId,
+                                medicationName: med.name,
+                                instructions: "Instructions for intake",
+                                scheduledTime: scheduledTime,
+                                status: status
+                            ))
+                        }
+                    }
+                    day = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+                }
+                
+                await MainActor.run {
+                    medicationEntries = entries.sorted { $0.scheduledTime < $1.scheduledTime }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    private func markMedicationAsTaken(_ entry: MedicationEntry) {
+        guard !isSaving else { return }
+        isSaving = true
+        
+        Task {
+            do {
+                // POST a medication metric to indicate "taken" for this scheduled slot.
+                // If it already exists, do nothing.
+                if entry.metricId != nil {
+                    await MainActor.run { isSaving = false }
+                    return
+                }
+                
+                let request = MetricCreateRequest.medication(
+                    name: entry.medicationName,
+                    dosage: "1 tablet", // Default dosage
+                    timeTaken: Date(),
+                    measuredAt: entry.scheduledTime
+                )
+                
+                _ = try await metricsService.createMetric(request)
+                
+                // Reload data
+                loadMedicationData()
+                
+                await MainActor.run {
+                    isSaving = false
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    private func markMedicationAsSkipped(_ entry: MedicationEntry) {
+        // DELETE the medication metric (if it exists) to indicate "not taken" for this scheduled slot.
+        guard !isSaving else { return }
+        isSaving = true
+        
+        Task {
+            do {
+                if let metricId = entry.metricId {
+                    try await metricsService.deleteMetric(metricType: .medication, metricId: metricId)
+                }
+                loadMedicationData()
+                await MainActor.run { isSaving = false }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
     
@@ -552,27 +709,11 @@ struct MedicationLogView: View {
     
     private func statusButton(title: String, status: MedicationStatus, isSelected: Bool, entryId: UUID) -> some View {
         Button(action: {
-            // Toggle status - if already selected, deselect; otherwise, select
-            if let index = medicationEntries.firstIndex(where: { $0.id == entryId }) {
-                let currentEntry = medicationEntries[index]
-                if currentEntry.status == status {
-                    // Deselect - set status to nil
-                    medicationEntries[index] = MedicationEntry(
-                        id: currentEntry.id,
-                        medicationName: currentEntry.medicationName,
-                        instructions: currentEntry.instructions,
-                        scheduledTime: currentEntry.scheduledTime,
-                        status: nil
-                    )
-                } else {
-                    // Select the new status
-                    medicationEntries[index] = MedicationEntry(
-                        id: currentEntry.id,
-                        medicationName: currentEntry.medicationName,
-                        instructions: currentEntry.instructions,
-                        scheduledTime: currentEntry.scheduledTime,
-                        status: status
-                    )
+            if let entry = medicationEntries.first(where: { $0.id == entryId }) {
+                if status == .taken {
+                    markMedicationAsTaken(entry)
+                } else if status == .skipped {
+                    markMedicationAsSkipped(entry)
                 }
             }
         }) {

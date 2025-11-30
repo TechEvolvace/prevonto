@@ -14,11 +14,43 @@ private struct WeightChartPoint: Identifiable {
 
 class WeightTrackerManager: ObservableObject {
     @Published var entries: [WeightEntry] = []
+    @Published var isLoading = false
+    @Published var isSaving = false
+    @Published var showError = false
+    @Published var errorMessage = ""
     private var repository: WeightRepository
 
-    init(repository: WeightRepository = LocalWeightRepository()) {
+    init(repository: WeightRepository = APIWeightRepository()) {
         self.repository = repository
-        self.entries = repository.fetchEntries()
+        loadEntries()
+    }
+    
+    func loadEntries() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                if let apiRepo = repository as? APIWeightRepository {
+                    try await apiRepo.loadEntries()
+                    await MainActor.run {
+                        self.entries = apiRepo.fetchEntries()
+                        self.isLoading = false
+                    }
+                } else {
+                    await MainActor.run {
+                        self.entries = repository.fetchEntries()
+                        self.isLoading = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isLoading = false
+                    self.errorMessage = error.localizedDescription
+                    self.showError = true
+                }
+            }
+        }
     }
 
     var averageWeightLb: Double {
@@ -57,9 +89,34 @@ class WeightTrackerManager: ObservableObject {
         return uniqueEntries.map { $0.weightLb }.reduce(0, +) / Double(uniqueEntries.count)
     }
 
+    // Helper function to send new user-logged weight entry to API
     func addEntry(weight: Double) {
-        repository.addEntry(weight: weight)
-        entries = repository.fetchEntries()
+        guard !isSaving else { return }
+        isSaving = true
+        
+        Task {
+            do {
+                if let apiRepo = repository as? APIWeightRepository {
+                    try await apiRepo.addEntryAsync(weight: weight)
+                    await MainActor.run {
+                        self.entries = apiRepo.fetchEntries()
+                        self.isSaving = false
+                    }
+                } else {
+                    repository.addEntry(weight: weight)
+                    await MainActor.run {
+                        self.entries = repository.fetchEntries()
+                        self.isSaving = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isSaving = false
+                    self.errorMessage = error.localizedDescription
+                    self.showError = true
+                }
+            }
+        }
     }
 }
 
@@ -101,6 +158,11 @@ struct WeightTrackerView: View {
             if showingAddPopup {
                 addForTodayPopup
             }
+        }
+        .alert("Error", isPresented: $manager.showError) {
+            Button("OK") { }
+        } message: {
+            Text(manager.errorMessage)
         }
     }
 
@@ -596,7 +658,10 @@ struct WeightTrackerView: View {
         }
         
         manager.addEntry(weight: weightInLbs)
-        showingAddPopup = false
+        // Wait a bit for async save, then close popup
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showingAddPopup = false
+        }
     }
     
     // MARK: - Chart Helpers

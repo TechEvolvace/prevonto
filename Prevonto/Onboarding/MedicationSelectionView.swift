@@ -33,9 +33,9 @@ struct MedicationSelectionView: View {
                                     ProgressView()
                                         .padding(.trailing, 12)
                                 } else {
-                                    Image(systemName: "magnifyingglass")
-                                        .foregroundColor(.gray)
-                                        .padding(.trailing, 12)
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.gray)
+                                    .padding(.trailing, 12)
                                 }
                             }
                         )
@@ -57,7 +57,7 @@ struct MedicationSelectionView: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(result.name)
-                                                .foregroundColor(isSelected ? .white : .primary)
+                                            .foregroundColor(isSelected ? .white : .primary)
                                                 .fontWeight(.medium)
                                             if let genericName = result.genericName, genericName != result.name {
                                                 Text(genericName)

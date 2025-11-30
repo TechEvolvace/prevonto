@@ -94,7 +94,16 @@ class APIClient {
         var requestBody: Data?
         if let body = body {
             do {
-                requestBody = try JSONEncoder().encode(body)
+                let encoder = JSONEncoder()
+                // Use ISO8601 date encoding strategy for API compatibility
+                let iso8601Formatter = ISO8601DateFormatter()
+                iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                encoder.dateEncodingStrategy = .custom { date, encoder in
+                    var container = encoder.singleValueContainer()
+                    let dateString = iso8601Formatter.string(from: date)
+                    try container.encode(dateString)
+                }
+                requestBody = try encoder.encode(body)
             } catch {
                 throw APIError.encodingError(error)
             }

@@ -34,12 +34,23 @@ struct DashboardView: View {
     
     let healthKitManager = HealthKitManager()
     
-    // Sample medication data
-    private let medications = [
-        Medication(name: "Medication", instructions: "Instructions for intake", time: "10:00 AM"),
-        Medication(name: "Ibuprofen", instructions: "Take one tablet with food 3 times a day", time: "6:00 PM"),
-        Medication(name: "Vitamin D2", instructions: "Take 1 capsule by mouth once weekly", time: "8:00 AM")
-    ]
+    // API data state
+    @State private var medications: [Medication] = []
+    @State private var latestHeartRate: Double = 60
+    @State private var latestBloodPressure: BloodPressureRecord?
+    @State private var latestBloodGlucose: Double = 0
+    @State private var latestSpO2: Double = 0
+    @State private var latestWeight: Double = 0
+    @State private var latestMood: EnergyMoodValue?
+    @State private var isLoadingMetrics = false
+    
+    // Medication reminders and adherence
+    @State private var upcomingReminders: [(name: String, time: Date)] = []
+    @State private var adherencePercentage: Double = 0.0
+    @State private var adherenceWeekRange: String = ""
+    
+    private let metricsService = MetricsService.shared
+    private let onboardingService = OnboardingService.shared
     
     var body: some View {
         NavigationStack {
@@ -64,6 +75,10 @@ struct DashboardView: View {
                 }
                 .background(Color.white)
                 .navigationBarHidden(true)
+                .onAppear {
+                    loadNotificationSettings()
+                    loadMetrics()
+                }
                                 
                 // Floating + button, always visible in Dashboard page in same spot
                 VStack {
@@ -342,7 +357,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("\(Int(heartRate))")
+                    Text("\(Int(latestHeartRate))")
                         .font(.custom("Noto Sans", size: 32))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
@@ -438,10 +453,22 @@ struct DashboardView: View {
             
             Spacer()
             
-            Text("View your blood glucose data and trends")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                .multilineTextAlignment(.leading)
+            if latestBloodGlucose > 0 {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(Int(latestBloodGlucose))")
+                        .font(.custom("Noto Sans", size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    Text("mg/dL")
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                }
+            } else {
+                Text("View your blood glucose data and trends")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .multilineTextAlignment(.leading)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -461,10 +488,22 @@ struct DashboardView: View {
             
             Spacer()
             
-            Text("View your blood pressure data and trends")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                .multilineTextAlignment(.leading)
+            if let bp = latestBloodPressure {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(bp.systolic)/\(bp.diastolic)")
+                        .font(.custom("Noto Sans", size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    Text("mmHg")
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                }
+            } else {
+                Text("View your blood pressure data and trends")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .multilineTextAlignment(.leading)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -484,10 +523,22 @@ struct DashboardView: View {
             
             Spacer()
             
-            Text("View your SpO2 data and trends")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                .multilineTextAlignment(.leading)
+            if latestSpO2 > 0 {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(Int(latestSpO2))")
+                        .font(.custom("Noto Sans", size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    Text("%")
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                }
+            } else {
+                Text("View your SpO2 data and trends")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .multilineTextAlignment(.leading)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -507,10 +558,27 @@ struct DashboardView: View {
             
             Spacer()
             
-            Text("View your weight data and trends")
-                .font(.custom("Noto Sans", size: 14))
-                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                .multilineTextAlignment(.leading)
+            if latestWeight > 0 {
+                // Get weight unit from onboarding
+                let weightUnit = UserDefaults.standard.string(forKey: "weightUnit") ?? "kg"
+                let displayWeight = weightUnit == "lbs" ? latestWeight * 2.20462 : latestWeight
+                let unitText = weightUnit == "lbs" ? "lbs" : "kg"
+                
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(String(format: "%.1f", displayWeight))
+                        .font(.custom("Noto Sans", size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                    Text(unitText)
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                }
+            } else {
+                Text("View your weight data and trends")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .multilineTextAlignment(.leading)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -613,28 +681,42 @@ struct DashboardView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
             
-            // Medication card carousel, where each card display each medicine and status of either taking or skipping that medicine
-            TabView(selection: $medicationCurrentIndex) {
-                ForEach(medications.indices, id: \.self) { index in
-                    medicationCard(medication: medications[index])
-                        .tag(index)
+            if medications.isEmpty {
+                VStack(spacing: 8) {
+                    Text("No medications logged")
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
-            }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 100)
-            
-            // Carousel progress bar for the Medication section
-            HStack {
-                Spacer()
-                HStack(spacing: 8) {
+                .frame(maxWidth: .infinity)
+                .frame(height: 100)
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+            } else {
+                // Medication card carousel, where each card display each medicine and status of either taking or skipping that medicine
+                TabView(selection: $medicationCurrentIndex) {
                     ForEach(medications.indices, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(index == medicationCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
-                            .frame(width: index == medicationCurrentIndex ? 24 : 8, height: 8)
-                            .animation(.easeInOut(duration: 0.3), value: medicationCurrentIndex)
+                        medicationCard(medication: medications[index])
+                            .tag(index)
                     }
                 }
-                Spacer()
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .frame(height: 100)
+                
+                // Carousel progress bar for the Medication section
+                HStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        ForEach(medications.indices, id: \.self) { index in
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(index == medicationCurrentIndex ? Color(red: 0.85, green: 0.85, blue: 0.85) : Color(red: 0.85, green: 0.85, blue: 0.85).opacity(0.5))
+                                .frame(width: index == medicationCurrentIndex ? 24 : 8, height: 8)
+                                .animation(.easeInOut(duration: 0.3), value: medicationCurrentIndex)
+                        }
+                    }
+                    Spacer()
+                }
             }
             
             // Medication Reminders and Adherence section
@@ -693,8 +775,11 @@ struct DashboardView: View {
                 .frame(width: 60)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-                .foregroundColor(.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(red: 0.690, green: 0.698, blue: 0.764), lineWidth: 1)
+                )
+                .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
                 .cornerRadius(8)
             }
         }
@@ -716,24 +801,23 @@ struct DashboardView: View {
                 .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                 .padding(.top, 10)
             
-            // Display each medicine user wants a reminder for
+            // Display upcoming medication reminders
             VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Image(systemName: "pills.fill")
-                        .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
-                        .font(.system(size: 14))
-                    Text("Medicine, 10:00 AM")
+                if upcomingReminders.isEmpty {
+                    Text("No upcoming reminders")
                         .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                }
-                
-                HStack {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
-                        .font(.system(size: 14))
-                    Text("Medicine, 11:00 AM")
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                } else {
+                    ForEach(Array(upcomingReminders.prefix(2).enumerated()), id: \.offset) { index, reminder in
+                        HStack {
+                            Image(systemName: index == 0 ? "pills.fill" : "clock.fill")
+                                .foregroundColor(Color(red: 0.690, green: 0.698, blue: 0.764))
+                                .font(.system(size: 14))
+                            Text("\(reminder.name), \(formatReminderTime(reminder.time))")
+                                .font(.custom("Noto Sans", size: 14))
+                                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                        }
+                    }
                 }
             }
             Spacer()
@@ -756,11 +840,11 @@ struct DashboardView: View {
                     .stroke(Color(red: 0.85, green: 0.85, blue: 0.85), lineWidth: 4)
                     .frame(width: 52, height: 52)
                 Circle()
-                    .trim(from: 0, to: 0.73)
+                    .trim(from: 0, to: min(adherencePercentage, 1.0))
                     .stroke(Color(red: 0.368, green: 0.553, blue: 0.372), lineWidth: 4)
                     .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(-90))
-                Text("73%")
+                Text("\(Int(adherencePercentage * 100))%")
                     .font(.custom("Noto Sans", size: 14))
                     .fontWeight(.bold)
                     .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
@@ -772,12 +856,12 @@ struct DashboardView: View {
                     .font(.custom("Noto Sans", size: 16))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
-                // Days of the Week
-                Text("21 to 28")
+                // Week range
+                Text(adherenceWeekRange.isEmpty ? "This week" : adherenceWeekRange)
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                // Display Selected Month
-                Text("September 2025")
+                // Current month
+                Text(formatCurrentMonth())
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
@@ -822,7 +906,247 @@ struct DashboardView: View {
         }
     }
     
+    // MARK: - Load Metrics from API
+    private func loadMetrics() {
+        guard !isLoadingMetrics else { return }
+        isLoadingMetrics = true
+        
+        Task {
+            do {
+                // Load medications from onboarding
+                let onboarding = try await onboardingService.getOnboarding()
+                let onboardingMedications = onboarding.medications ?? []
+                await MainActor.run {
+                    medications = (onboarding.medications ?? []).map { med in
+                        Medication(
+                            name: med.name,
+                            instructions: "Instructions for intake", // Placeholder as API doesn't support this yet
+                            time: "9:00 AM" // Default time
+                        )
+                    }
+                }
+                
+                // Load latest metrics for each type
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
+                
+                // Heart Rate
+                if showHeartRate {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .heartRate,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let hr = latest.extractHeartRate() {
+                        await MainActor.run {
+                            latestHeartRate = Double(hr.bpm)
+                        }
+                    }
+                }
+                
+                // Blood Pressure
+                if showBloodPressure {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .bloodPressure,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let bp = latest.extractBloodPressure() {
+                        await MainActor.run {
+                            latestBloodPressure = BloodPressureRecord(
+                                date: latest.measuredAt,
+                                systolic: bp.systolic,
+                                diastolic: bp.diastolic,
+                                pulse: bp.pulse ?? 0
+                            )
+                        }
+                    }
+                }
+                
+                // Blood Glucose
+                if showBloodGlucose {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .bloodGlucose,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let bg = latest.extractBloodGlucose() {
+                        await MainActor.run {
+                            latestBloodGlucose = bg.value
+                        }
+                    }
+                }
+                
+                // SpO2
+                if showSpO2 {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .spo2,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let spo2 = latest.extractSpO2() {
+                        await MainActor.run {
+                            latestSpO2 = spo2.value
+                        }
+                    }
+                }
+                
+                // Weight
+                if showWeight {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .weight,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let weight = latest.extractWeight() {
+                        await MainActor.run {
+                            latestWeight = weight.weight
+                        }
+                    }
+                }
+                
+                // Mood
+                if showMoodTracker {
+                    let response = try await metricsService.listMetrics(
+                        metricType: .energyMood,
+                        startDate: startDate,
+                        endDate: endDate,
+                        pageSize: 1
+                    )
+                    if let latest = response.metrics.first,
+                       let mood = latest.extractEnergyMood() {
+                        await MainActor.run {
+                            latestMood = mood
+                        }
+                    }
+                }
+                
+                // Medication logs (for reminders and adherence cards)
+                if showMedicationLog {
+                    let calendar = Calendar.current
+                    let now = Date()
+                    
+                    // Get current week start (Monday)
+                    let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
+                    let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? now
+                    
+                    // Fetch taken medication logs for the current week and near future.
+                    // The app treats existence of a medication metric at a scheduled slot as "taken".
+                    let futureDate = calendar.date(byAdding: .day, value: 7, to: now) ?? now
+                    let medicationResponse = try await metricsService.listMetrics(
+                        metricType: .medication,
+                        startDate: weekStart,
+                        endDate: futureDate,
+                        pageSize: 100
+                    )
+                    
+                    await MainActor.run {
+                        // Helper to create a stable key for a scheduled slot.
+                        func slotKey(name: String, scheduledTime: Date) -> String {
+                            let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: scheduledTime)
+                            let y = comps.year ?? 0
+                            let m = comps.month ?? 0
+                            let d = comps.day ?? 0
+                            let h = comps.hour ?? 0
+                            let min = comps.minute ?? 0
+                            return "\(name.lowercased())|\(y)-\(m)-\(d)|\(h):\(min)"
+                        }
+                        
+                        // Build a set of taken slots from API.
+                        var takenSlots = Set<String>()
+                        for metric in medicationResponse.metrics {
+                            if let med = metric.extractMedication() {
+                                takenSlots.insert(slotKey(name: med.name, scheduledTime: metric.measuredAt))
+                            }
+                        }
+                        
+                        // Build scheduled slots locally (9AM + 3PM), then compute reminders/adherence.
+                        let scheduledHours = [9, 15]
+                        
+                        var reminders: [(name: String, time: Date)] = []
+                        var totalScheduled = 0
+                        var totalTaken = 0
+                        
+                        if !onboardingMedications.isEmpty {
+                            var day = calendar.startOfDay(for: weekStart)
+                            let endDay = calendar.startOfDay(for: futureDate)
+                            
+                            while day <= endDay {
+                                for hour in scheduledHours {
+                                    guard let scheduledTime = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) else { continue }
+                                    
+                                    for med in onboardingMedications {
+                                        let key = slotKey(name: med.name, scheduledTime: scheduledTime)
+                                        let isTaken = takenSlots.contains(key)
+                                        
+                                        // Upcoming reminder: scheduled in future AND not taken
+                                        if scheduledTime > now && !isTaken {
+                                            reminders.append((name: med.name, time: scheduledTime))
+                                        }
+                                        
+                                        // Adherence: count scheduled slots in this week up to "now"
+                                        if scheduledTime >= weekStart && scheduledTime < weekEnd && scheduledTime <= now {
+                                            totalScheduled += 1
+                                            if isTaken { totalTaken += 1 }
+                                        }
+                                    }
+                                }
+                                
+                                day = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+                            }
+                        }
+                        
+                        reminders.sort { $0.time < $1.time }
+                        upcomingReminders = Array(reminders.prefix(2))
+                        
+                        adherencePercentage = totalScheduled > 0 ? Double(totalTaken) / Double(totalScheduled) : 0.0
+                        
+                        // Format week range
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "d"
+                        let startStr = dateFormatter.string(from: weekStart)
+                        dateFormatter.dateFormat = "d"
+                        let endStr = dateFormatter.string(from: calendar.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart)
+                        adherenceWeekRange = "\(startStr) to \(endStr)"
+                    }
+                }
+                
+                await MainActor.run {
+                    isLoadingMetrics = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoadingMetrics = false
+                }
+                print("⚠️ Failed to load metrics: \(error)")
+            }
+        }
+    }
+    
     // MARK: - Helper Functions
+    private func formatReminderTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func formatCurrentMonth() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: Date())
+    }
+    
     private func loadHealthData() {
         // Load health data from HealthKit
         healthKitManager.requestAuthorization { success, error in

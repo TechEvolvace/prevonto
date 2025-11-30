@@ -8,6 +8,8 @@ struct OnboardingFlowView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var navigateToDashboard = false
+    
+    private let metricsService = MetricsService.shared
 
     var body: some View {
         VStack {
@@ -100,12 +102,27 @@ struct OnboardingFlowView: View {
                 // Mark onboarding as completed (separate call)
                 let completedResponse = try await OnboardingService.shared.completeOnboarding()
                 
+                // Create initial metrics from onboarding inputs (one-time at completion)
+                // Weight: onboarding currentWeight
+                // Mood/Energy: onboarding currentMood (energy not collected in onboarding; default to neutral)
+                try await createInitialMetricsFromOnboarding(completedResponse)
+                
                 // Initialize notification settings from preferred metrics
                 await MainActor.run {
                     initializeNotificationSettings(from: completedResponse.preferredMetrics ?? onboardingResponse.preferredMetrics ?? [])
                     dataManager.reset()
                     isLoading = false
                     navigateToDashboard = true
+                }
+                
+                // Seed sample data in the background (non-blocking)
+                Task.detached {
+                    do {
+                        try await MetricsDataSeeder.shared.seedSampleData()
+                    } catch {
+                        print("⚠️ Failed to seed sample data: \(error)")
+                        // Don't block navigation if seeding fails
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -128,10 +145,39 @@ struct OnboardingFlowView: View {
         }
     }
     
+    // Helper function that create initial metrics from onboarding data
+    private func createInitialMetricsFromOnboarding(_ onboarding: OnboardingResponse) async throws {
+        let measuredAt = onboarding.completedAt ?? Date()
+        
+        // Weight (store as kg in API)
+        if let weight = onboarding.currentWeight {
+            let unit = (onboarding.weightUnit ?? "kg").lowercased()
+            let weightKg = unit == "lbs" ? (weight * 0.453592) : weight
+            let req = MetricCreateRequest.weight(weight: weightKg, measuredAt: measuredAt, unit: "kg")
+            _ = try await metricsService.createMetric(req)
+        }
+        
+        // Mood/Energy
+        if let moodStr = onboarding.currentMood?.lowercased() {
+            let apiMood: Int
+            switch moodStr {
+            case "very_poor": apiMood = 2
+            case "poor": apiMood = 4
+            case "neutral": apiMood = 5
+            case "good": apiMood = 7
+            case "excellent": apiMood = 9
+            default: apiMood = 5
+            }
+            let defaultEnergy = 5 // onboarding does not collect energy; neutral default
+            let req = MetricCreateRequest.energyMood(energy: defaultEnergy, mood: apiMood, measuredAt: measuredAt)
+            _ = try await metricsService.createMetric(req)
+        }
+    }
+    
     // MARK: - Initialize Notification Settings
     private func initializeNotificationSettings(from preferredMetrics: [String]) {
         // Map API metric types to notification setting keys
-        // Default: all metrics are OFF, then turn ON only the preferred ones
+        // Default: all metrics are OFF, then turn ON only the preferred ones chosen by the user
         UserDefaults.standard.set(false, forKey: "showBloodPressure")
         UserDefaults.standard.set(false, forKey: "showBloodGlucose")
         UserDefaults.standard.set(false, forKey: "showSpO2")

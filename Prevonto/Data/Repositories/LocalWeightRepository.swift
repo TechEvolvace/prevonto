@@ -1,4 +1,8 @@
-// Local storing of weight data
+/*
+ Local storing of weight data (deprecated). The app now stores weight entries in the API.
+ This implementation is commented out to avoid accidental local persistence.
+*/
+#if false
 import Foundation
 
 class LocalWeightRepository: WeightRepository {
@@ -32,3 +36,4 @@ class LocalWeightRepository: WeightRepository {
         }
     }
 }
+#endif

@@ -331,16 +331,18 @@ struct EnergyRow: View {
 
 struct MoodTrackerView: View {
     @State private var selectedTab = "Month"
-    @State private var entries: [MoodLogEntry] = [
-        MoodLogEntry(date: Calendar.current.date(byAdding: .day, value: -5, to: Date())!, mood: .sad, energy: 4),
-        MoodLogEntry(date: Calendar.current.date(byAdding: .day, value: -3, to: Date())!, mood: .happy, energy: 7),
-        MoodLogEntry(date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!, mood: .neutral, energy: 5)
-    ]
+    @State private var entries: [MoodLogEntry] = []
     @State private var showMoodEntry = false
     @State private var showEnergyEntry = false
     @State private var tempMood: MoodType? = nil
     @State private var selectedBarIndex: Int? = nil
     @State private var currentDate = Date()
+    @State private var isLoading = false
+    @State private var isSaving = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
 
     var body: some View {
         ZStack {
@@ -372,6 +374,9 @@ struct MoodTrackerView: View {
                         let today = Date()
                         let calendar = Calendar.current
                         
+                        // Save to API
+                        saveMoodEntry(mood: mood, energy: energy, date: today)
+                        
                         // Remove any existing entry for today
                         entries.removeAll { entry in
                             calendar.isDate(entry.date, inSameDayAs: today)
@@ -383,6 +388,111 @@ struct MoodTrackerView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            loadMoodData()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    private func loadMoodData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .energyMood,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                let moodEntries = response.metrics.compactMap { metric -> MoodLogEntry? in
+                    guard let moodValue = metric.extractEnergyMood() else { return nil }
+                    // Map API mood (1-10) to MoodType
+                    let moodType = mapMoodFromAPI(moodValue.mood)
+                    return MoodLogEntry(
+                        date: metric.measuredAt,
+                        mood: moodType,
+                        energy: moodValue.energy
+                    )
+                }
+                
+                await MainActor.run {
+                    entries = moodEntries.sorted { $0.date > $1.date }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // Helper function to send new user-logged mood and energy entry to API
+    private func saveMoodEntry(mood: MoodType, energy: Int, date: Date) {
+        guard !isSaving else { return }
+        isSaving = true
+        
+        Task {
+            do {
+                // Map MoodType to API mood value (1-10)
+                let apiMood = mapMoodToAPI(mood)
+                
+                let request = MetricCreateRequest.energyMood(
+                    energy: energy,
+                    mood: apiMood,
+                    measuredAt: date
+                )
+                
+                _ = try await metricsService.createMetric(request)
+                
+                await MainActor.run {
+                    isSaving = false
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // Map MoodType to API mood value (1-10 scale)
+    private func mapMoodToAPI(_ mood: MoodType) -> Int {
+        switch mood {
+        case .depressed: return 2
+        case .sad: return 4
+        case .neutral: return 5
+        case .happy: return 7
+        case .veryHappy: return 9
+        }
+    }
+    
+    // Map API mood value (1-10) to MoodType
+    private func mapMoodFromAPI(_ apiMood: Int) -> MoodType {
+        switch apiMood {
+        case 1...3: return .depressed
+        case 4...5: return .sad
+        case 6: return .neutral
+        case 7...8: return .happy
+        case 9...10: return .veryHappy
+        default: return .neutral
         }
     }
 

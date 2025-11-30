@@ -29,25 +29,13 @@ struct BloodGlucoseView: View {
     @State private var weekStartDate: Date = Date()
     @State private var weekEndDate: Date = Date()
     
-    // Sample Blood Glucose data
-    private let allGlucoseRecords: [BloodGlucoseRecord] = [
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 10, day: 12, hour: 7, minute: 30), glucoseLevel: 95),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 10, day: 12, hour: 12, minute: 15), glucoseLevel: 120),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 13, minute: 30), glucoseLevel: 135),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 13, hour: 7, minute: 15), glucoseLevel: 92),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 9, minute: 30), glucoseLevel: 145),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 12, minute: 0), glucoseLevel: 130),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 15, minute: 45), glucoseLevel: 115),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 14, hour: 19, minute: 0), glucoseLevel: 105),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 7, minute: 45), glucoseLevel: 88),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 15, hour: 12, minute: 30), glucoseLevel: 140),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 8, minute: 15), glucoseLevel: 94),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 16, hour: 14, minute: 0), glucoseLevel: 128),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 7, minute: 30), glucoseLevel: 90),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 17, hour: 13, minute: 15), glucoseLevel: 132),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 8, minute: 0), glucoseLevel: 96),
-        BloodGlucoseRecord(timestamp: Date.from(year: 2025, month: 11, day: 18, hour: 12, minute: 45), glucoseLevel: 125)
-    ]
+    // Blood Glucose data from API
+    @State private var allGlucoseRecords: [BloodGlucoseRecord] = []
+    @State private var isLoading = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
@@ -116,6 +104,54 @@ struct BloodGlucoseView: View {
         }
         .onAppear {
             updateWeekDates()
+            loadBloodGlucoseData()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - API Integration
+    // Helper function to get blood glucose data from API
+    private func loadBloodGlucoseData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .bloodGlucose,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                // Convert API metrics to BloodGlucoseRecord
+                let records = response.metrics.compactMap { metric -> BloodGlucoseRecord? in
+                    guard let bg = metric.extractBloodGlucose() else { return nil }
+                    return BloodGlucoseRecord(
+                        timestamp: metric.measuredAt,
+                        glucoseLevel: Int(bg.value)
+                    )
+                }
+                
+                await MainActor.run {
+                    allGlucoseRecords = records.sorted { $0.timestamp < $1.timestamp }
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
         }
     }
     

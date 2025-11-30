@@ -61,16 +61,14 @@ struct BloodPressureView: View {
     @State private var newDiastolic: String = ""
     @State private var newPulse: String = ""
     
-    // Sample Blood Pressure data
-    @State private var allRecords: [BloodPressureRecord] = [
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 3), systolic: 120, diastolic: 80, pulse: 72),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 4), systolic: 118, diastolic: 78, pulse: 70),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 5), systolic: 122, diastolic: 82, pulse: 74),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 6), systolic: 125, diastolic: 85, pulse: 76),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 7), systolic: 119, diastolic: 79, pulse: 71),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 8), systolic: 123, diastolic: 83, pulse: 96),
-        BloodPressureRecord(date: Date.from(year: 2025, month: 11, day: 9), systolic: 121, diastolic: 81, pulse: 73),
-    ]
+    // Blood Pressure data from API
+    @State private var allRecords: [BloodPressureRecord] = []
+    @State private var isLoading = false
+    @State private var isSaving = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    private let metricsService = MetricsService.shared
     
     // Chart data for selected week
     private var weeklyChartData: [(index: Int, label: String, value: Int?)] {
@@ -180,7 +178,13 @@ struct BloodPressureView: View {
             }
         }
         .onAppear {
+            loadBloodPressureData()
             updateWeekDates()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
         }
     }
     
@@ -819,14 +823,19 @@ struct BloodPressureView: View {
                 
                 // Save button
                 Button(action: saveNewReading) {
-                    Text("Save")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.primaryGreen)
-                        .cornerRadius(10)
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Save")
+                    }
                 }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.primaryGreen)
+                .cornerRadius(10)
             }
             .padding(24)
             .background(Color.white)
@@ -871,6 +880,7 @@ struct BloodPressureView: View {
         return formatter.string(from: Date())
     }
     
+    // Helper function to send new user-logged blood pressure entry to API
     private func saveNewReading() {
         guard let sys = Int(newSystolic),
               let dia = Int(newDiastolic),
@@ -878,15 +888,89 @@ struct BloodPressureView: View {
             return
         }
         
-        let newRecord = BloodPressureRecord(
-            date: Date(),
-            systolic: sys,
-            diastolic: dia,
-            pulse: pulse
-        )
+        isSaving = true
         
-        allRecords.append(newRecord)
-        showingAddPopup = false
+        Task {
+            do {
+                let request = MetricCreateRequest.bloodPressure(
+                    systolic: sys,
+                    diastolic: dia,
+                    pulse: pulse,
+                    measuredAt: Date(),
+                    unit: "mmHg"
+                )
+                
+                let response = try await metricsService.createMetric(request)
+                
+                // Convert to BloodPressureRecord and add to list
+                if let bp = response.extractBloodPressure() {
+                    let newRecord = BloodPressureRecord(
+                        date: response.measuredAt,
+                        systolic: bp.systolic,
+                        diastolic: bp.diastolic,
+                        pulse: bp.pulse ?? 0
+                    )
+                    
+                    await MainActor.run {
+                        allRecords.append(newRecord)
+                        allRecords.sort { $0.date > $1.date } // Sort by date descending
+                        newSystolic = ""
+                        newDiastolic = ""
+                        newPulse = ""
+                        showingAddPopup = false
+                        isSaving = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // MARK: - Load Blood Pressure Data
+    private func loadBloodPressureData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .bloodPressure,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                let records = response.metrics.compactMap { metric -> BloodPressureRecord? in
+                    guard let bp = metric.extractBloodPressure() else { return nil }
+                    return BloodPressureRecord(
+                        date: metric.measuredAt,
+                        systolic: bp.systolic,
+                        diastolic: bp.diastolic,
+                        pulse: bp.pulse ?? 0
+                    )
+                }
+                
+                await MainActor.run {
+                    allRecords = records.sorted { $0.date > $1.date } // Sort by date descending
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
     }
     
     // MARK: - Helper Functions

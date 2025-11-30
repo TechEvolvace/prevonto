@@ -247,17 +247,17 @@ struct ProfileView: View {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
-                    Text("Save")
+            Text("Save")
                 }
             }
-            .font(.custom("Noto Sans", size: 16))
-            .fontWeight(.semibold)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(Color(red: 0.02, green: 0.33, blue: 0.18))
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
+                .font(.custom("Noto Sans", size: 16))
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(Color(red: 0.02, green: 0.33, blue: 0.18))
+                .cornerRadius(12)
+                .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
         .disabled(isSaving)
