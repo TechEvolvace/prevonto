@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var isLoggingOut = false
     @State private var isDeletingAccount = false
     @StateObject private var authManager = AuthManager.shared
+    @State private var currentUser: User?
+    @State private var isLoadingUser = false
     
     var body: some View {
         NavigationStack {
@@ -42,6 +44,9 @@ struct SettingsView: View {
                 }
                 .navigationBarHidden(true)
             }
+        }
+        .onAppear {
+            loadCurrentUser()
         }
         // Logout Confirmation Sheet
         .sheet(isPresented: $showLogoutSheet) {
@@ -87,16 +92,16 @@ struct SettingsView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
-                                Text("Log Out")
+                        Text("Log Out")
                             }
                         }
-                        .font(.custom("Noto Sans", size: 18))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color(red: 0.13, green: 0.54, blue: 0.24))
-                        .cornerRadius(12)
+                            .font(.custom("Noto Sans", size: 18))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color(red: 0.13, green: 0.54, blue: 0.24))
+                            .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
                     .disabled(isLoggingOut)
@@ -150,16 +155,16 @@ struct SettingsView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
-                                Text("Delete Account")
+                        Text("Delete Account")
                             }
                         }
-                        .font(.custom("Noto Sans", size: 18))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.red)
-                        .cornerRadius(12)
+                            .font(.custom("Noto Sans", size: 18))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.red)
+                            .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
                     .disabled(isDeletingAccount)
@@ -228,12 +233,12 @@ struct SettingsView: View {
                         .padding(.trailing, 4)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Your Name")
+                        Text(currentUser?.name ?? "Your Name")
                             .font(.custom("Noto Sans", size: 16))
                             .fontWeight(.medium)
                             .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                         
-                        Text("yourname@example.com")
+                        Text(currentUser?.email ?? "yourname@example.com")
                             .font(.custom("Noto Sans", size: 14))
                             .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                     }
@@ -375,6 +380,27 @@ struct SettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    // MARK: - Load User Data
+    private func loadCurrentUser() {
+        guard !isLoadingUser else { return }
+        isLoadingUser = true
+        
+        Task {
+            do {
+                let user = try await AuthService.shared.getCurrentUser()
+                await MainActor.run {
+                    currentUser = user
+                    isLoadingUser = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoadingUser = false
+                    // Silently fail - user can still use settings
+                }
+            }
         }
     }
     

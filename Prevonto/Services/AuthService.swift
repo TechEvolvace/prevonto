@@ -101,5 +101,17 @@ class AuthService {
             responseType: EmptyResponse.self
         )
     }
+    
+    // MARK: - Update Profile
+    func updateProfile(name: String?, email: String?) async throws -> User {
+        let request = UserUpdateRequest(name: name, email: email)
+        let user: User = try await apiClient.request(
+            endpoint: "/api/settings/profile",
+            method: .PUT,
+            body: request,
+            responseType: User.self
+        )
+        return user
+    }
 }
 

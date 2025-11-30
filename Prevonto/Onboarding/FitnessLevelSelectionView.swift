@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct FitnessLevelSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedLevel: Int? = nil
 
     let next: () -> Void
@@ -12,14 +13,26 @@ struct FitnessLevelSelectionView: View {
         let id: Int
         let title: String
         let subtitle: String?
+        let apiValue: String // API enum value
     }
 
+    // Available fitness level options user can select in this page mapped to appropriate API values
     let fitnessOptions: [FitnessOption] = [
-        .init(id: 1, title: "Just started", subtitle: nil),
-        .init(id: 2, title: "Getting back into fitness", subtitle: nil),
-        .init(id: 3, title: "Fairly active", subtitle: nil),
-        .init(id: 4, title: "Very active", subtitle: nil)
+        .init(id: 1, title: "Just started", subtitle: nil, apiValue: "beginner"),
+        .init(id: 2, title: "Getting back into fitness", subtitle: nil, apiValue: "beginner"),
+        .init(id: 3, title: "Fairly active", subtitle: nil, apiValue: "intermediate"),
+        .init(id: 4, title: "Very active", subtitle: nil, apiValue: "advanced")
     ]
+    
+    private func mapFitnessLevelToAPI(_ levelId: Int?) -> String? {
+        guard let levelId = levelId else { return nil }
+        return fitnessOptions.first(where: { $0.id == levelId })?.apiValue
+    }
+    
+    private func mapAPIToFitnessLevel(_ apiValue: String?) -> Int? {
+        guard let apiValue = apiValue else { return nil }
+        return fitnessOptions.first(where: { $0.apiValue == apiValue })?.id
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your current\nfitness level?") {
@@ -78,6 +91,7 @@ struct FitnessLevelSelectionView: View {
 
                 Button {
                     if selectedLevel != nil {
+                        dataManager.fitnessLevel = mapFitnessLevelToAPI(selectedLevel)
                         next()
                     }
                 } label: {
@@ -88,6 +102,12 @@ struct FitnessLevelSelectionView: View {
                         .background(selectedLevel != nil ? Color.primaryGreen : .gray.opacity(0.3))
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved fitness level if any
+            if let savedLevel = dataManager.fitnessLevel {
+                selectedLevel = mapAPIToFitnessLevel(savedLevel)
             }
         }
     }

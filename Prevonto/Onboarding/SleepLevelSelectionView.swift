@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct SleepLevelSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedLevel: Int? = nil
     
     let next: () -> Void
@@ -12,15 +13,27 @@ struct SleepLevelSelectionView: View {
         let id: Int
         let title: String
         let subtitle: String
+        let apiValue: String // API enum value
     }
 
+    // Available sleep level options user can select in this page mapped to appropriate API values
     let sleepOptions: [SleepOption] = [
-        .init(id: 1, title: "Very Low", subtitle: "~0–3 hours daily"),
-        .init(id: 2, title: "Low", subtitle: "~3–5 hours daily"),
-        .init(id: 3, title: "Moderate", subtitle: "~5–8 hours daily"),
-        .init(id: 4, title: "High", subtitle: "~8–10 hours daily"),
-        .init(id: 5, title: "Excellent", subtitle: "10+ hours daily")
+        .init(id: 1, title: "Very Low", subtitle: "~0–3 hours daily", apiValue: "poor"),
+        .init(id: 2, title: "Low", subtitle: "~3–5 hours daily", apiValue: "poor"),
+        .init(id: 3, title: "Moderate", subtitle: "~5–8 hours daily", apiValue: "fair"),
+        .init(id: 4, title: "High", subtitle: "~8–10 hours daily", apiValue: "good"),
+        .init(id: 5, title: "Excellent", subtitle: "10+ hours daily", apiValue: "excellent")
     ]
+    
+    private func mapSleepLevelToAPI(_ levelId: Int?) -> String? {
+        guard let levelId = levelId else { return nil }
+        return sleepOptions.first(where: { $0.id == levelId })?.apiValue
+    }
+    
+    private func mapAPIToSleepLevel(_ apiValue: String?) -> Int? {
+        guard let apiValue = apiValue else { return nil }
+        return sleepOptions.first(where: { $0.apiValue == apiValue })?.id
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your current\nsleep level?") {
@@ -75,6 +88,7 @@ struct SleepLevelSelectionView: View {
 
                 Button {
                     if selectedLevel != nil {
+                        dataManager.sleepLevel = mapSleepLevelToAPI(selectedLevel)
                         next()
                     }
                 } label: {
@@ -85,6 +99,12 @@ struct SleepLevelSelectionView: View {
                         .background(selectedLevel != nil ? Color.primaryGreen : .gray.opacity(0.3))
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved sleep level if any
+            if let savedLevel = dataManager.sleepLevel {
+                selectedLevel = mapAPIToSleepLevel(savedLevel)
             }
         }
     }

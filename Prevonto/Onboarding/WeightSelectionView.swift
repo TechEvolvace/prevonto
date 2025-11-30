@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct WeightSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedUnit: String = "lbs"
     @State private var selectedWeight: Int = 140
 
@@ -50,6 +51,8 @@ struct WeightSelectionView: View {
 
                 // Next button
                 Button {
+                    dataManager.currentWeight = Double(selectedWeight)
+                    dataManager.weightUnit = selectedUnit
                     next()
                 } label: {
                     Text("Next")
@@ -59,6 +62,15 @@ struct WeightSelectionView: View {
                         .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved weight if any
+            if let savedWeight = dataManager.currentWeight {
+                selectedWeight = Int(savedWeight)
+            }
+            if let savedUnit = dataManager.weightUnit {
+                selectedUnit = savedUnit
             }
         }
     }

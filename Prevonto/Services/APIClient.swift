@@ -124,16 +124,91 @@ class APIClient {
                 if T.self == EmptyResponse.self {
                     return EmptyResponse() as! T
                 }
+                // If expecting EmptyResponse but got empty data, return it
+                if T.self == EmptyResponse.self {
+                    return EmptyResponse() as! T
+                }
             }
             
             // Decode response
             do {
                 let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
+                
+                // Custom date decoding strategy to handle various ISO8601 formats
+                decoder.dateDecodingStrategy = .custom { decoder in
+                    let container = try decoder.singleValueContainer()
+                    let dateString = try container.decode(String.self)
+                    
+                    // Try multiple date formats
+                    let formatters: [DateFormatter] = [
+                        {
+                            let f = DateFormatter()
+                            f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                            f.timeZone = TimeZone(secondsFromGMT: 0)
+                            return f
+                        }(),
+                        {
+                            let f = DateFormatter()
+                            f.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                            f.timeZone = TimeZone(secondsFromGMT: 0)
+                            return f
+                        }()
+                    ]
+                    
+                    for formatter in formatters {
+                        if let date = formatter.date(from: dateString) {
+                            return date
+                        }
+                    }
+                    
+                    // Try ISO8601DateFormatter
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    isoFormatter.formatOptions = [.withInternetDateTime]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+                    
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Expected date string to be ISO8601-formatted."
+                    )
+                }
+                
+                // Special handling for EmptyResponse - if we get any 2xx response, consider it success
+                if T.self == EmptyResponse.self {
+                    return EmptyResponse() as! T
+                }
+                
                 let decoded = try decoder.decode(T.self, from: data)
                 return decoded
-            } catch {
-                throw APIError.decodingError(error)
+            } catch let decodeError {
+                // Debug: Print response data for decoding errors
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("⚠️ DECODING ERROR - Full Response JSON:")
+                    print(jsonString)
+                    print("---")
+                }
+                print("⚠️ Decoding error details: \(decodeError)")
+                if let decodingError = decodeError as? DecodingError {
+                    switch decodingError {
+                    case .typeMismatch(let type, let context):
+                        print("Type mismatch: Expected \(type), at path: \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("Value not found: Expected \(type), at path: \(context.codingPath)")
+                    case .keyNotFound(let key, let context):
+                        print("Key not found: \(key.stringValue), at path: \(context.codingPath)")
+                    case .dataCorrupted(let context):
+                        print("Data corrupted at path: \(context.codingPath), \(context.debugDescription)")
+                    @unknown default:
+                        print("Unknown decoding error")
+                    }
+                }
+                throw APIError.decodingError(decodeError)
             }
         } catch let error as APIError {
             throw error

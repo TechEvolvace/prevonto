@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct EatingHabitSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedHabit: String? = nil
 
     let next: () -> Void
@@ -12,16 +13,28 @@ struct EatingHabitSelectionView: View {
         let id = UUID()
         let iconName: String
         let label: String
+        let apiValue: String // API enum value
     }
 
+    // Available eating habit options user can select in this page mapped to appropriate API values
     let habits: [HabitOption] = [
-        .init(iconName: "Balanced Diet icon", label: "Balanced Diet"),
-        .init(iconName: "Mostly Vegetarian icon", label: "Mostly Vegetarian"),
-        .init(iconName: "Low Carb icon", label: "Low Carb"),
-        .init(iconName: "Gluten Free icon", label: "Gluten Free"),
-        .init(iconName: "Vegan icon", label: "Vegan"),
-        .init(iconName: "Keto icon", label: "Keto")
+        .init(iconName: "Balanced Diet icon", label: "Balanced Diet", apiValue: "omnivore"),
+        .init(iconName: "Mostly Vegetarian icon", label: "Mostly Vegetarian", apiValue: "vegetarian"),
+        .init(iconName: "Low Carb icon", label: "Low Carb", apiValue: "keto"),
+        .init(iconName: "Gluten Free icon", label: "Gluten Free", apiValue: "other"),
+        .init(iconName: "Vegan icon", label: "Vegan", apiValue: "vegan"),
+        .init(iconName: "Keto icon", label: "Keto", apiValue: "keto")
     ]
+    
+    private func mapDietTypeToAPI(_ label: String?) -> String? {
+        guard let label = label else { return nil }
+        return habits.first(where: { $0.label == label })?.apiValue
+    }
+    
+    private func mapAPIToDietType(_ apiValue: String?) -> String? {
+        guard let apiValue = apiValue else { return nil }
+        return habits.first(where: { $0.apiValue == apiValue })?.label
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What does your current\ndiet look like?") {
@@ -66,6 +79,7 @@ struct EatingHabitSelectionView: View {
 
             Button {
                 if selectedHabit != nil {
+                    dataManager.dietType = mapDietTypeToAPI(selectedHabit)
                     next()
                 }
             } label: {
@@ -75,6 +89,12 @@ struct EatingHabitSelectionView: View {
                     .foregroundColor(selectedHabit != nil ? .white : .gray)
                     .background(selectedHabit != nil ? Color.primaryGreen : .gray.opacity(0.3))
                     .cornerRadius(12)
+            }
+        }
+        .onAppear {
+            // Load saved diet type if any
+            if let savedDietType = dataManager.dietType {
+                selectedHabit = mapAPIToDietType(savedDietType)
             }
         }
     }

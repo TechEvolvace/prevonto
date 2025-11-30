@@ -6,8 +6,21 @@ struct SelectGenderView: View {
     let back: () -> Void
     let step: Int
 
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedGender: String? = nil
     let genderOptions = ["Male", "Female", "Other", "Prefer not to say"]
+    
+    // Map display names to API values
+    private func mapGenderToAPI(_ displayName: String?) -> String? {
+        guard let displayName = displayName else { return nil }
+        switch displayName {
+        case "Male": return "male"
+        case "Female": return "female"
+        case "Other": return "other"
+        case "Prefer not to say": return "prefer_not_to_say"
+        default: return nil
+        }
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your gender?") {
@@ -58,6 +71,7 @@ struct SelectGenderView: View {
             // Next button
             Button {
                 if selectedGender != nil {
+                    dataManager.gender = mapGenderToAPI(selectedGender)
                     next()
                 }
             } label: {
@@ -68,6 +82,19 @@ struct SelectGenderView: View {
                     .background(selectedGender != nil ? Color.primaryGreen : .gray.opacity(0.3))
                     .cornerRadius(12)
             }
-        }.navigationBarBackButtonHidden(true)
+        }
+        .navigationBarBackButtonHidden(true)
+        .onAppear {
+            // Load saved gender if any
+            if let savedGender = dataManager.gender {
+                switch savedGender {
+                case "male": selectedGender = "Male"
+                case "female": selectedGender = "Female"
+                case "other": selectedGender = "Other"
+                case "prefer_not_to_say": selectedGender = "Prefer not to say"
+                default: break
+                }
+            }
+        }
     }
 }

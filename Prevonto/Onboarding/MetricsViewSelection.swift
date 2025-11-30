@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct MetricsSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedMetrics: Set<String> = []
 
     let next: () -> Void
@@ -12,18 +13,32 @@ struct MetricsSelectionView: View {
         let id = UUID()
         let iconName: String
         let label: String
+        let apiValue: String // API enum value
     }
 
+    // Available metric options user can select in this page mapped to appropriate API values
     let metrics: [MetricOption] = [
-        .init(iconName: "Heart Rate icon", label: "Heart Rate"),
-        .init(iconName: "Blood Pressure icon", label: "Blood Pressure"),
-        .init(iconName: "Blood Glucose icon", label: "Blood Glucose"),
-        .init(iconName: "Weight Tracker icon", label: "Weight Tracker"),
-        .init(iconName: "Steps and Activity icon", label: "Steps & Activity"),
-        .init(iconName: "Medication Log icon", label: "Medication Log"),
-        .init(iconName: "Mood Tracker icon", label: "Mood Tracker"),
-        .init(iconName: "SpO2 icon", label: "SpO2")
+        .init(iconName: "Heart Rate icon", label: "Heart Rate", apiValue: "heart_rate"),
+        .init(iconName: "Blood Pressure icon", label: "Blood Pressure", apiValue: "blood_pressure"),
+        .init(iconName: "Blood Glucose icon", label: "Blood Glucose", apiValue: "blood_glucose"),
+        .init(iconName: "Weight Tracker icon", label: "Weight Tracker", apiValue: "weight"),
+        .init(iconName: "Steps and Activity icon", label: "Steps & Activity", apiValue: "steps_activity"),
+        .init(iconName: "Medication Log icon", label: "Medication Log", apiValue: "medication"),
+        .init(iconName: "Mood Tracker icon", label: "Mood Tracker", apiValue: "energy_mood"),
+        .init(iconName: "SpO2 icon", label: "SpO2", apiValue: "spo2")
     ]
+    
+    private func mapLabelsToAPIValues(_ labels: Set<String>) -> [String] {
+        return labels.compactMap { label in
+            metrics.first(where: { $0.label == label })?.apiValue
+        }
+    }
+    
+    private func mapAPIValuesToLabels(_ apiValues: [String]) -> Set<String> {
+        return Set(apiValues.compactMap { apiValue in
+            metrics.first(where: { $0.apiValue == apiValue })?.label
+        })
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What metric would you like to see most?") {
@@ -70,6 +85,7 @@ struct MetricsSelectionView: View {
 
             Button {
                 if !selectedMetrics.isEmpty {
+                    dataManager.preferredMetrics = mapLabelsToAPIValues(selectedMetrics)
                     next()
                 }
             } label: {
@@ -79,6 +95,12 @@ struct MetricsSelectionView: View {
                     .foregroundColor(!selectedMetrics.isEmpty ? .white : .gray)
                     .background(!selectedMetrics.isEmpty ? Color.primaryGreen : .gray.opacity(0.3))
                     .cornerRadius(12)
+            }
+        }
+        .onAppear {
+            // Load saved preferred metrics if any
+            if !dataManager.preferredMetrics.isEmpty {
+                selectedMetrics = mapAPIValuesToLabels(dataManager.preferredMetrics)
             }
         }
     }

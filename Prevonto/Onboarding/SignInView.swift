@@ -92,14 +92,14 @@ struct SignInView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
-                            Text("Sign In")
+                    Text("Sign In")
                         }
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.primaryGreen)
-                    .cornerRadius(12)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.primaryGreen)
+                        .cornerRadius(12)
                 }
                 .disabled(isLoading)
 

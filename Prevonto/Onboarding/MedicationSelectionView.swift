@@ -4,30 +4,23 @@ import SwiftUI
 struct MedicationSelectionView: View {
     @State private var selectedMeds: [String] = []
     @State private var searchQuery: String = ""
+    @State private var searchResults: [MedicationSearchResult] = []
+    @State private var isLoading: Bool = false
+    @State private var searchTask: Task<Void, Never>?
+    
+    @StateObject private var dataManager = OnboardingDataManager.shared
+    @StateObject private var authManager = AuthManager.shared
 
     let next: () -> Void
     let back: () -> Void
     let step: Int
-
-    let allMedications = [
-        "Abilify", "Abilify Maintena", "Abiraterone", "Acetaminophen",
-        "Actemra", "Aceon", "Accutane", "Acetasol HC", "Aspirin", "Ibuprofen", "Xanax", "Zoloft"
-    ]
-
-    var filteredMedications: [String] {
-        if searchQuery.isEmpty {
-            return []
-        } else {
-            return allMedications.filter { $0.lowercased().contains(searchQuery.lowercased()) }
-        }
-    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "Which medications are\nyou currently taking?") {
             VStack(spacing: 16) {
                 // Search bar
                 HStack {
-                    TextField("Search", text: $searchQuery)
+                    TextField("Search (min 2 characters)", text: $searchQuery)
                         .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
@@ -36,26 +29,42 @@ struct MedicationSelectionView: View {
                         .overlay(
                             HStack {
                                 Spacer()
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.gray)
-                                    .padding(.trailing, 12)
+                                if isLoading {
+                                    ProgressView()
+                                        .padding(.trailing, 12)
+                                } else {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundColor(.gray)
+                                        .padding(.trailing, 12)
+                                }
                             }
                         )
+                        .onChange(of: searchQuery) { _, newValue in
+                            performSearch(query: newValue)
+                        }
                 }
 
                 // Medication search result list
-                if !filteredMedications.isEmpty {
+                if !searchResults.isEmpty {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 0) {
-                            ForEach(filteredMedications, id: \.self) { med in
-                                let isSelected = selectedMeds.contains(med)
+                            ForEach(searchResults, id: \.name) { result in
+                                let isSelected = selectedMeds.contains(result.name)
                                 
                                 Button(action: {
-                                    toggleSelection(for: med)
+                                    toggleSelection(for: result.name)
                                 }) {
                                     HStack {
-                                        Text(med)
-                                            .foregroundColor(isSelected ? .white : .primary)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(result.name)
+                                                .foregroundColor(isSelected ? .white : .primary)
+                                                .fontWeight(.medium)
+                                            if let genericName = result.genericName, genericName != result.name {
+                                                Text(genericName)
+                                                    .font(.caption)
+                                                    .foregroundColor(isSelected ? .white.opacity(0.8) : .gray)
+                                            }
+                                        }
                                         Spacer()
                                         // Rounded checkbox
                                         ZStack {
@@ -80,7 +89,7 @@ struct MedicationSelectionView: View {
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 // Divider between items (except last)
-                                if med != filteredMedications.last {
+                                if result.name != searchResults.last?.name {
                                     Divider()
                                         .padding(.leading)
                                 }
@@ -94,6 +103,11 @@ struct MedicationSelectionView: View {
                         )
                     }
                     .frame(maxHeight: 400)
+                } else if searchQuery.count >= 2 && !isLoading {
+                    Text("No medications found")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        .padding()
                 }
 
                 // Selected chips
@@ -128,6 +142,7 @@ struct MedicationSelectionView: View {
 
                 // Next button
                 Button {
+                    saveMedications()
                     next()
                 } label: {
                     Text("Next")
@@ -139,6 +154,12 @@ struct MedicationSelectionView: View {
                 }
             }
         }
+        .onAppear {
+            // Load saved medications if any
+            if !dataManager.medications.isEmpty {
+                selectedMeds = dataManager.medications.map { $0.name }
+            }
+        }
     }
 
     private func toggleSelection(for medication: String) {
@@ -146,6 +167,58 @@ struct MedicationSelectionView: View {
             selectedMeds.removeAll { $0 == medication }
         } else {
             selectedMeds.append(medication)
+        }
+    }
+    
+    private func performSearch(query: String) {
+        // Cancel previous search task
+        searchTask?.cancel()
+        
+        // Clear results if query is too short
+        guard query.count >= 2 else {
+            searchResults = []
+            return
+        }
+        
+        // Debounce search - wait 300ms after user stops typing
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+            
+            guard !Task.isCancelled, query.count >= 2 else { return }
+            
+            await MainActor.run {
+                isLoading = true
+            }
+            
+            do {
+                let response = try await MedicationService.shared.searchMedications(query: query)
+                
+                await MainActor.run {
+                    if !Task.isCancelled {
+                        searchResults = response.results
+                        isLoading = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    if !Task.isCancelled {
+                        searchResults = []
+                        isLoading = false
+                    }
+                }
+            }
+        }
+    }
+    
+    private func saveMedications() {
+        // Convert selected medication names to OnboardingMedicationEntry format
+        // Since onboarding doesn't collect dosage/frequency, use nil
+        dataManager.medications = selectedMeds.map { name in
+            OnboardingMedicationEntry(
+                name: name,
+                dosage: nil,
+                frequency: nil
+            )
         }
     }
 }

@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct SymptomsAllergyInputView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedSymptoms: Set<String> = []
     @State private var selectedAllergyCategories: Set<String> = []
     @State private var showAllergyDetails = false
@@ -108,6 +109,7 @@ struct SymptomsAllergyInputView: View {
                 Spacer()
 
                 Button {
+                    saveSymptomsAndAllergies()
                     next()
                 } label: {
                     Text("Next")
@@ -167,6 +169,87 @@ struct SymptomsAllergyInputView: View {
         default:
             return $foodAllergyDescription
         }
+    }
+    
+    private func saveSymptomsAndAllergies() {
+        // Combine all symptoms and allergies into a single string
+        var combinedText: [String] = []
+        
+        // Add symptoms
+        if !selectedSymptoms.isEmpty {
+            combinedText.append("Symptoms: \(selectedSymptoms.joined(separator: ", "))")
+        }
+        
+        // Add allergies by category
+        if !selectedAllergyCategories.isEmpty {
+            var allergyDetails: [String] = []
+            
+            if selectedAllergyCategories.contains("Food") && (!foodAllergyDetails.isEmpty || !foodAllergyDescription.isEmpty) {
+                var foodText = "Food allergies: "
+                if !foodAllergyDetails.isEmpty {
+                    foodText += foodAllergyDetails.joined(separator: ", ")
+                }
+                if !foodAllergyDescription.isEmpty {
+                    foodText += foodAllergyDetails.isEmpty ? foodAllergyDescription : ". \(foodAllergyDescription)"
+                }
+                allergyDetails.append(foodText)
+            }
+            
+            if selectedAllergyCategories.contains("Indoor") && (!indoorAllergyDetails.isEmpty || !indoorAllergyDescription.isEmpty) {
+                var indoorText = "Indoor allergies: "
+                if !indoorAllergyDetails.isEmpty {
+                    indoorText += indoorAllergyDetails.joined(separator: ", ")
+                }
+                if !indoorAllergyDescription.isEmpty {
+                    indoorText += indoorAllergyDetails.isEmpty ? indoorAllergyDescription : ". \(indoorAllergyDescription)"
+                }
+                allergyDetails.append(indoorText)
+            }
+            
+            if selectedAllergyCategories.contains("Seasonal") && (!seasonalAllergyDetails.isEmpty || !seasonalAllergyDescription.isEmpty) {
+                var seasonalText = "Seasonal allergies: "
+                if !seasonalAllergyDetails.isEmpty {
+                    seasonalText += seasonalAllergyDetails.joined(separator: ", ")
+                }
+                if !seasonalAllergyDescription.isEmpty {
+                    seasonalText += seasonalAllergyDetails.isEmpty ? seasonalAllergyDescription : ". \(seasonalAllergyDescription)"
+                }
+                allergyDetails.append(seasonalText)
+            }
+            
+            if selectedAllergyCategories.contains("Drug") && (!drugAllergyDetails.isEmpty || !drugAllergyDescription.isEmpty) {
+                var drugText = "Drug allergies: "
+                if !drugAllergyDetails.isEmpty {
+                    drugText += drugAllergyDetails.joined(separator: ", ")
+                }
+                if !drugAllergyDescription.isEmpty {
+                    drugText += drugAllergyDetails.isEmpty ? drugAllergyDescription : ". \(drugAllergyDescription)"
+                }
+                allergyDetails.append(drugText)
+            }
+            
+            if selectedAllergyCategories.contains("Skin") && (!skinAllergyDetails.isEmpty || !skinAllergyDescription.isEmpty) {
+                var skinText = "Skin allergies: "
+                if !skinAllergyDetails.isEmpty {
+                    skinText += skinAllergyDetails.joined(separator: ", ")
+                }
+                if !skinAllergyDescription.isEmpty {
+                    skinText += skinAllergyDetails.isEmpty ? skinAllergyDescription : ". \(skinAllergyDescription)"
+                }
+                allergyDetails.append(skinText)
+            }
+            
+            if selectedAllergyCategories.contains("Other") {
+                allergyDetails.append("Other allergies")
+            }
+            
+            if !allergyDetails.isEmpty {
+                combinedText.append(allergyDetails.joined(separator: "\n"))
+            }
+        }
+        
+        // Save to data manager
+        dataManager.symptomsOrAllergies = combinedText.isEmpty ? nil : combinedText.joined(separator: "\n\n")
     }
 }
 

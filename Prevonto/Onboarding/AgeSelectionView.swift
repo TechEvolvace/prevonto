@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct AgeSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedAge: Int = 19
     let next: () -> Void
     let back: () -> Void
@@ -18,6 +19,7 @@ struct AgeSelectionView: View {
 
                 // Next Button
                 Button {
+                    dataManager.age = selectedAge
                     next()
                 } label: {
                     Text("Next")
@@ -27,6 +29,12 @@ struct AgeSelectionView: View {
                         .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved age if any
+            if let savedAge = dataManager.age {
+                selectedAge = savedAge
             }
         }
     }
