@@ -25,6 +25,12 @@ struct DashboardView: View {
     // Notification settings state
     @State private var showHeartRate: Bool = true
     @State private var showStepsActivity: Bool = true
+    @State private var showBloodPressure: Bool = true
+    @State private var showBloodGlucose: Bool = true
+    @State private var showSpO2: Bool = true
+    @State private var showWeight: Bool = true
+    @State private var showMoodTracker: Bool = true
+    @State private var showMedicationLog: Bool = true
     
     let healthKitManager = HealthKitManager()
     
@@ -40,14 +46,18 @@ struct DashboardView: View {
             ZStack {
                 // All Dashboard Page Content that is not the floating + button
                 ScrollView {
-                    VStack(spacing: 32) {
+                        VStack(spacing: 32) {
                         VStack(spacing: 16){
                             headerSection
                             quickHealthSection
                         }
                         healthHighlightsSection
-                        medicationSection
-                        moodTrackerSection
+                        if showMedicationLog {
+                            medicationSection
+                        }
+                        if showMoodTracker {
+                            moodTrackerSection
+                        }
                         Spacer(minLength: 100)
                     }
                     .padding(.horizontal, 16)
@@ -195,9 +205,44 @@ struct DashboardView: View {
                 }
             }
             
-            // Conditional Health Metrics Display
-            HStack(spacing: 16) {
-                // Only show activity rings if Steps & Activity is enabled in notifications
+            // Conditional Health Metrics Display in a 2 columns layout
+            healthMetricsGrid
+        }
+    }
+    
+    // MARK: - Health Metrics Grid
+    @ViewBuilder
+    var healthMetricsGrid: some View {
+        let hasAnyEnabled = showStepsActivity || showHeartRate || showBloodGlucose || showBloodPressure || showSpO2 || showWeight
+        
+        if !hasAnyEnabled {
+            // If all metrics are disabled, show a placeholder
+            VStack(spacing: 16) {
+                Image(systemName: "heart.slash")
+                    .font(.system(size: 40))
+                    .foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70))
+                
+                Text("No health metrics enabled")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.medium)
+                    .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                    .multilineTextAlignment(.center)
+                
+                Text("Enable metrics in Notifications settings")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 160)
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+        } else {
+            // 2-column grid layout
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 2)
+            LazyVGrid(columns: columns, spacing: 16) {
                 if showStepsActivity {
                     NavigationLink(destination: StepsDetailsView()) {
                         activityRingsCard
@@ -205,7 +250,6 @@ struct DashboardView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 
-                // Only show heart rate if Heart Rate is enabled in notifications
                 if showHeartRate {
                     NavigationLink(destination: HeartRateView()) {
                         heartRateCard
@@ -213,30 +257,32 @@ struct DashboardView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 
-                // If both are disabled, show a placeholder
-                if !showStepsActivity && !showHeartRate {
-                    VStack(spacing: 16) {
-                        Image(systemName: "heart.slash")
-                            .font(.system(size: 40))
-                            .foregroundColor(Color(red: 0.70, green: 0.70, blue: 0.70))
-                        
-                        Text("No health metrics enabled")
-                            .font(.custom("Noto Sans", size: 16))
-                            .fontWeight(.medium)
-                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
-                            .multilineTextAlignment(.center)
-                        
-                        Text("Enable metrics in Notifications settings")
-                            .font(.custom("Noto Sans", size: 14))
-                            .foregroundColor(Color(red: 0.60, green: 0.60, blue: 0.60))
-                            .multilineTextAlignment(.center)
+                if showBloodGlucose {
+                    NavigationLink(destination: BloodGlucoseView()) {
+                        bloodGlucoseCard
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 160)
-                    .padding(16)
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                if showBloodPressure {
+                    NavigationLink(destination: BloodPressureView()) {
+                        bloodPressureCard
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                if showSpO2 {
+                    NavigationLink(destination: SpO2View()) {
+                        spo2Card
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                if showWeight {
+                    NavigationLink(destination: WeightTrackerView()) {
+                        weightCard
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -382,6 +428,98 @@ struct DashboardView: View {
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
+    // MARK: - Blood Glucose Card
+    var bloodGlucoseCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Blood Glucose")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+            
+            Spacer()
+            
+            Text("View your blood glucose data and trends")
+                .font(.custom("Noto Sans", size: 14))
+                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 160)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+    }
+    
+    // MARK: - Blood Pressure Card
+    var bloodPressureCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Blood Pressure")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+            
+            Spacer()
+            
+            Text("View your blood pressure data and trends")
+                .font(.custom("Noto Sans", size: 14))
+                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 160)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+    }
+    
+    // MARK: - SpO2 Card
+    var spo2Card: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SpO2")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+            
+            Spacer()
+            
+            Text("View your SpO2 data and trends")
+                .font(.custom("Noto Sans", size: 14))
+                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 160)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+    }
+    
+    // MARK: - Weight Card
+    var weightCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Weight")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+            
+            Spacer()
+            
+            Text("View your weight data and trends")
+                .font(.custom("Noto Sans", size: 14))
+                .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 160)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+    }
+    
     // MARK: - Health Highlights Section
     var healthHighlightsSection: some View {
         let cardCount = 3
@@ -502,10 +640,16 @@ struct DashboardView: View {
             // Medication Reminders and Adherence section
             HStack(spacing: 12) {
                 // Medication Reminders card
-                remindersCard
+                NavigationLink(destination: MedicationLogView()) {
+                    remindersCard
+                }
+                .buttonStyle(PlainButtonStyle())
                 
                 // Medication Adherence card
-                adherenceCard
+                NavigationLink(destination: MedicationLogView()) {
+                    adherenceCard
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
     }
@@ -513,7 +657,7 @@ struct DashboardView: View {
     // MARK: - Medication Card
     func medicationCard(medication: Medication) -> some View {
         HStack {
-            // Medication name and instructions to take the medicine
+            // Medication name and instructions to take the medicines
             VStack(alignment: .leading, spacing: 4) {
                 Text(medication.name)
                     .font(.custom("Noto Sans", size: 20))
@@ -663,15 +807,18 @@ struct DashboardView: View {
             }
             
             // Showcase the user's mood data
-            VStack(alignment: .leading, spacing: 4) {
-                // Add contents of mood tracker data here!
+            NavigationLink(destination: MoodTrackerView()) {
+                VStack(alignment: .leading, spacing: 4) {
+                    // Add contents of mood tracker data here!
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 120)
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 120)
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+            .buttonStyle(PlainButtonStyle())
         }
     }
     
@@ -732,10 +879,34 @@ struct DashboardView: View {
         if UserDefaults.standard.object(forKey: "showStepsActivity") == nil {
             UserDefaults.standard.set(true, forKey: "showStepsActivity")
         }
+        if UserDefaults.standard.object(forKey: "showBloodPressure") == nil {
+            UserDefaults.standard.set(true, forKey: "showBloodPressure")
+        }
+        if UserDefaults.standard.object(forKey: "showBloodGlucose") == nil {
+            UserDefaults.standard.set(true, forKey: "showBloodGlucose")
+        }
+        if UserDefaults.standard.object(forKey: "showSpO2") == nil {
+            UserDefaults.standard.set(true, forKey: "showSpO2")
+        }
+        if UserDefaults.standard.object(forKey: "showWeight") == nil {
+            UserDefaults.standard.set(true, forKey: "showWeight")
+        }
+        if UserDefaults.standard.object(forKey: "showMoodTracker") == nil {
+            UserDefaults.standard.set(true, forKey: "showMoodTracker")
+        }
+        if UserDefaults.standard.object(forKey: "showMedicationLog") == nil {
+            UserDefaults.standard.set(true, forKey: "showMedicationLog")
+        }
         
         // Update state variables
         showHeartRate = UserDefaults.standard.bool(forKey: "showHeartRate")
         showStepsActivity = UserDefaults.standard.bool(forKey: "showStepsActivity")
+        showBloodPressure = UserDefaults.standard.bool(forKey: "showBloodPressure")
+        showBloodGlucose = UserDefaults.standard.bool(forKey: "showBloodGlucose")
+        showSpO2 = UserDefaults.standard.bool(forKey: "showSpO2")
+        showWeight = UserDefaults.standard.bool(forKey: "showWeight")
+        showMoodTracker = UserDefaults.standard.bool(forKey: "showMoodTracker")
+        showMedicationLog = UserDefaults.standard.bool(forKey: "showMedicationLog")
     }
     
     private func hideFloatingMenu() {

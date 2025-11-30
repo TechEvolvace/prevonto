@@ -164,8 +164,6 @@ struct SpO2View: View {
             .padding(.horizontal, 16)
         }
         .background(.white)
-        .navigationTitle("SpO2 Full Page")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             updateWeekDates()
         }

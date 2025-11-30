@@ -96,8 +96,6 @@ struct WeightTrackerView: View {
                 .padding(.top)
             }
             .background(Color.white)
-            .navigationTitle("Weight Full Page")
-            .navigationBarTitleDisplayMode(.inline)
             
             // Add for Today Popup Overlay
             if showingAddPopup {

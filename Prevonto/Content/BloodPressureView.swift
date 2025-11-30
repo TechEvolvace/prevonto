@@ -178,14 +178,6 @@ struct BloodPressureView: View {
                     addForTodayPopup
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .foregroundColor(.darkGrayText)
-                    }
-                }
-            }
         }
         .onAppear {
             updateWeekDates()

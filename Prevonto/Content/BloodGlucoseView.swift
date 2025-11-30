@@ -113,14 +113,6 @@ struct BloodGlucoseView: View {
                 .padding(.horizontal, 16)
             }
             .background(Color.white)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                            .foregroundColor(.darkGrayText)
-                    }
-                }
-            }
         }
         .onAppear {
             updateWeekDates()

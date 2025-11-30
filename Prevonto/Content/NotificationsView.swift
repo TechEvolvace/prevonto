@@ -13,20 +13,36 @@ class NotificationSettings: ObservableObject {
     @Published var stepsAndActivity: Bool = true {
         didSet { UserDefaults.standard.set(stepsAndActivity, forKey: "showStepsActivity") }
     }
-    
-    // Read-only toggles (grayed out)
-    let bloodPressure: Bool = false
-    let bloodGlucose: Bool = false
-    let spo2: Bool = false
-    let mood: Bool = false
-    let weight: Bool = false
-    let medication: Bool = false
+    @Published var bloodPressure: Bool = true {
+        didSet { UserDefaults.standard.set(bloodPressure, forKey: "showBloodPressure") }
+    }
+    @Published var bloodGlucose: Bool = true {
+        didSet { UserDefaults.standard.set(bloodGlucose, forKey: "showBloodGlucose") }
+    }
+    @Published var spo2: Bool = true {
+        didSet { UserDefaults.standard.set(spo2, forKey: "showSpO2") }
+    }
+    @Published var moodTracker: Bool = true {
+        didSet { UserDefaults.standard.set(moodTracker, forKey: "showMoodTracker") }
+    }
+    @Published var weight: Bool = true {
+        didSet { UserDefaults.standard.set(weight, forKey: "showWeight") }
+    }
+    @Published var medicationLog: Bool = true {
+        didSet { UserDefaults.standard.set(medicationLog, forKey: "showMedicationLog") }
+    }
     
     init() {
         // Load saved settings
         pushNotifications = UserDefaults.standard.object(forKey: "pushNotifications") as? Bool ?? true
         heartRate = UserDefaults.standard.object(forKey: "showHeartRate") as? Bool ?? true
         stepsAndActivity = UserDefaults.standard.object(forKey: "showStepsActivity") as? Bool ?? true
+        bloodPressure = UserDefaults.standard.object(forKey: "showBloodPressure") as? Bool ?? true
+        bloodGlucose = UserDefaults.standard.object(forKey: "showBloodGlucose") as? Bool ?? true
+        spo2 = UserDefaults.standard.object(forKey: "showSpO2") as? Bool ?? true
+        moodTracker = UserDefaults.standard.object(forKey: "showMoodTracker") as? Bool ?? true
+        weight = UserDefaults.standard.object(forKey: "showWeight") as? Bool ?? true
+        medicationLog = UserDefaults.standard.object(forKey: "showMedicationLog") as? Bool ?? true
     }
 }
 
@@ -130,24 +146,24 @@ struct NotificationsView: View {
             VStack(spacing: 0) {
                 NotificationToggleRow(
                     title: "Blood Pressure",
-                    isOn: .constant(settings.bloodPressure),
-                    isEnabled: false
+                    isOn: $settings.bloodPressure,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "Blood Glucose",
-                    isOn: .constant(settings.bloodGlucose),
-                    isEnabled: false
+                    isOn: $settings.bloodGlucose,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "SpO2",
-                    isOn: .constant(settings.spo2),
-                    isEnabled: false
+                    isOn: $settings.spo2,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
@@ -175,25 +191,25 @@ struct NotificationsView: View {
             
             VStack(spacing: 0) {
                 NotificationToggleRow(
-                    title: "Medication",
-                    isOn: .constant(settings.medication),
-                    isEnabled: false
+                    title: "Medication Log",
+                    isOn: $settings.medicationLog,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
                     title: "Weight",
-                    isOn: .constant(settings.weight),
-                    isEnabled: false
+                    isOn: $settings.weight,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
                 
                 NotificationToggleRow(
-                    title: "Mood",
-                    isOn: .constant(settings.mood),
-                    isEnabled: false
+                    title: "Mood Tracker",
+                    isOn: $settings.moodTracker,
+                    isEnabled: true
                 )
                 
                 Divider().padding(.leading, 0)
