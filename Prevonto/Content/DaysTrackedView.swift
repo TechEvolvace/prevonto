@@ -86,7 +86,6 @@ struct DaysTrackedView: View {
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
                 .padding(.top, 12)
                 
                 // Main Box
@@ -112,7 +111,6 @@ struct DaysTrackedView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.gray, lineWidth: 0.15)
                 }
-                .padding(.horizontal, 24)
 
                 // Period Picker
                 HStack(spacing: 8) {
@@ -131,13 +129,13 @@ struct DaysTrackedView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
 
                 // Calendar
                 calendarView
                 
                 Spacer(minLength: 50)
             }
+            .padding(.horizontal, 16)
             .background(.white)
         }
     }
@@ -182,7 +180,6 @@ struct DaysTrackedView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
-        .padding(.horizontal, 24)
     }
     
     // Month Calendar View

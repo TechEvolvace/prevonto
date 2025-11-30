@@ -115,7 +115,7 @@ struct MedicationLogView: View {
                         weeklyViewContent
                     }
                 }
-                .padding(.horizontal, 15)
+                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .toolbar {
@@ -617,7 +617,7 @@ struct MedicationLogView: View {
                     .padding(.top, 0)
             } else {
                 // Missed medications are medications that were not taken
-                let missedEntries = entries.filter { $0.status == .skipped }
+                let missedEntries = entries.filter { $0.status == .skipped || $0.status == nil}
                 
                 // Taken medications are medications that were taken
                 let takenEntries = entries.filter { $0.status == .taken }

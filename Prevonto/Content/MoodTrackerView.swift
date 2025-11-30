@@ -355,7 +355,7 @@ struct MoodTrackerView: View {
                         .padding(.bottom, 20)
                     insightSection
                 }
-                .padding()
+                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .navigationTitle("Mood Tracker")

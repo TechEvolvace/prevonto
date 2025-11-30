@@ -110,7 +110,7 @@ struct BloodGlucoseView: View {
                             unselectChartData()
                         }
                 }
-                .padding(.horizontal, 15)
+                .padding(.horizontal, 16)
             }
             .background(Color.white)
             .toolbar {

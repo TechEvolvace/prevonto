@@ -41,7 +41,7 @@ struct OnboardingFlowView: View {
 
             default:
                 // After the user goes through the 9 onbaoarding page, they will arrive at the Dashboard page, which is primarily handled by ContentView.swift file.
-                ContentView()
+                DashboardView()
             }
         }
         // Back button navigation

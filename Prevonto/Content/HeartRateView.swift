@@ -8,20 +8,6 @@ struct HeartRateRecord {
     let heartRate: Int
 }
 
-// Properties defined for Date
-extension Date {
-    static func from(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0) -> Date {
-        var components = DateComponents()
-        components.year = year
-        components.month = month
-        components.day = day
-        components.hour = hour
-        components.minute = minute
-        components.second = second
-        return Calendar.current.date(from: components)!
-    }
-}
-
 // Specify whether user selects "Day", "Week", or "Month" view mode
 enum HeartRateChartMode: String, CaseIterable, Identifiable {
     case day, week, month
@@ -179,7 +165,7 @@ struct HeartRateView: View {
                             unselectChartData()
                         }
                 }
-                .padding(.horizontal, 15)
+                .padding(.horizontal, 16)
             }
         }
         .onAppear {

@@ -121,9 +121,9 @@ struct SignInView: View {
                 Spacer()
             }
             .padding()
-            // After signing in, user goes directly to the Dashboard page (ContentView) as a full screen cover
+            // After signing in, user goes directly to the Dashboard page (DashboardView) as a full screen cover
             .fullScreenCover(isPresented: $navigateToDashboard) {
-                ContentView()
+                DashboardView()
             }
     }
 }

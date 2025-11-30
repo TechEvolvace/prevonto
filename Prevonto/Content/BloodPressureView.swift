@@ -169,7 +169,7 @@ struct BloodPressureView: View {
                         insightsSection
                             .onTapGesture { unselectChartData() }
                     }
-                    .padding(.horizontal, 15)
+                    .padding(.horizontal, 16)
                 }
                 .background(Color.white)
                 

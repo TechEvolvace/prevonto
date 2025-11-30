@@ -92,7 +92,7 @@ struct WeightTrackerView: View {
                     trendsSection
                     loggedEntriesSection
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 16)
                 .padding(.top)
             }
             .background(Color.white)

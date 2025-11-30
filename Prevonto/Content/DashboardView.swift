@@ -2,7 +2,7 @@
 import SwiftUI
 import Charts
 
-struct ContentView: View {
+struct DashboardView: View {
     @State private var stepCount: Double = 0
     @State private var calories: Double = 0
     @State private var distance: Double = 0
@@ -853,8 +853,8 @@ struct Medication {
 }
 
 // Preview
-struct ContentView_Previews: PreviewProvider {
+struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        DashboardView()
     }
 }

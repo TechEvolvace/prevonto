@@ -161,8 +161,7 @@ struct SpO2View: View {
                     .onTapGesture { unselectChartData() }
                 timelineChart
             }
-            .padding(.horizontal)
-            .padding(.top)
+            .padding(.horizontal, 16)
         }
         .background(.white)
         .navigationTitle("SpO2 Full Page")
@@ -173,7 +172,6 @@ struct SpO2View: View {
     }
     
     // MARK: - Subviews
-    
     private var header: some View {
         Text("SpO₂")
             .font(.largeTitle)
