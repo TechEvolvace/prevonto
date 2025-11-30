@@ -6,6 +6,9 @@ struct SettingsView: View {
     @State private var showLogoutSheet = false
     @State private var showDeleteSheet = false
     @State private var navigateToSignUp = false
+    @State private var isLoggingOut = false
+    @State private var isDeletingAccount = false
+    @StateObject private var authManager = AuthManager.shared
     
     var body: some View {
         NavigationStack {
@@ -77,19 +80,26 @@ struct SettingsView: View {
                     
                     // Log out button in Log out modal sheet
                     Button(action: {
-                        showLogoutSheet = false
-                        navigateToSignUp = true
+                        logout()
                     }) {
-                        Text("Log Out")
-                            .font(.custom("Noto Sans", size: 18))
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color(red: 0.13, green: 0.54, blue: 0.24))
-                            .cornerRadius(12)
+                        HStack {
+                            if isLoggingOut {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Log Out")
+                            }
+                        }
+                        .font(.custom("Noto Sans", size: 18))
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color(red: 0.13, green: 0.54, blue: 0.24))
+                        .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
+                    .disabled(isLoggingOut)
                 }
             }
             .presentationDetents([.height(250)])
@@ -133,29 +143,35 @@ struct SettingsView: View {
                     
                     // Delete Account button in Delete Account modal sheet
                     Button(action: {
-                        showDeleteSheet = false
-                        navigateToSignUp = true
+                        deleteAccount()
                     }) {
-                        Text("Delete Account")
-                            .font(.custom("Noto Sans", size: 18))
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.red)
-                            .cornerRadius(12)
+                        HStack {
+                            if isDeletingAccount {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Delete Account")
+                            }
+                        }
+                        .font(.custom("Noto Sans", size: 18))
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.red)
+                        .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
+                    .disabled(isDeletingAccount)
                 }
             }
             .presentationDetents([.height(250)])
             .background(Color.white)
             .cornerRadius(18)
         }
-        // Navigate to SignUp without back button
-        .navigationDestination(isPresented: $navigateToSignUp) {
-            SignUpView()
-                .navigationBarBackButtonHidden(true)
+        // Navigate to AuthView (which manages SignUp/SignIn toggle) without back button
+        .fullScreenCover(isPresented: $navigateToSignUp) {
+            AuthView()
         }
     }
     
@@ -359,6 +375,52 @@ struct SettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private func logout() {
+        isLoggingOut = true
+        
+        Task {
+            do {
+                try await AuthService.shared.logout()
+                await MainActor.run {
+                    isLoggingOut = false
+                    showLogoutSheet = false
+                    navigateToSignUp = true
+                }
+            } catch {
+                // Even if logout fails on server, clear local tokens
+                await MainActor.run {
+                    AuthManager.shared.clearTokens()
+                    isLoggingOut = false
+                    showLogoutSheet = false
+                    navigateToSignUp = true
+                }
+            }
+        }
+    }
+    
+    private func deleteAccount() {
+        isDeletingAccount = true
+        
+        Task {
+            do {
+                try await SettingsService.shared.deleteAccount(password: nil)
+                await MainActor.run {
+                    isDeletingAccount = false
+                    showDeleteSheet = false
+                    navigateToSignUp = true
+                }
+            } catch {
+                await MainActor.run {
+                    isDeletingAccount = false
+                    // Show error - for now just close sheet
+                    // TODO: Show error alert
+                    showDeleteSheet = false
+                }
+            }
         }
     }
 }

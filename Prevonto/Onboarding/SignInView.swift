@@ -10,12 +10,15 @@ struct SignInView: View {
 
     @State private var showValidationMessage = false
     @State private var errorMessage = ""
+    @State private var isLoading = false
+    
+    @StateObject private var authManager = AuthManager.shared
     
     init(showSignIn: Binding<Bool> = .constant(true)) {
         _showSignIn = showSignIn
     }
     
-    let testMode = true
+    let testMode = false // Changed to false to use API
     
     // Supportive quotes to randomly display
     let healthQuotes = [
@@ -68,7 +71,7 @@ struct SignInView: View {
                 }
 
 
-                // Join button users click on after entering their credentials to successfully create their new acocunt!
+                // Sign In button users click on after entering their credentials
                 Button(action: {
                     if testMode {
                         // For quicker testing by the developer
@@ -80,17 +83,25 @@ struct SignInView: View {
                             showValidationMessage = true
                         } else {
                             showValidationMessage = false
-                            navigateToDashboard = true
+                            signInUser()
                         }
                     }
                 }) {
-                    Text("Sign In")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.primaryGreen)
-                        .cornerRadius(12)
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Sign In")
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.primaryGreen)
+                    .cornerRadius(12)
                 }
+                .disabled(isLoading)
 
 
                 HStack {
@@ -125,6 +136,37 @@ struct SignInView: View {
             .fullScreenCover(isPresented: $navigateToDashboard) {
                 DashboardView()
             }
+    }
+    
+    // MARK: - Helper Functions
+    private func signInUser() {
+        isLoading = true
+        errorMessage = ""
+        showValidationMessage = false
+        
+        Task {
+            do {
+                let _ = try await AuthService.shared.login(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password
+                )
+                
+                await MainActor.run {
+                    isLoading = false
+                    navigateToDashboard = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    if let apiError = error as? APIError {
+                        errorMessage = apiError.errorDescription ?? "Sign in failed"
+                    } else {
+                        errorMessage = error.localizedDescription
+                    }
+                    showValidationMessage = true
+                }
+            }
+        }
     }
 }
 

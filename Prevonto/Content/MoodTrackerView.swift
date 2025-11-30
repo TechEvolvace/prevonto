@@ -358,8 +358,6 @@ struct MoodTrackerView: View {
                 .padding(.horizontal, 16)
             }
             .background(Color.white)
-            .navigationTitle("Mood Tracker")
-            .navigationBarTitleDisplayMode(.inline)
 
             if showMoodEntry {
                 MoodEntryCard(show: $showMoodEntry) { mood in

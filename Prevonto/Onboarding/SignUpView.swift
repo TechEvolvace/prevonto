@@ -13,12 +13,15 @@ struct SignUpView: View {
 
     @State private var showValidationMessage = false
     @State private var errorMessage = ""
+    @State private var isLoading = false
+    
+    @StateObject private var authManager = AuthManager.shared
     
     init(showSignIn: Binding<Bool> = .constant(false)) {
         _showSignIn = showSignIn
     }
     
-    let testMode = true
+    let testMode = false // Changed to false to use API
     
     // Supportive quotes to randomly display
     let healthQuotes = [
@@ -100,18 +103,32 @@ struct SignUpView: View {
                             errorMessage = "Please accept the terms and conditions."
                             showValidationMessage = true
                         } else {
-                            showValidationMessage = false
-                            navigateToGender = true
+                            // Validate password complexity (matches API requirements)
+                            if !isValidPassword(password) {
+                                errorMessage = "Password must be at least 8 characters. Password must also include at least an uppercase letter, an lowercase letter, and a number."
+                                showValidationMessage = true
+                            } else {
+                                showValidationMessage = false
+                                registerUser()
+                            }
                         }
                     }
                 }) {
-                    Text("Join")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.primaryGreen)
-                        .cornerRadius(12)
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Join")
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.primaryGreen)
+                    .cornerRadius(12)
                 }
+                .disabled(isLoading)
 
 
                 HStack {
@@ -146,6 +163,50 @@ struct SignUpView: View {
             .navigationDestination(isPresented: $navigateToGender) {
                 OnboardingFlowView()
             }
+    }
+    
+    // MARK: - Helper Functions
+    private func isValidPassword(_ password: String) -> Bool {
+        let hasDigit = password.rangeOfCharacter(from: .decimalDigits) != nil
+        let hasUpperCase = password.rangeOfCharacter(from: .uppercaseLetters) != nil
+        let hasLowerCase = password.rangeOfCharacter(from: .lowercaseLetters) != nil
+        return hasDigit && hasUpperCase && hasLowerCase && password.count >= 8
+    }
+    
+    private func registerUser() {
+        isLoading = true
+        errorMessage = ""
+        showValidationMessage = false
+        
+        Task {
+            do {
+                // Register user
+                let _ = try await AuthService.shared.register(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password,
+                    name: fullName.isEmpty ? nil : fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                
+                // Accept consent (HIPAA consent)
+                try await AuthService.shared.acceptConsent(consentType: "hipaa_consent", version: "1.0")
+                
+                // Navigate to onboarding
+                await MainActor.run {
+                    isLoading = false
+                    navigateToGender = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    if let apiError = error as? APIError {
+                        errorMessage = apiError.errorDescription ?? "Registration failed"
+                    } else {
+                        errorMessage = error.localizedDescription
+                    }
+                    showValidationMessage = true
+                }
+            }
+        }
     }
 }
 
