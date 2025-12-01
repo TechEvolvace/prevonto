@@ -1005,7 +1005,7 @@ struct Language: Identifiable {
     let flag: String
 }
 
-// MARK: - Preview
+// MARK: - To preview Language page, for only developer uses
 struct LanguageView_Previews: PreviewProvider {
     static var previews: some View {
         LanguageView()

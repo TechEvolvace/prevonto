@@ -1,4 +1,4 @@
-// Onboarding Service
+// Onboarding Service - Communicates with API at api/onboarding endpoints
 import Foundation
 
 class OnboardingService {

@@ -273,7 +273,7 @@ enum DeviceType {
     case other
 }
 
-// Preview
+// MARK: - To preview Devices page, for only developer uses
 struct DevicesView_Previews: PreviewProvider {
     static var previews: some View {
         DevicesView()

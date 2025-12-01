@@ -36,6 +36,7 @@ struct MedicationLogView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     private let onboardingService = OnboardingService.shared
     
@@ -920,7 +921,7 @@ private extension Color {
     static let missingColor = Color(red: 181/255, green: 55/255, blue: 55/255)
 }
 
-// To preview this page for only developer use
+// MARK: - To preview Medication Log page, for only developer uses
 #Preview {
     MedicationLogView()
 }

@@ -1,6 +1,7 @@
-// Authentication Service
+// Authentication Service - Handle authentication processes
 import Foundation
 
+// Can communicate with API at /api/auth and /api/settings endpoints
 class AuthService {
     static let shared = AuthService()
     

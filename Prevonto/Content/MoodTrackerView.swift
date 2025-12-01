@@ -342,6 +342,7 @@ struct MoodTrackerView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
 
     var body: some View {
@@ -1191,6 +1192,7 @@ struct EnergyPopoverArrow: Shape {
     }
 }
 
+// MARK: - To preview Mood Tracker page, for only developer uses
 struct MoodTrackerView_Previews: PreviewProvider {
     static var previews: some View {
         MoodTrackerView()

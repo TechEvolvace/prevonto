@@ -11,8 +11,10 @@ struct SpO2Record {
 struct SpO2View: View {
     @State private var selectedTab = "Week"
     @State private var selectedDate: Date = Date()
-    @State private var avgHeartRate = 60.0
+    @State private var avgHeartRate: Double?
+    @State private var heartRateCount: Int = 0
     @State private var selectedDataIndex: Int? = nil
+    
     // Week mode start and end date pickers
     @State private var showingStartDatePicker: Bool = false
     @State private var showingEndDatePicker: Bool = false
@@ -25,7 +27,9 @@ struct SpO2View: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
     
     // Helper to get filtered records for current period
     private var filteredSpO2Records: [SpO2Record] {
@@ -151,6 +155,28 @@ struct SpO2View: View {
         .onAppear {
             updateWeekDates()
             loadSpO2Data()
+            loadHeartRateSummary()
+        }
+        .onChange(of: selectedTab) {
+            if selectedTab == "Week" {
+                updateWeekDates()
+            }
+            loadHeartRateSummary()
+        }
+        .onChange(of: selectedDate) {
+            if selectedTab == "Day" {
+                loadHeartRateSummary()
+            }
+        }
+        .onChange(of: weekStartDate) {
+            if selectedTab == "Week" {
+                loadHeartRateSummary()
+            }
+        }
+        .onChange(of: weekEndDate) { 
+            if selectedTab == "Week" {
+                loadHeartRateSummary()
+            }
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -199,6 +225,57 @@ struct SpO2View: View {
                 }
             }
         }
+    }
+    
+    private func loadHeartRateSummary() {
+        let dateRange = analyticsDateRange()
+        let startDate = dateRange.start
+        let endDate = dateRange.end
+        
+        Task {
+            do {
+                let stats = try await analyticsService.getStatistics(
+                    metricType: .heartRate,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                
+                await MainActor.run {
+                    heartRateCount = stats.count
+                    avgHeartRate = stats.average["bpm"]?.asDouble
+                }
+            } catch let error as APIError {
+                if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                    await MainActor.run {
+                        heartRateCount = 0
+                        avgHeartRate = nil
+                    }
+                } else {
+                    await MainActor.run {
+                        heartRateCount = 0
+                        avgHeartRate = nil
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    heartRateCount = 0
+                    avgHeartRate = nil
+                }
+            }
+        }
+    }
+    
+    private func analyticsDateRange() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        if selectedTab == "Day" {
+            let start = calendar.startOfDay(for: selectedDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1) ?? selectedDate
+            return (start, end)
+        }
+        
+        let start = calendar.startOfDay(for: weekStartDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
+        return (start, end)
     }
     
     // MARK: - Subviews
@@ -521,7 +598,10 @@ struct SpO2View: View {
                     title: "Lowest SpO₂",
                     value: hasSpO2Data ? "\(Int(computedLowestSpO2))%" : "No data yet"
                 )
-                summaryItem(title: "Avg Heart Rate", value: "\(Int(avgHeartRate)) bpm")
+                summaryItem(
+                    title: "Avg Heart Rate",
+                    value: heartRateCount == 0 ? "No data yet" : "\(Int(avgHeartRate ?? 0)) bpm"
+                )
             }
             Divider()
         }
@@ -1066,6 +1146,7 @@ struct SpO2PopoverArrow: Shape {
     }
 }
 
+// MARK: - To preview SpO2 page, for only developer uses
 struct SpO2View_Previews: PreviewProvider {
     static var previews: some View {
         SpO2View()

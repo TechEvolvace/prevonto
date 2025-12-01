@@ -34,8 +34,12 @@ struct BloodGlucoseView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var averageGlucose: Double?
+    @State private var glucoseCount: Int = 0
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
@@ -105,6 +109,29 @@ struct BloodGlucoseView: View {
         .onAppear {
             updateWeekDates()
             loadBloodGlucoseData()
+            loadAverageGlucose()
+        }
+        .onChange(of: selectedMode) { _, _ in
+            selectedDataIndex = nil
+            if selectedMode == .week {
+                updateWeekDates()
+            }
+            loadAverageGlucose()
+        }
+        .onChange(of: selectedDate) { _, _ in
+            if selectedMode == .day || selectedMode == .month {
+                loadAverageGlucose()
+            }
+        }
+        .onChange(of: weekStartDate) { _, _ in
+            if selectedMode == .week {
+                loadAverageGlucose()
+            }
+        }
+        .onChange(of: weekEndDate) { _, _ in
+            if selectedMode == .week {
+                loadAverageGlucose()
+            }
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -177,8 +204,8 @@ struct BloodGlucoseView: View {
     // MARK: - Average Glucose Card
     private var averageGlucoseCard: some View {
         VStack(spacing: 8) {
-            if hasData {
-                Text("\(averageGlucose)")
+            if glucoseCount > 0, let avg = averageGlucose {
+                Text("\(Int(avg))")
                     .font(.system(size: 42, weight: .semibold))
                     .foregroundColor(Color.secondaryGreen)
                 + Text(" mg/dl")
@@ -204,17 +231,6 @@ struct BloodGlucoseView: View {
                 .stroke(Color.gray, lineWidth: 0.15)
         }
         .padding(.bottom, 16)
-    }
-    
-    private var averageGlucose: Int {
-        let dataWithValues = chartData.filter { $0.min != nil && $0.max != nil }
-        guard !dataWithValues.isEmpty else { return 0 }
-        
-        let sum = dataWithValues.reduce(0) { total, data in
-            let avg = (data.min! + data.max!) / 2
-            return total + avg
-        }
-        return sum / dataWithValues.count
     }
     
     private var averageLabel: String {
@@ -974,6 +990,66 @@ struct BloodGlucoseView: View {
     private func updateSelectedDateFromWeek() {
         selectedDate = weekStartDate
     }
+
+    // MARK: - Analytics Average
+    private func loadAverageGlucose() {
+        let dateRange = analyticsDateRange()
+        let startDate = dateRange.start
+        let endDate = dateRange.end
+        
+        Task {
+            do {
+                let stats = try await analyticsService.getStatistics(
+                    metricType: .bloodGlucose,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                
+                await MainActor.run {
+                    glucoseCount = stats.count
+                    averageGlucose = stats.average["value"]?.asDouble
+                }
+            } catch let error as APIError {
+                if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                    await MainActor.run {
+                        glucoseCount = 0
+                        averageGlucose = nil
+                    }
+                } else {
+                    await MainActor.run {
+                        glucoseCount = 0
+                        averageGlucose = nil
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    glucoseCount = 0
+                    averageGlucose = nil
+                }
+            }
+        }
+    }
+    
+    private func analyticsDateRange() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        switch selectedMode {
+        case .day:
+            let start = calendar.startOfDay(for: selectedDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1) ?? selectedDate
+            return (start, end)
+        case .week:
+            let start = calendar.startOfDay(for: weekStartDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
+            return (start, end)
+        case .month:
+            if let monthInterval = calendar.dateInterval(of: .month, for: selectedDate) {
+                let start = monthInterval.start
+                let end = monthInterval.end.addingTimeInterval(-1)
+                return (start, end)
+            }
+            return (selectedDate, selectedDate)
+        }
+    }
 }
 
 // MARK: - Colors used for the Blood Glucose page
@@ -1167,6 +1243,7 @@ struct GlucoseInsightRow: View {
     }
 }
 
+// MARK: - To preview Blood Glucose page, for only developer uses
 #Preview {
     BloodGlucoseView()
 }

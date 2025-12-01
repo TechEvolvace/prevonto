@@ -16,6 +16,7 @@ struct DaysTrackedView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     
     // Map API metric types to display names
@@ -421,6 +422,7 @@ private extension Color {
     static let completedGreen = Color.primaryGreen
 }
 
+// MARK: - To preview Days Tracked page, for only developer uses
 struct DaysTrackedView_Previews: PreviewProvider {
     static var previews: some View {
         DaysTrackedView()

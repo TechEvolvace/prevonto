@@ -493,7 +493,7 @@ struct SettingsRowView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - To preview Settings page, for only developer uses
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView()

@@ -385,7 +385,7 @@ enum Gender: String, CaseIterable {
     case other = "Other"
 }
 
-// MARK: - Preview
+// MARK: - To preview Profile page, for only developer uses
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
         ProfileView()

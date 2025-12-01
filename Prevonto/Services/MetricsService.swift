@@ -1,4 +1,4 @@
-// Metrics Service for API calls
+// Metrics Service - Communicates with API at api/metrics endpoint
 import Foundation
 
 class MetricsService {

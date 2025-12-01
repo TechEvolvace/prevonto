@@ -67,8 +67,11 @@ struct BloodPressureView: View {
     @State private var isSaving = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var trendSummary: TrendSummary = .noData
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
     
     // Chart data for selected week
     private var weeklyChartData: [(index: Int, label: String, value: Int?)] {
@@ -180,6 +183,13 @@ struct BloodPressureView: View {
         .onAppear {
             loadBloodPressureData()
             updateWeekDates()
+            loadTrendSummary()
+        }
+        .onChange(of: weekStartDate) {
+            loadTrendSummary()
+        }
+        .onChange(of: weekEndDate) { 
+            loadTrendSummary()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -622,15 +632,15 @@ struct BloodPressureView: View {
             
             // Trend summary
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
+                Image(systemName: trendSummary.iconName)
                     .font(.system(size: 24))
                     .foregroundColor(.white)
                     .frame(width: 40, height: 40)
                     .background(Color.blue.opacity(0.8))
                     .cornerRadius(20)
                 
-                Text("Higher \(selectedMeasurement.chartLabel) by 25% this week as compared to your average metrics")
-                    .font(.custom("Noto Sans", size: 14))
+                Text(trendSummary.text)
+                    .font(.custom("Noto Sans", size: 16))
                     .foregroundColor(.darkGrayText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -747,11 +757,11 @@ struct BloodPressureView: View {
     private var averageValue: Int {
         switch selectedMeasurement {
         case .sys:
-            return weeklyAverageSystolic > 0 ? weeklyAverageSystolic - 10 : 110
+            return weeklyAverageSystolic > 0 ? weeklyAverageSystolic : 110
         case .dia:
-            return weeklyAverageDiastolic > 0 ? weeklyAverageDiastolic - 5 : 75
+            return weeklyAverageDiastolic > 0 ? weeklyAverageDiastolic : 75
         case .pulse:
-            return weeklyAveragePulse > 0 ? weeklyAveragePulse - 8 : 70
+            return weeklyAveragePulse > 0 ? weeklyAveragePulse : 70
         }
     }
     
@@ -920,6 +930,8 @@ struct BloodPressureView: View {
                         showingAddPopup = false
                         isSaving = false
                     }
+                    
+                    loadTrendSummary()
                 }
             } catch {
                 await MainActor.run {
@@ -1003,6 +1015,94 @@ struct BloodPressureView: View {
             weekEndDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
         }
     }
+
+    // MARK: - Trend Summary
+    private func loadTrendSummary() {
+        let dateRange = analyticsDateRange()
+        let startDate = dateRange.start
+        let endDate = dateRange.end
+        
+        Task {
+            do {
+                let stats = try await analyticsService.getStatistics(
+                    metricType: .bloodPressure,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                let summary = TrendSummary.from(trend: stats.trend)
+                await MainActor.run {
+                    trendSummary = summary
+                }
+            } catch let error as APIError {
+                if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                    await MainActor.run {
+                        trendSummary = .noData
+                    }
+                } else {
+                    await MainActor.run {
+                        trendSummary = .noData
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    trendSummary = .noData
+                }
+            }
+        }
+    }
+    
+    private func analyticsDateRange() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: weekStartDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
+        return (start, end)
+    }
+}
+
+enum TrendSummary {
+    case increasing
+    case stable
+    case decreasing
+    case noData
+    
+    var iconName: String {
+        switch self {
+        case .increasing:
+            return "chart.line.uptrend.xyaxis"
+        case .stable:
+            return "chart.line.flattrend.xyaxis"
+        case .decreasing:
+            return "chart.line.downtrend.xyaxis"
+        case .noData:
+            return "circle.slash"
+        }
+    }
+    
+    var text: String {
+        switch self {
+        case .increasing:
+            return "Your blood pressure is increasing."
+        case .stable:
+            return "Your blood pressure is stable."
+        case .decreasing:
+            return "Your blood pressure is decreasing."
+        case .noData:
+            return "There's no data within this period to identify a trend."
+        }
+    }
+    
+    static func from(trend: String?) -> TrendSummary {
+        switch trend?.lowercased() {
+        case "increasing":
+            return .increasing
+        case "decreasing":
+            return .decreasing
+        case "stable":
+            return .stable
+        default:
+            return .noData
+        }
+    }
 }
 
 // MARK: - Colors
@@ -1061,6 +1161,7 @@ struct BPInsightRow: View {
     }
 }
 
+// MARK: - To preview Blood Pressure page, for only developer uses
 #Preview {
     BloodPressureView()
 }

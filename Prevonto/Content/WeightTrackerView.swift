@@ -11,7 +11,7 @@ private struct WeightChartPoint: Identifiable {
     let valueLb: Double?
 }
 
-
+// Weight Tracker Manager coordinates with API-based weight repository to manage weight data
 class WeightTrackerManager: ObservableObject {
     @Published var entries: [WeightEntry] = []
     @Published var isLoading = false
@@ -798,7 +798,7 @@ private extension Color {
     static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
 }
 
-// To preview Weight Tracker page, for only developer uses
+// MARK: - To preview Weight Tracker page, for only developer uses
 struct WeightTrackerView_Previews: PreviewProvider {
     static var previews: some View {
         WeightTrackerView()

@@ -32,6 +32,7 @@ struct StepsDetailsView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     
     // Activity ring values
@@ -703,6 +704,7 @@ struct StepsInsightRow: View {
     }
 }
 
+// MARK: - To preview Steps & Activity page, for only developer uses
 #Preview {
     StepsDetailsView()
 }

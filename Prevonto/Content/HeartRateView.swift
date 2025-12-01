@@ -32,8 +32,12 @@ struct HeartRateView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var averageHeartRate: Double?
+    @State private var heartRateCount: Int = 0
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
@@ -121,6 +125,28 @@ struct HeartRateView: View {
         .onAppear {
             updateWeekDates()
             loadHeartRateData()
+            loadAverageHeartRate()
+        }
+        .onChange(of: selectedMode) {
+            if selectedMode == .week {
+                updateWeekDates()
+            }
+            loadAverageHeartRate()
+        }
+        .onChange(of: selectedDate) {
+            if selectedMode == .day || selectedMode == .month {
+                loadAverageHeartRate()
+            }
+        }
+        .onChange(of: weekStartDate) {
+            if selectedMode == .week {
+                loadAverageHeartRate()
+            }
+        }
+        .onChange(of: weekEndDate) {
+            if selectedMode == .week {
+                loadAverageHeartRate()
+            }
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -174,8 +200,8 @@ struct HeartRateView: View {
     // MARK: - Average Heart Rate Card
     var averageHeartRateCard: some View {
         VStack(spacing: 8) {
-            if hasHeartRateData {
-                Text("\(averageHeartRate)")
+            if heartRateCount > 0, let avg = averageHeartRate {
+                Text("\(Int(avg))")
                     .font(.system(size: 42, weight: .semibold))
                     .foregroundColor(Color.secondaryGreen)
                 + Text(" bpm")
@@ -201,17 +227,6 @@ struct HeartRateView: View {
                 .stroke(Color.gray, lineWidth: 0.15)
         }
         .padding(.bottom, 16)
-    }
-    
-    private var averageHeartRate: Int {
-        let dataWithValues = chartData.filter { $0.min != nil && $0.max != nil }
-        guard !dataWithValues.isEmpty else { return 0 }
-        
-        let sum = dataWithValues.reduce(0) { total, data in
-            let avg = (data.min! + data.max!) / 2
-            return total + avg
-        }
-        return sum / dataWithValues.count
     }
     
     private var averageLabel: String {
@@ -897,6 +912,66 @@ struct HeartRateView: View {
         // Update selectedDate to be within the selected week range
         selectedDate = weekStartDate
     }
+
+    // MARK: - Analytics Average
+    private func loadAverageHeartRate() {
+        let dateRange = analyticsDateRange()
+        let startDate = dateRange.start
+        let endDate = dateRange.end
+        
+        Task {
+            do {
+                let stats = try await analyticsService.getStatistics(
+                    metricType: .heartRate,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                
+                await MainActor.run {
+                    heartRateCount = stats.count
+                    averageHeartRate = stats.average["bpm"]?.asDouble
+                }
+            } catch let error as APIError {
+                if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                    await MainActor.run {
+                        heartRateCount = 0
+                        averageHeartRate = nil
+                    }
+                } else {
+                    await MainActor.run {
+                        heartRateCount = 0
+                        averageHeartRate = nil
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    heartRateCount = 0
+                    averageHeartRate = nil
+                }
+            }
+        }
+    }
+    
+    private func analyticsDateRange() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        switch selectedMode {
+        case .day:
+            let start = calendar.startOfDay(for: selectedDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1) ?? selectedDate
+            return (start, end)
+        case .week:
+            let start = calendar.startOfDay(for: weekStartDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
+            return (start, end)
+        case .month:
+            if let monthInterval = calendar.dateInterval(of: .month, for: selectedDate) {
+                let start = monthInterval.start
+                let end = monthInterval.end.addingTimeInterval(-1)
+                return (start, end)
+            }
+            return (selectedDate, selectedDate)
+        }
+    }
 }
 
 // Colors used for the Heart Rate page
@@ -1119,6 +1194,7 @@ struct InsightRow: View {
     }
 }
 
+// MARK: - To preview Heart Rate page, for only developer uses
 #Preview {
     HeartRateView()
 }

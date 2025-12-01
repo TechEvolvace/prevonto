@@ -219,6 +219,21 @@ struct AnyCodable: Codable {
     }
 }
 
+extension AnyCodable {
+    var asDouble: Double? {
+        if let doubleValue = value as? Double {
+            return doubleValue
+        }
+        if let intValue = value as? Int {
+            return Double(intValue)
+        }
+        if let stringValue = value as? String {
+            return Double(stringValue)
+        }
+        return nil
+    }
+}
+
 // MARK: - Helper Extensions for Converting Values
 extension MetricResponse {
     // Extract typed values from AnyCodable dictionary

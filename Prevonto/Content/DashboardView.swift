@@ -11,7 +11,7 @@ struct DashboardView: View {
     @State private var showingAddModal = false
     
     // Time period selection
-    @State private var selectedTimePeriod: TimePeriod = .thisMonth
+    @State private var selectedTimePeriod: TimePeriod = .today
     
     // Carousel states
     @State private var healthHighlightsCurrentIndex = 0
@@ -36,20 +36,23 @@ struct DashboardView: View {
     
     // API data state
     @State private var medications: [Medication] = []
-    @State private var latestHeartRate: Double = 60
-    @State private var latestBloodPressure: BloodPressureRecord?
-    @State private var latestBloodGlucose: Double = 0
-    @State private var latestSpO2: Double = 0
-    @State private var latestWeight: Double = 0
+    @State private var averageHeartRate: Double?
+    @State private var averageBloodPressure: BloodPressureAverage?
+    @State private var averageBloodGlucose: Double?
+    @State private var averageSpO2: Double?
+    @State private var averageWeight: Double?
     @State private var latestMood: EnergyMoodValue?
     @State private var isLoadingMetrics = false
     
     // Medication reminders and adherence
     @State private var upcomingReminders: [(name: String, time: Date)] = []
     @State private var adherencePercentage: Double = 0.0
-    @State private var adherenceWeekRange: String = ""
+    @State private var adherencePeriodPrimary: String = ""
+    @State private var adherencePeriodSecondary: String = ""
     
+    // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
     private let onboardingService = OnboardingService.shared
     
     var body: some View {
@@ -135,6 +138,9 @@ struct DashboardView: View {
             .onAppear {
                 loadHealthData()
                 loadNotificationSettings()
+            }
+            .onChange(of: selectedTimePeriod) { 
+                loadMetrics()
             }
         }
     }
@@ -357,7 +363,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("\(Int(latestHeartRate))")
+                    Text(averageHeartRate.map { "\(Int($0))" } ?? "--")
                         .font(.custom("Noto Sans", size: 32))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
@@ -367,7 +373,7 @@ struct DashboardView: View {
                     Spacer()
                 }
                 
-                Text("Avg Heart Rate")
+                Text("Average Heart Rate")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             }
@@ -453,9 +459,9 @@ struct DashboardView: View {
             
             Spacer()
             
-            if latestBloodGlucose > 0 {
+            if let avg = averageBloodGlucose {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(Int(latestBloodGlucose))")
+                    Text("\(Int(avg))")
                         .font(.custom("Noto Sans", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
@@ -463,6 +469,10 @@ struct DashboardView: View {
                         .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
+                
+                Text("Average Blood Glucose")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
                 Text("View your blood glucose data and trends")
                     .font(.custom("Noto Sans", size: 14))
@@ -488,9 +498,9 @@ struct DashboardView: View {
             
             Spacer()
             
-            if let bp = latestBloodPressure {
+            if let bp = averageBloodPressure {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(bp.systolic)/\(bp.diastolic)")
+                    Text("\(Int(bp.systolic))/\(Int(bp.diastolic))")
                         .font(.custom("Noto Sans", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
@@ -498,6 +508,10 @@ struct DashboardView: View {
                         .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
+                
+                Text("Average Blood Pressure")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
                 Text("View your blood pressure data and trends")
                     .font(.custom("Noto Sans", size: 14))
@@ -523,9 +537,9 @@ struct DashboardView: View {
             
             Spacer()
             
-            if latestSpO2 > 0 {
+            if let avg = averageSpO2 {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(Int(latestSpO2))")
+                    Text("\(Int(avg))")
                         .font(.custom("Noto Sans", size: 24))
                         .fontWeight(.bold)
                         .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
@@ -533,6 +547,10 @@ struct DashboardView: View {
                         .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
+                
+                Text("Average SpO2")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
                 Text("View your SpO2 data and trends")
                     .font(.custom("Noto Sans", size: 14))
@@ -558,10 +576,10 @@ struct DashboardView: View {
             
             Spacer()
             
-            if latestWeight > 0 {
+            if let avgWeight = averageWeight {
                 // Get weight unit from onboarding
                 let weightUnit = UserDefaults.standard.string(forKey: "weightUnit") ?? "kg"
-                let displayWeight = weightUnit == "lbs" ? latestWeight * 2.20462 : latestWeight
+                let displayWeight = weightUnit == "lbs" ? avgWeight * 2.20462 : avgWeight
                 let unitText = weightUnit == "lbs" ? "lbs" : "kg"
                 
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -573,6 +591,10 @@ struct DashboardView: View {
                         .font(.custom("Noto Sans", size: 14))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
+                
+                Text("Average Weight")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
                 Text("View your weight data and trends")
                     .font(.custom("Noto Sans", size: 14))
@@ -683,8 +705,8 @@ struct DashboardView: View {
             
             if medications.isEmpty {
                 VStack(spacing: 8) {
-                    Text("No medications logged")
-                        .font(.custom("Noto Sans", size: 14))
+                    Text("You have no medications you are taking now.")
+                        .font(.custom("Noto Sans", size: 16))
                         .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                 }
                 .frame(maxWidth: .infinity)
@@ -857,13 +879,14 @@ struct DashboardView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
                 // Week range
-                Text(adherenceWeekRange.isEmpty ? "This week" : adherenceWeekRange)
+                Text(adherencePeriodPrimary.isEmpty ? selectedTimePeriod.rawValue : adherencePeriodPrimary)
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
-                // Current month
-                Text(formatCurrentMonth())
-                    .font(.custom("Noto Sans", size: 14))
-                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                if !adherencePeriodSecondary.isEmpty {
+                    Text(adherencePeriodSecondary)
+                        .font(.custom("Noto Sans", size: 14))
+                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                }
             }
             Spacer()
         }
@@ -926,93 +949,68 @@ struct DashboardView: View {
                     }
                 }
                 
-                // Load latest metrics for each type
-                let calendar = Calendar.current
-                let endDate = Date()
-                let startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
+                let period = selectedTimePeriod
+                let dateRange = dateRange(for: period)
+                let startDate = dateRange.start
+                let endDate = dateRange.end
                 
-                // Heart Rate
+                await MainActor.run {
+                    setAdherencePeriodLabel(for: period, startDate: startDate, endDate: endDate)
+                }
+                
+                // Load averages for each metric type using analytics/statistics
                 if showHeartRate {
-                    let response = try await metricsService.listMetrics(
+                    await fetchAverage(
                         metricType: .heartRate,
                         startDate: startDate,
-                        endDate: endDate,
-                        pageSize: 1
-                    )
-                    if let latest = response.metrics.first,
-                       let hr = latest.extractHeartRate() {
-                        await MainActor.run {
-                            latestHeartRate = Double(hr.bpm)
-                        }
+                        endDate: endDate
+                    ) { average in
+                        averageHeartRate = average?["bpm"]?.asDouble
                     }
                 }
                 
-                // Blood Pressure
                 if showBloodPressure {
-                    let response = try await metricsService.listMetrics(
+                    await fetchAverage(
                         metricType: .bloodPressure,
                         startDate: startDate,
-                        endDate: endDate,
-                        pageSize: 1
-                    )
-                    if let latest = response.metrics.first,
-                       let bp = latest.extractBloodPressure() {
-                        await MainActor.run {
-                            latestBloodPressure = BloodPressureRecord(
-                                date: latest.measuredAt,
-                                systolic: bp.systolic,
-                                diastolic: bp.diastolic,
-                                pulse: bp.pulse ?? 0
-                            )
+                        endDate: endDate
+                    ) { average in
+                        if let systolic = average?["systolic"]?.asDouble,
+                           let diastolic = average?["diastolic"]?.asDouble {
+                            averageBloodPressure = BloodPressureAverage(systolic: systolic, diastolic: diastolic)
+                        } else {
+                            averageBloodPressure = nil
                         }
                     }
                 }
                 
-                // Blood Glucose
                 if showBloodGlucose {
-                    let response = try await metricsService.listMetrics(
+                    await fetchAverage(
                         metricType: .bloodGlucose,
                         startDate: startDate,
-                        endDate: endDate,
-                        pageSize: 1
-                    )
-                    if let latest = response.metrics.first,
-                       let bg = latest.extractBloodGlucose() {
-                        await MainActor.run {
-                            latestBloodGlucose = bg.value
-                        }
+                        endDate: endDate
+                    ) { average in
+                        averageBloodGlucose = average?["value"]?.asDouble
                     }
                 }
                 
-                // SpO2
                 if showSpO2 {
-                    let response = try await metricsService.listMetrics(
+                    await fetchAverage(
                         metricType: .spo2,
                         startDate: startDate,
-                        endDate: endDate,
-                        pageSize: 1
-                    )
-                    if let latest = response.metrics.first,
-                       let spo2 = latest.extractSpO2() {
-                        await MainActor.run {
-                            latestSpO2 = spo2.value
-                        }
+                        endDate: endDate
+                    ) { average in
+                        averageSpO2 = average?["value"]?.asDouble
                     }
                 }
                 
-                // Weight
                 if showWeight {
-                    let response = try await metricsService.listMetrics(
+                    await fetchAverage(
                         metricType: .weight,
                         startDate: startDate,
-                        endDate: endDate,
-                        pageSize: 1
-                    )
-                    if let latest = response.metrics.first,
-                       let weight = latest.extractWeight() {
-                        await MainActor.run {
-                            latestWeight = weight.weight
-                        }
+                        endDate: endDate
+                    ) { average in
+                        averageWeight = average?["weight"]?.asDouble
                     }
                 }
                 
@@ -1037,16 +1035,15 @@ struct DashboardView: View {
                     let calendar = Calendar.current
                     let now = Date()
                     
-                    // Get current week start (Monday)
-                    let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
-                    let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? now
+                    let periodStart = startDate
+                    let periodEnd = endDate
                     
                     // Fetch taken medication logs for the current week and near future.
                     // The app treats existence of a medication metric at a scheduled slot as "taken".
                     let futureDate = calendar.date(byAdding: .day, value: 7, to: now) ?? now
                     let medicationResponse = try await metricsService.listMetrics(
                         metricType: .medication,
-                        startDate: weekStart,
+                        startDate: periodStart,
                         endDate: futureDate,
                         pageSize: 100
                     )
@@ -1079,7 +1076,7 @@ struct DashboardView: View {
                         var totalTaken = 0
                         
                         if !onboardingMedications.isEmpty {
-                            var day = calendar.startOfDay(for: weekStart)
+                            var day = calendar.startOfDay(for: periodStart)
                             let endDay = calendar.startOfDay(for: futureDate)
                             
                             while day <= endDay {
@@ -1096,7 +1093,7 @@ struct DashboardView: View {
                                         }
                                         
                                         // Adherence: count scheduled slots in this week up to "now"
-                                        if scheduledTime >= weekStart && scheduledTime < weekEnd && scheduledTime <= now {
+                                        if scheduledTime >= periodStart && scheduledTime <= periodEnd && scheduledTime <= now {
                                             totalScheduled += 1
                                             if isTaken { totalTaken += 1 }
                                         }
@@ -1111,14 +1108,6 @@ struct DashboardView: View {
                         upcomingReminders = Array(reminders.prefix(2))
                         
                         adherencePercentage = totalScheduled > 0 ? Double(totalTaken) / Double(totalScheduled) : 0.0
-                        
-                        // Format week range
-                        let dateFormatter = DateFormatter()
-                        dateFormatter.dateFormat = "d"
-                        let startStr = dateFormatter.string(from: weekStart)
-                        dateFormatter.dateFormat = "d"
-                        let endStr = dateFormatter.string(from: calendar.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart)
-                        adherenceWeekRange = "\(startStr) to \(endStr)"
                     }
                 }
                 
@@ -1145,6 +1134,99 @@ struct DashboardView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: Date())
+    }
+
+    // Specifies the start and end of a specific period
+    private func dateRange(for period: TimePeriod) -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        switch period {
+        case .today:
+            let start = calendar.startOfDay(for: now)
+            let end = calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1) ?? now
+            return (start, end)
+        case .thisWeek:
+            let startOfDay = calendar.startOfDay(for: now)
+            let weekday = calendar.component(.weekday, from: startOfDay) // Sunday = 1
+            let daysFromSunday = weekday - 1
+            let start = calendar.date(byAdding: .day, value: -daysFromSunday, to: startOfDay) ?? startOfDay
+            let end = calendar.date(byAdding: .day, value: 6, to: start)?.addingTimeInterval(86399) ?? now
+            return (start, end)
+        case .thisMonth:
+            let components = calendar.dateComponents([.year, .month], from: now)
+            let start = calendar.date(from: components) ?? now
+            let end = calendar.date(byAdding: DateComponents(month: 1, day: 0), to: start)?.addingTimeInterval(-1) ?? now
+            return (start, end)
+        case .thisYear:
+            let components = calendar.dateComponents([.year], from: now)
+            let start = calendar.date(from: components) ?? now
+            let end = calendar.date(byAdding: DateComponents(year: 1, day: 0), to: start)?.addingTimeInterval(-1) ?? now
+            return (start, end)
+        }
+    }
+
+    // Format the adherence period label in adherence card
+    private func setAdherencePeriodLabel(for period: TimePeriod, startDate: Date, endDate: Date) {
+        switch period {
+        case .today:
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d, yyyy"
+            adherencePeriodPrimary = formatter.string(from: startDate)
+            adherencePeriodSecondary = ""
+        case .thisWeek:
+            let dayFormatter = DateFormatter()
+            dayFormatter.dateFormat = "d"
+            let startStr = dayFormatter.string(from: startDate)
+            let endStr = dayFormatter.string(from: endDate)
+            adherencePeriodPrimary = "\(startStr) to \(endStr)"
+            adherencePeriodSecondary = formatCurrentMonth()
+        case .thisMonth:
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            adherencePeriodPrimary = formatter.string(from: startDate)
+            adherencePeriodSecondary = ""
+        case .thisYear:
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy"
+            adherencePeriodPrimary = formatter.string(from: startDate)
+            adherencePeriodSecondary = ""
+        }
+    }
+
+    // Get the specific metric average in the response from the API
+    private func fetchAverage(
+        metricType: MetricType,
+        startDate: Date,
+        endDate: Date,
+        onResult: @escaping ([String: AnyCodable]?) -> Void
+    ) async {
+        do {
+            let stats = try await analyticsService.getStatistics(
+                metricType: metricType,
+                startDate: startDate,
+                endDate: endDate
+            )
+            await MainActor.run {
+                onResult(stats.average)
+            }
+        } catch let error as APIError {
+            if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                await MainActor.run {
+                    onResult(nil)
+                }
+            } else {
+                print("⚠️ Failed to load analytics for \(metricType.rawValue): \(error.localizedDescription)")
+                await MainActor.run {
+                    onResult(nil)
+                }
+            }
+        } catch {
+            print("⚠️ Failed to load analytics for \(metricType.rawValue): \(error.localizedDescription)")
+            await MainActor.run {
+                onResult(nil)
+            }
+        }
     }
     
     private func loadHealthData() {
@@ -1341,13 +1423,18 @@ enum TimePeriod: String, CaseIterable {
     case thisYear = "This year"
 }
 
+struct BloodPressureAverage {
+    let systolic: Double
+    let diastolic: Double
+}
+
 struct Medication {
     let name: String
     let instructions: String
     let time: String
 }
 
-// Preview
+// MARK: - To preview Dashboard page, for only developer uses
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
         DashboardView()

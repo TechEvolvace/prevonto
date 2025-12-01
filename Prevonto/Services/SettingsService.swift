@@ -1,4 +1,4 @@
-// Settings Service
+// Settings Service - Communicates with API at /api/settings endpoint
 import Foundation
 
 class SettingsService {

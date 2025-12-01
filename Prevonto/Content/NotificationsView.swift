@@ -282,7 +282,7 @@ struct CustomToggleStyle: ToggleStyle {
     }
 }
 
-// MARK: - Preview
+// MARK: - To preview Notifications page, for only developer uses
 struct NotificationsView_Previews: PreviewProvider {
     static var previews: some View {
         NotificationsView()

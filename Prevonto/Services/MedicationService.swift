@@ -1,4 +1,4 @@
-// Medication Service
+// Medication Service - Communicates with API at api/medications endpoint
 import Foundation
 
 class MedicationService {
