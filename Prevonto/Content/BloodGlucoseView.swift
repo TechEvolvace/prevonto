@@ -36,10 +36,13 @@ struct BloodGlucoseView: View {
     @State private var errorMessage = ""
     @State private var averageGlucose: Double?
     @State private var glucoseCount: Int = 0
+    @State private var highlightMessages: [String] = []
+    @State private var insightMessages: [String] = []
     
     // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     private let analyticsService = AnalyticsService.shared
+    private let aiService = AIService.shared
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
@@ -110,6 +113,7 @@ struct BloodGlucoseView: View {
             updateWeekDates()
             loadBloodGlucoseData()
             loadAverageGlucose()
+            refreshAiContent()
         }
         .onChange(of: selectedMode) { _, _ in
             selectedDataIndex = nil
@@ -117,21 +121,25 @@ struct BloodGlucoseView: View {
                 updateWeekDates()
             }
             loadAverageGlucose()
+            refreshAiContent()
         }
         .onChange(of: selectedDate) { _, _ in
             if selectedMode == .day || selectedMode == .month {
                 loadAverageGlucose()
             }
+            refreshAiContent()
         }
         .onChange(of: weekStartDate) { _, _ in
             if selectedMode == .week {
                 loadAverageGlucose()
             }
+            refreshAiContent()
         }
         .onChange(of: weekEndDate) { _, _ in
             if selectedMode == .week {
                 loadAverageGlucose()
             }
+            refreshAiContent()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -171,6 +179,7 @@ struct BloodGlucoseView: View {
                 await MainActor.run {
                     allGlucoseRecords = records.sorted { $0.timestamp < $1.timestamp }
                     isLoading = false
+                    refreshAiContent()
                 }
             } catch {
                 await MainActor.run {
@@ -905,9 +914,21 @@ struct BloodGlucoseView: View {
                 .foregroundColor(.primaryGreen)
             
             if hasData {
-                VStack(alignment: .leading, spacing: 0) {
-                    GlucoseHighlightRow(number: 1, text: "Your glucose levels are within normal range", isLast: false)
-                    GlucoseHighlightRow(number: 2, text: "Post-meal spikes observed between 12pm-2pm", isLast: true)
+                if highlightMessages.isEmpty {
+                    Text("No highlights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(highlightMessages.enumerated()), id: \.offset) { index, message in
+                            GlucoseHighlightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == highlightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate highlights")
@@ -929,9 +950,21 @@ struct BloodGlucoseView: View {
                 .foregroundColor(.primaryGreen)
             
             if hasData {
-                VStack(alignment: .leading, spacing: 0) {
-                    GlucoseInsightRow(number: 1, text: "Consider reducing carbohydrate intake at lunch", isLast: false)
-                    GlucoseInsightRow(number: 2, text: "Maintain your current breakfast routine", isLast: true)
+                if insightMessages.isEmpty {
+                    Text("No insights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insightMessages.enumerated()), id: \.offset) { index, message in
+                            GlucoseInsightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == insightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate insights")
@@ -1049,6 +1082,40 @@ struct BloodGlucoseView: View {
             }
             return (selectedDate, selectedDate)
         }
+    }
+
+    // MARK: - AI Highlights & Insights
+    private func refreshAiContent() {
+        guard hasData else {
+            highlightMessages = []
+            insightMessages = []
+            return
+        }
+        
+        let daysBack = aiDaysBack()
+        Task {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: .bloodGlucose, daysBack: daysBack)
+                let descriptions = anomalies.map { $0.description }
+                let recommendations = anomalies.compactMap { $0.recommendation }
+                
+                await MainActor.run {
+                    highlightMessages = descriptions
+                    insightMessages = recommendations
+                }
+            } catch {
+                await MainActor.run {
+                    highlightMessages = []
+                    insightMessages = []
+                }
+            }
+        }
+    }
+    
+    private func aiDaysBack() -> Int {
+        let range = analyticsDateRange()
+        let days = Calendar.current.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        return max(1, days + 1)
     }
 }
 

@@ -85,7 +85,8 @@ class APIClient {
         endpoint: String,
         method: HTTPMethod = .GET,
         body: Encodable? = nil,
-        responseType: T.Type
+        responseType: T.Type,
+        isRetry: Bool = false
     ) async throws -> T {
         guard let url = buildURL(endpoint: endpoint) else {
             throw APIError.invalidURL
@@ -120,7 +121,27 @@ class APIClient {
             
             // Handle HTTP errors
             if httpResponse.statusCode == 401 {
-                throw APIError.unauthorized
+                // Don't retry if this was already a retry or if it's the refresh endpoint itself
+                if isRetry || endpoint == "/api/auth/refresh" {
+                    throw APIError.unauthorized
+                }
+                
+                // Attempt to refresh access token
+                do {
+                    _ = try await AuthService.shared.refreshToken()
+                    
+                    // If successful, retry the original request
+                    return try await self.request(
+                        endpoint: endpoint,
+                        method: method,
+                        body: body,
+                        responseType: responseType,
+                        isRetry: true
+                    )
+                } catch {
+                    // If refresh fails, throw unauthorized
+                    throw APIError.unauthorized
+                }
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {

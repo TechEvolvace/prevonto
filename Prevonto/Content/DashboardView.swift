@@ -19,8 +19,8 @@ struct DashboardView: View {
     
     // Activity ring data
     @State private var caloriesProgress: Double = 0.6
-    @State private var exerciseProgress: Double = 0.8
-    @State private var standProgress: Double = 0.4
+    @State private var exerciseProgress: Double = 1.66
+    @State private var standProgress: Double = 0.25
     
     // Notification settings state
     @State private var showHeartRate: Bool = true
@@ -43,6 +43,17 @@ struct DashboardView: View {
     @State private var averageWeight: Double?
     @State private var latestMood: EnergyMoodValue?
     @State private var isLoadingMetrics = false
+    @State private var moodTrackerMessage: String = ""
+    @State private var daysTrackedMessage: String = ""
+    @State private var healthHighlightMessages: [String] = []
+    
+    // Navigation states for floating menu
+    @State private var navigateToWeight = false
+    @State private var navigateToMood = false
+    @State private var navigateToMedication = false
+    
+    // Days Tracked navigation
+    @State private var navigateToDaysTracked = false
     
     // Medication reminders and adherence
     @State private var upcomingReminders: [(name: String, time: Date)] = []
@@ -54,6 +65,7 @@ struct DashboardView: View {
     private let metricsService = MetricsService.shared
     private let analyticsService = AnalyticsService.shared
     private let onboardingService = OnboardingService.shared
+    private let aiService = AIService.shared
     
     var body: some View {
         NavigationStack {
@@ -72,6 +84,7 @@ struct DashboardView: View {
                         if showMoodTracker {
                             moodTrackerSection
                         }
+                        daysTrackedSection
                         Spacer(minLength: 100)
                     }
                     .padding(.horizontal, 16)
@@ -120,8 +133,16 @@ struct DashboardView: View {
                         HStack {
                             Spacer()
                             FloatingActionMenu(
-                                actionTapped: { _ in
+                                actionTapped: { action in
                                     hideFloatingMenu()
+                                    switch action {
+                                    case .inputWeight:
+                                        navigateToWeight = true
+                                    case .inputMood:
+                                        navigateToMood = true
+                                    case .addMedication:
+                                        navigateToMedication = true
+                                    }
                                 },
                                 closeTapped: {
                                     hideFloatingMenu()
@@ -142,6 +163,18 @@ struct DashboardView: View {
             .onChange(of: selectedTimePeriod) { 
                 loadMetrics()
             }
+            .navigationDestination(isPresented: $navigateToWeight) {
+                WeightTrackerView()
+            }
+            .navigationDestination(isPresented: $navigateToMood) {
+                MoodTrackerView()
+            }
+            .navigationDestination(isPresented: $navigateToMedication) {
+                MedicationLogView()
+            }
+            .navigationDestination(isPresented: $navigateToDaysTracked) {
+                DaysTrackedView()
+            }
         }
     }
     
@@ -160,18 +193,6 @@ struct DashboardView: View {
             
             // Search Button
             HStack(spacing: 16) {
-                Button(action: {
-                    // Search functionality
-                }) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 20))
-                        .foregroundColor(.black)
-                        .frame(width: 40, height: 40)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
-                }
-                
                 // New Settings Button
                 NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gearshape")
@@ -313,12 +334,12 @@ struct DashboardView: View {
     var activityRingsCard: some View {
         VStack(spacing: 16) {
             ZStack {
-                // Outermost ring (Stand)
+                // Outermost ring (Calories)
                 Circle()
                     .stroke(Color(red: 0.14, green: 0.20, blue: 0.08).opacity(0.2), lineWidth: 12)
                     .frame(width: 120, height: 120)
                 Circle()
-                    .trim(from: 0, to: standProgress)
+                    .trim(from: 0, to: caloriesProgress)
                     .stroke(Color(red: 0.14, green: 0.20, blue: 0.08), style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .frame(width: 120, height: 120)
                     .rotationEffect(.degrees(-90))
@@ -333,12 +354,12 @@ struct DashboardView: View {
                     .frame(width: 90, height: 90)
                     .rotationEffect(.degrees(-90))
                 
-                // Innermost ring (Calories)
+                // Innermost ring (Stand)
                 Circle()
                     .stroke(Color(red: 0.51, green: 0.64, blue: 0.51).opacity(0.2), lineWidth: 12)
                     .frame(width: 60, height: 60)
                 Circle()
-                    .trim(from: 0, to: caloriesProgress)
+                    .trim(from: 0, to: standProgress)
                     .stroke(Color(red: 0.51, green: 0.64, blue: 0.51), style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .frame(width: 60, height: 60)
                     .rotationEffect(.degrees(-90))
@@ -360,88 +381,41 @@ struct DashboardView: View {
     
     // MARK: - Heart Rate Card
     var heartRateCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer()
+                .frame(height: 14)
+            
+            if let avg = averageHeartRate {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(averageHeartRate.map { "\(Int($0))" } ?? "--")
+                    Text("\(Int(avg))")
                         .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
                         .foregroundColor(Color.secondaryGreen)
                     Text("bpm")
                         .font(.custom("Noto Sans", size: 18))
                         .foregroundColor(Color.secondaryGreen)
-                    Spacer()
                 }
+                .padding(.bottom, 2)
                 
                 Text("Average Heart Rate")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+            } else {
+                Text("Heart Rate")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.secondaryGreen)
+                    .padding(.bottom, 8)
+                
+                Text("View your heart rate data and trends")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    .multilineTextAlignment(.leading)
             }
             
-            // Heart rate chart with gradient
-            ZStack {
-                // Background bars
-                HStack(spacing: 12) {
-                    ForEach(0..<12) { _ in
-                        Rectangle()
-                            .fill(Color(red: 0.74, green: 0.77, blue: 0.82).opacity(0.25))
-                            .frame(width: 1, height: 60)
-                    }
-                }
-                
-                // Area chart with gradient from line to bottom
-                Path { path in
-                    let width = 120.0
-                    let height = 60.0
-                    let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3, 0.5, 0.4, 0.6, 0.2]
-                    
-                    // Start from bottom left
-                    path.move(to: CGPoint(x: 0, y: height))
-                    // Draw to first point
-                    path.addLine(to: CGPoint(x: 0, y: height * (1 - points[0])))
-                    
-                    // Draw the line
-                    for i in 1..<points.count {
-                        let x = width * Double(i) / Double(points.count - 1)
-                        let y = height * (1 - points[i])
-                        path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                    
-                    // Close the path to bottom right
-                    path.addLine(to: CGPoint(x: width, y: height))
-                    path.closeSubpath()
-                }
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.368, green: 0.553, blue: 0.372).opacity(0.3),
-                            Color(red: 0.368, green: 0.553, blue: 0.372).opacity(0.05)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 120, height: 60)
-                
-                // Line on top
-                Path { path in
-                    let width = 120.0
-                    let height = 60.0
-                    let points = [0.3, 0.5, 0.2, 0.7, 0.4, 0.8, 0.6, 0.3, 0.5, 0.4, 0.6, 0.2]
-                    
-                    path.move(to: CGPoint(x: 0, y: height * (1 - points[0])))
-                    
-                    for i in 1..<points.count {
-                        let x = width * Double(i) / Double(points.count - 1)
-                        let y = height * (1 - points[i])
-                        path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
-                .stroke(Color(red: 0.368, green: 0.553, blue: 0.372), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                .frame(width: 120, height: 60)
-            }
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
         .padding(16)
         .background(Color.white)
@@ -632,7 +606,7 @@ struct DashboardView: View {
     
     // MARK: - Health Highlights Section
     var healthHighlightsSection: some View {
-        let cardCount = 3
+        let cardCount = max(healthHighlightMessages.count, 1)
         
         return VStack(alignment: .leading, spacing: 16) {
             Text("Health highlights")
@@ -662,10 +636,12 @@ struct DashboardView: View {
                                 .fill(Color.white)
                                 .frame(width: width * 0.72, height: 120)
                                 .overlay(
-                                    Text("Highlight \(index + 1)")
+                                    Text(healthHighlightText(at: index))
                                         .font(.custom("Noto Sans", size: 16))
                                         .fontWeight(.semibold)
-                                        .foregroundColor(Color(red: 0.19, green: 0.21, blue: 0.24))
+                                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                                        .multilineTextAlignment(.leading)
+                                        .padding(.horizontal, 12)
                                 )
                                 .scaleEffect(scale)
                                 .opacity(opacity)
@@ -919,6 +895,41 @@ struct DashboardView: View {
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
     
+    // MARK: - Days Tracked Section
+    var daysTrackedSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Days Tracked")
+                    .font(.custom("Noto Sans", size: 22))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                Spacer()
+            }
+            
+            NavigationLink(destination: DaysTrackedView()) {
+                VStack(alignment: .leading, spacing: 4) {
+                    if daysTrackedMessage.isEmpty {
+                        Text("Calculating days tracked...")
+                            .font(.custom("Noto Sans", size: 16))
+                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    } else {
+                        Text(daysTrackedMessage)
+                            .font(.custom("Noto Sans", size: 16))
+                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 32)
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+    
     // MARK: - Mood Tracker Section
     var moodTrackerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -936,10 +947,19 @@ struct DashboardView: View {
             // Showcase the user's mood data
             NavigationLink(destination: MoodTrackerView()) {
                 VStack(alignment: .leading, spacing: 4) {
-                    // Add contents of mood tracker data here!
+                    if moodTrackerMessage.isEmpty {
+                        Text("No mood insights available yet")
+                            .font(.custom("Noto Sans", size: 16))
+                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                    } else {
+                        Text(moodTrackerMessage)
+                            .font(.custom("Noto Sans", size: 16))
+                            .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                            .multilineTextAlignment(.leading)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 120)
+                .frame(height: 32)
                 .padding(16)
                 .background(Color.white)
                 .cornerRadius(16)
@@ -1034,6 +1054,9 @@ struct DashboardView: View {
                     }
                 }
                 
+                // Fetch Days Tracked (not affected by dropdown)
+                await loadTotalDaysTracked()
+                
                 // Mood
                 if showMoodTracker {
                     let response = try await metricsService.listMetrics(
@@ -1049,6 +1072,9 @@ struct DashboardView: View {
                         }
                     }
                 }
+                
+                await loadMoodAnomaly(startDate: startDate, endDate: endDate)
+                await loadHealthHighlights(startDate: startDate, endDate: endDate)
                 
                 // Medication logs (for reminders and adherence cards)
                 if showMedicationLog {
@@ -1249,6 +1275,150 @@ struct DashboardView: View {
         }
     }
 
+    private func loadTotalDaysTracked() async {
+        // Calculate total days tracked across all metrics for the last year
+        // Similar logic to DaysTrackedView but optimized for Dashboard
+        do {
+            let calendar = Calendar.current
+            let endDate = Date()
+            let startDate = calendar.date(byAdding: .year, value: -1, to: endDate) ?? endDate
+            
+            // Fetch all metric types to find unique days
+            let metricTypes: [MetricType] = [.bloodPressure, .heartRate, .bloodGlucose, .spo2, .weight, .stepsActivity, .energyMood, .medication]
+            
+            var uniqueDays = Set<Date>()
+            
+            for metricType in metricTypes {
+                // We only need to know if data exists on a day, not the values.
+                // Using listMetrics with small page size to get all timestamps.
+                let response = try await metricsService.listMetrics(
+                    metricType: metricType,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100 // Assume user doesn't have more than 100 entries of one type per year for dashboard preview
+                )
+                
+                for metric in response.metrics {
+                    uniqueDays.insert(calendar.startOfDay(for: metric.measuredAt))
+                }
+            }
+            
+            await MainActor.run {
+                let count = uniqueDays.count
+                if count == 0 {
+                    daysTrackedMessage = "You haven't tracked any health metrics yet."
+                } else if count == 1 {
+                    daysTrackedMessage = "You have tracked your health for 1 day."
+                } else {
+                    daysTrackedMessage = "You have tracked your health for \(count) days."
+                }
+            }
+        } catch {
+            print("⚠️ Failed to load total days tracked: \(error)")
+            await MainActor.run {
+                daysTrackedMessage = "Error loading tracking data"
+            }
+        }
+    }
+
+    private func loadMoodAnomaly(startDate: Date, endDate: Date) async {
+        guard showMoodTracker, latestMood != nil else {
+            await MainActor.run {
+                moodTrackerMessage = ""
+            }
+            return
+        }
+        
+        let daysBack = aiDaysBack(startDate: startDate, endDate: endDate)
+        do {
+            let anomalies = try await aiService.getAnomalies(metricType: .energyMood, daysBack: daysBack)
+            if let anomaly = anomalies.first {
+                let message = combineAnomalyText(anomaly)
+                await MainActor.run {
+                    moodTrackerMessage = message
+                }
+            } else {
+                await MainActor.run {
+                    moodTrackerMessage = ""
+                }
+            }
+        } catch {
+            await MainActor.run {
+                moodTrackerMessage = ""
+            }
+        }
+    }
+
+    private func aiDaysBack(startDate: Date, endDate: Date) -> Int {
+        let days = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        return max(1, days + 1)
+    }
+
+    private func combineAnomalyText(_ anomaly: Anomaly) -> String {
+        if let recommendation = anomaly.recommendation, !recommendation.isEmpty {
+            return "\(anomaly.description)\n\(recommendation)"
+        }
+        return anomaly.description
+    }
+
+    private func loadHealthHighlights(startDate: Date, endDate: Date) async {
+        let daysBack = aiDaysBack(startDate: startDate, endDate: endDate)
+        let metricsToCheck: [MetricType] = [
+            showHeartRate ? .heartRate : nil,
+            showBloodPressure ? .bloodPressure : nil,
+            showBloodGlucose ? .bloodGlucose : nil,
+            showSpO2 ? .spo2 : nil,
+            showWeight ? .weight : nil
+        ].compactMap { $0 }
+        
+        var messages: [String] = []
+        
+        for metric in metricsToCheck {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: metric, daysBack: daysBack)
+                let description = anomalies.first?.description.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if description.isEmpty {
+                    messages.append("No highlights available for \(metricDisplayName(metric)).")
+                } else {
+                    messages.append(description)
+                }
+            } catch {
+                messages.append("No highlights available for \(metricDisplayName(metric)).")
+            }
+        }
+        
+        await MainActor.run {
+            healthHighlightMessages = messages
+            if healthHighlightsCurrentIndex >= healthHighlightMessages.count {
+                healthHighlightsCurrentIndex = 0
+            }
+        }
+    }
+
+    private func healthHighlightText(at index: Int) -> String {
+        guard !healthHighlightMessages.isEmpty else {
+            return "No highlights available yet"
+        }
+        let safeIndex = min(index, healthHighlightMessages.count - 1)
+        return healthHighlightMessages[safeIndex]
+    }
+
+    private func metricDisplayName(_ metric: MetricType) -> String {
+        switch metric {
+        case .heartRate:
+            return "Heart Rate"
+        case .bloodPressure:
+            return "Blood Pressure"
+        case .bloodGlucose:
+            return "Blood Glucose"
+        case .spo2:
+            return "SpO2"
+        case .weight:
+            return "Weight"
+        default:
+            return metric.rawValue.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
     
     private func loadHealthData() {
         // Load health data from HealthKit

@@ -68,10 +68,12 @@ struct BloodPressureView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var trendSummary: TrendSummary = .noData
+    @State private var insightMessages: [String] = []
     
     // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     private let analyticsService = AnalyticsService.shared
+    private let aiService = AIService.shared
     
     // Chart data for selected week
     private var weeklyChartData: [(index: Int, label: String, value: Int?)] {
@@ -184,12 +186,15 @@ struct BloodPressureView: View {
             loadBloodPressureData()
             updateWeekDates()
             loadTrendSummary()
+            refreshAiContent()
         }
         .onChange(of: weekStartDate) {
             loadTrendSummary()
+            refreshAiContent()
         }
         .onChange(of: weekEndDate) { 
             loadTrendSummary()
+            refreshAiContent()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -774,9 +779,21 @@ struct BloodPressureView: View {
                 .foregroundColor(.primaryGreen)
             
             if hasData {
-                VStack(alignment: .leading, spacing: 0) {
-                    BPInsightRow(number: 1, text: "Try to complete one Breath Training every day", isLast: false)
-                    BPInsightRow(number: 2, text: "Your blood pressure is within healthy range", isLast: true)
+                if insightMessages.isEmpty {
+                    Text("No insights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insightMessages.enumerated()), id: \.offset) { index, message in
+                            BPInsightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == insightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate insights")
@@ -974,6 +991,7 @@ struct BloodPressureView: View {
                 await MainActor.run {
                     allRecords = records.sorted { $0.date > $1.date } // Sort by date descending
                     isLoading = false
+                    refreshAiContent()
                 }
             } catch {
                 await MainActor.run {
@@ -1056,6 +1074,36 @@ struct BloodPressureView: View {
         let start = calendar.startOfDay(for: weekStartDate)
         let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
         return (start, end)
+    }
+
+    // MARK: - AI Insights
+    private func refreshAiContent() {
+        guard hasData else {
+            insightMessages = []
+            return
+        }
+        
+        let daysBack = aiDaysBack()
+        Task {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: .bloodPressure, daysBack: daysBack)
+                let recommendations = anomalies.compactMap { $0.recommendation }
+                
+                await MainActor.run {
+                    insightMessages = recommendations
+                }
+            } catch {
+                await MainActor.run {
+                    insightMessages = []
+                }
+            }
+        }
+    }
+    
+    private func aiDaysBack() -> Int {
+        let range = analyticsDateRange()
+        let days = Calendar.current.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        return max(1, days + 1)
     }
 }
 

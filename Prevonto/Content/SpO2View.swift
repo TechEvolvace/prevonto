@@ -634,10 +634,10 @@ struct SpO2View: View {
             }
         }
         // Added the white card the chart is on
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 1)
+//        .padding()
+//        .background(Color.white)
+//        .cornerRadius(12)
+//        .shadow(radius: 1)
     }
     
     private var weekChart: some View {

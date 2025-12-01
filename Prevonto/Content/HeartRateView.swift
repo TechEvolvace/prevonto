@@ -34,10 +34,13 @@ struct HeartRateView: View {
     @State private var errorMessage = ""
     @State private var averageHeartRate: Double?
     @State private var heartRateCount: Int = 0
+    @State private var highlightMessages: [String] = []
+    @State private var insightMessages: [String] = []
     
     // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
     private let analyticsService = AnalyticsService.shared
+    private let aiService = AIService.shared
     
     // Sample data gets processed into suitable chart data to be displayed in the Chart for current selected view mode.
     private var chartData: [(index: Int, label: String, min: Int?, max: Int?)] {
@@ -126,27 +129,32 @@ struct HeartRateView: View {
             updateWeekDates()
             loadHeartRateData()
             loadAverageHeartRate()
+            refreshAiContent()
         }
         .onChange(of: selectedMode) {
             if selectedMode == .week {
                 updateWeekDates()
             }
             loadAverageHeartRate()
+            refreshAiContent()
         }
         .onChange(of: selectedDate) {
             if selectedMode == .day || selectedMode == .month {
                 loadAverageHeartRate()
             }
+            refreshAiContent()
         }
         .onChange(of: weekStartDate) {
             if selectedMode == .week {
                 loadAverageHeartRate()
             }
+            refreshAiContent()
         }
         .onChange(of: weekEndDate) {
             if selectedMode == .week {
                 loadAverageHeartRate()
             }
+            refreshAiContent()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -186,6 +194,7 @@ struct HeartRateView: View {
                 await MainActor.run {
                     allHeartRateRecords = records.sorted { $0.timestamp < $1.timestamp }
                     isLoading = false
+                    refreshAiContent()
                 }
             } catch {
                 await MainActor.run {
@@ -820,9 +829,21 @@ struct HeartRateView: View {
                 .foregroundColor(.primaryGreen)
             
             if hasHighlightsData {
-                VStack(alignment: .leading, spacing: 0) {
-                    HighlightRow(number: 1, text: "Stable heart rate for 5 hours", isLast: false)
-                    HighlightRow(number: 2, text: "Rest periods usually fall between 12 am to 9 am", isLast: true)
+                if highlightMessages.isEmpty {
+                    Text("No highlights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(highlightMessages.enumerated()), id: \.offset) { index, message in
+                            HighlightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == highlightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate highlights")
@@ -844,9 +865,21 @@ struct HeartRateView: View {
                 .foregroundColor(.primaryGreen)
             
             if hasInsightsData {
-                VStack(alignment: .leading, spacing: 0) {
-                    InsightRow(number: 1, text: "Try to complete one Breath Training every day", isLast: false)
-                    InsightRow(number: 2, text: "Don't smoke!", isLast: true)
+                if insightMessages.isEmpty {
+                    Text("No insights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insightMessages.enumerated()), id: \.offset) { index, message in
+                            InsightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == insightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate insights")
@@ -972,6 +1005,41 @@ struct HeartRateView: View {
             return (selectedDate, selectedDate)
         }
     }
+
+    // MARK: - AI Highlights & Insights
+    private func refreshAiContent() {
+        guard hasHeartRateData else {
+            highlightMessages = []
+            insightMessages = []
+            return
+        }
+        
+        let daysBack = aiDaysBack()
+        Task {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: .heartRate, daysBack: daysBack)
+                let descriptions = anomalies.map { $0.description }
+                let recommendations = anomalies.compactMap { $0.recommendation }
+                
+                await MainActor.run {
+                    highlightMessages = descriptions
+                    insightMessages = recommendations
+                }
+            } catch {
+                await MainActor.run {
+                    highlightMessages = []
+                    insightMessages = []
+                }
+            }
+        }
+    }
+    
+    private func aiDaysBack() -> Int {
+        let range = analyticsDateRange()
+        let days = Calendar.current.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        return max(1, days + 1)
+    }
+    
 }
 
 // Colors used for the Heart Rate page

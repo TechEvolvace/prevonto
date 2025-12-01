@@ -50,6 +50,7 @@ class AuthManager: ObservableObject {
             guard let self = self else { return }
             self.accessToken = nil
             self.isAuthenticated = false
+            APIClient.shared.setAccessToken(nil)
         }
     }
     

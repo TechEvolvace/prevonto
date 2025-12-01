@@ -388,7 +388,7 @@ struct StepsDetailsView: View {
                 .foregroundColor(.proPrimary)
                 .padding(.horizontal, 24)
             
-            // Horizontal scrolling trend cards
+            // Horizontal scrolling trend cards providing some insights
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     trendCard(
@@ -414,14 +414,6 @@ struct StepsDetailsView: View {
                 }
                 .padding(.horizontal, 24)
             }
-            
-            // Insights
-            VStack(alignment: .leading, spacing: 0) {
-                StepsInsightRow(number: 1, text: "Your step count is 15% higher than last week's average", isLast: false)
-                StepsInsightRow(number: 2, text: "Most active hours: 8 AM - 10 AM and 4 PM - 6 PM", isLast: false)
-                StepsInsightRow(number: 3, text: "Try to maintain consistent activity throughout the day", isLast: true)
-            }
-            .padding(.horizontal, 24)
         }
         .padding(.top, 16)
     }

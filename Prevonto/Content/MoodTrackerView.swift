@@ -341,9 +341,11 @@ struct MoodTrackerView: View {
     @State private var isSaving = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var insightMessages: [String] = []
     
     // Services within this app used to communicate with the API
     private let metricsService = MetricsService.shared
+    private let aiService = AIService.shared
 
     var body: some View {
         ZStack {
@@ -392,6 +394,13 @@ struct MoodTrackerView: View {
         }
         .onAppear {
             loadMoodData()
+            refreshAiContent()
+        }
+        .onChange(of: selectedTab) {
+            refreshAiContent()
+        }
+        .onChange(of: currentDate) {
+            refreshAiContent()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") { }
@@ -432,6 +441,7 @@ struct MoodTrackerView: View {
                 await MainActor.run {
                     entries = moodEntries.sorted { $0.date > $1.date }
                     isLoading = false
+                    refreshAiContent()
                 }
             } catch {
                 await MainActor.run {
@@ -914,8 +924,21 @@ struct MoodTrackerView: View {
             
             // Display insights only if there is data
             if !entries.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    MoodInsightRow(number: 1, text: "On the days you get more than 8 hours of sleep, you tend to have a 20% increase in energy levels as compared to your average.", isLast: true)
+                if insightMessages.isEmpty {
+                    Text("No insights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insightMessages.enumerated()), id: \.offset) { index, message in
+                            MoodInsightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == insightMessages.count - 1
+                            )
+                        }
+                    }
                 }
             } else {
                 Text("No data available to generate insights")
@@ -927,6 +950,45 @@ struct MoodTrackerView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 30)
     }
+
+    // MARK: - AI Insights
+    private func refreshAiContent() {
+        guard !entries.isEmpty else {
+            insightMessages = []
+            return
+        }
+        
+        let daysBack = aiDaysBack()
+        Task {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: .energyMood, daysBack: daysBack)
+                let recommendations = anomalies.compactMap { $0.recommendation }
+                
+                await MainActor.run {
+                    insightMessages = recommendations
+                }
+            } catch {
+                await MainActor.run {
+                    insightMessages = []
+                }
+            }
+        }
+    }
+    
+    private func aiDaysBack() -> Int {
+        let calendar = Calendar.current
+        if selectedTab == "Week" {
+            return 7
+        }
+        
+        if let monthInterval = calendar.dateInterval(of: .month, for: currentDate) {
+            let days = calendar.dateComponents([.day], from: monthInterval.start, to: monthInterval.end).day ?? 0
+            return max(1, days)
+        }
+        
+        return 1
+    }
+    
 }
 
 // Calendar interface with each day recorded with a mood marked
