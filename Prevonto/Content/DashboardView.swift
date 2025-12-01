@@ -362,14 +362,14 @@ struct DashboardView: View {
     var heartRateCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(averageHeartRate.map { "\(Int($0))" } ?? "--")
-                        .font(.custom("Noto Sans", size: 32))
+                        .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
+                        .foregroundColor(Color.secondaryGreen)
                     Text("bpm")
                         .font(.custom("Noto Sans", size: 18))
-                        .foregroundColor(Color(red: 0.368, green: 0.553, blue: 0.372))
+                        .foregroundColor(Color.secondaryGreen)
                     Spacer()
                 }
                 
@@ -451,34 +451,39 @@ struct DashboardView: View {
     
     // MARK: - Blood Glucose Card
     var bloodGlucoseCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Blood Glucose")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-            
+        VStack(alignment: .leading, spacing: 0) {
             Spacer()
+                .frame(height: 14)
             
             if let avg = averageBloodGlucose {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(Int(avg))")
-                        .font(.custom("Noto Sans", size: 24))
+                        .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                        .foregroundColor(Color.secondaryGreen)
                     Text("mg/dL")
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                        .font(.custom("Noto Sans", size: 18))
+                        .foregroundColor(Color.secondaryGreen)
                 }
+                .padding(.bottom, 2)
                 
                 Text("Average Blood Glucose")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
+                Text("Blood Glucose")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.secondaryGreen)
+                    .padding(.bottom, 8)
+                
                 Text("View your blood glucose data and trends")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                     .multilineTextAlignment(.leading)
             }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -490,34 +495,39 @@ struct DashboardView: View {
     
     // MARK: - Blood Pressure Card
     var bloodPressureCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Blood Pressure")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-            
+        VStack(alignment: .leading, spacing: 0) {
             Spacer()
-            
+                .frame(height: 14)
+        
             if let bp = averageBloodPressure {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(Int(bp.systolic))/\(Int(bp.diastolic))")
-                        .font(.custom("Noto Sans", size: 24))
+                        .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                        .foregroundColor(Color.secondaryGreen)
                     Text("mmHg")
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                        .font(.custom("Noto Sans", size: 18))
+                        .foregroundColor(Color.secondaryGreen)
                 }
+                .padding(.bottom, 2)
                 
                 Text("Average Blood Pressure")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
+                Text("Blood Pressure")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.secondaryGreen)
+                    .padding(.bottom, 8)
+                
                 Text("View your blood pressure data and trends")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                     .multilineTextAlignment(.leading)
             }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -529,34 +539,39 @@ struct DashboardView: View {
     
     // MARK: - SpO2 Card
     var spo2Card: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("SpO2")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-            
+        VStack(alignment: .leading, spacing: 0) {
             Spacer()
+                .frame(height: 14)
             
             if let avg = averageSpO2 {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(Int(avg))")
-                        .font(.custom("Noto Sans", size: 24))
+                        .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                        .foregroundColor(Color.secondaryGreen)
                     Text("%")
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                        .font(.custom("Noto Sans", size: 18))
+                        .foregroundColor(Color.secondaryGreen)
                 }
+                .padding(.bottom, 2)
                 
                 Text("Average SpO2")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
+                Text("SpO2")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.secondaryGreen)
+                    .padding(.bottom, 8)
+                
                 Text("View your SpO2 data and trends")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                     .multilineTextAlignment(.leading)
             }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -568,13 +583,9 @@ struct DashboardView: View {
     
     // MARK: - Weight Card
     var weightCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Weight")
-                .font(.custom("Noto Sans", size: 18))
-                .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
-            
+        VStack(alignment: .leading, spacing: 0) {
             Spacer()
+                .frame(height: 14)
             
             if let avgWeight = averageWeight {
                 // Get weight unit from onboarding
@@ -584,23 +595,32 @@ struct DashboardView: View {
                 
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(String(format: "%.1f", displayWeight))
-                        .font(.custom("Noto Sans", size: 24))
+                        .font(.custom("Noto Sans", size: 28))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 0.36, green: 0.55, blue: 0.37))
+                        .foregroundColor(Color.secondaryGreen)
                     Text(unitText)
-                        .font(.custom("Noto Sans", size: 14))
-                        .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
+                        .font(.custom("Noto Sans", size: 18))
+                        .foregroundColor(Color.secondaryGreen)
                 }
+                .padding(.bottom, 2)
                 
                 Text("Average Weight")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
             } else {
+                Text("Weight")
+                    .font(.custom("Noto Sans", size: 18))
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.secondaryGreen)
+                    .padding(.bottom, 8)
+                
                 Text("View your weight data and trends")
                     .font(.custom("Noto Sans", size: 14))
                     .foregroundColor(Color(red: 0.40, green: 0.42, blue: 0.46))
                     .multilineTextAlignment(.leading)
             }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
@@ -1228,6 +1248,7 @@ struct DashboardView: View {
             }
         }
     }
+
     
     private func loadHealthData() {
         // Load health data from HealthKit
