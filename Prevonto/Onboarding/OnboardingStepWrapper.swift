@@ -8,7 +8,7 @@ struct OnboardingStepWrapper<Content: View>: View {
     let title: String
     let content: Content
 
-    init(step: Int, totalSteps: Int = 9, title: String, @ViewBuilder content: () -> Content) {
+    init(step: Int, totalSteps: Int = 10, title: String, @ViewBuilder content: () -> Content) {
         self.step = step
         self.totalSteps = totalSteps
         self.title = title
@@ -17,10 +17,15 @@ struct OnboardingStepWrapper<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 30) {
-            // Step indicator and progress bar
+            // Segmented progress bar
             VStack(alignment: .leading, spacing: 8) {
-                ProgressView(value: Double(step + 1), total: Double(totalSteps))
-                    .accentColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                SegmentedProgressBar(
+                    currentStep: step + 1,
+                    totalSteps: totalSteps,
+                    activeColor: Color.primaryGreen,
+                    inactiveColor: Color.gray.opacity(0.3)
+                )
+                
                 Text("\(step + 1) of \(totalSteps)")
                     .foregroundColor(.gray)
                     .font(.footnote)
@@ -30,7 +35,7 @@ struct OnboardingStepWrapper<Content: View>: View {
             Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                .foregroundColor(Color.primaryGreen)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             content
@@ -38,5 +43,23 @@ struct OnboardingStepWrapper<Content: View>: View {
             Spacer()
         }
         .padding()
+    }
+}
+
+// MARK: - Segmented Progress Bar
+struct SegmentedProgressBar: View {
+    let currentStep: Int
+    let totalSteps: Int
+    let activeColor: Color
+    let inactiveColor: Color
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(1...totalSteps, id: \.self) { step in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(step <= currentStep ? activeColor : inactiveColor)
+                    .frame(height: 4)
+            }
+        }
     }
 }

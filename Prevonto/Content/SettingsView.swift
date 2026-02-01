@@ -6,6 +6,11 @@ struct SettingsView: View {
     @State private var showLogoutSheet = false
     @State private var showDeleteSheet = false
     @State private var navigateToSignUp = false
+    @State private var isLoggingOut = false
+    @State private var isDeletingAccount = false
+    @StateObject private var authManager = AuthManager.shared
+    @State private var currentUser: User?
+    @State private var isLoadingUser = false
     
     var body: some View {
         NavigationStack {
@@ -39,6 +44,9 @@ struct SettingsView: View {
                 }
                 .navigationBarHidden(true)
             }
+        }
+        .onAppear {
+            loadCurrentUser()
         }
         // Logout Confirmation Sheet
         .sheet(isPresented: $showLogoutSheet) {
@@ -77,10 +85,16 @@ struct SettingsView: View {
                     
                     // Log out button in Log out modal sheet
                     Button(action: {
-                        showLogoutSheet = false
-                        navigateToSignUp = true
+                        logout()
                     }) {
+                        HStack {
+                            if isLoggingOut {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
                         Text("Log Out")
+                            }
+                        }
                             .font(.custom("Noto Sans", size: 18))
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -90,6 +104,7 @@ struct SettingsView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
+                    .disabled(isLoggingOut)
                 }
             }
             .presentationDetents([.height(250)])
@@ -133,10 +148,16 @@ struct SettingsView: View {
                     
                     // Delete Account button in Delete Account modal sheet
                     Button(action: {
-                        showDeleteSheet = false
-                        navigateToSignUp = true
+                        deleteAccount()
                     }) {
+                        HStack {
+                            if isDeletingAccount {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
                         Text("Delete Account")
+                            }
+                        }
                             .font(.custom("Noto Sans", size: 18))
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -146,16 +167,16 @@ struct SettingsView: View {
                             .cornerRadius(12)
                     }
                     .padding(.horizontal, 24)
+                    .disabled(isDeletingAccount)
                 }
             }
             .presentationDetents([.height(250)])
             .background(Color.white)
             .cornerRadius(18)
         }
-        // Navigate to SignUp without back button
-        .navigationDestination(isPresented: $navigateToSignUp) {
-            SignUpView()
-                .navigationBarBackButtonHidden(true)
+        // Navigate to AuthView (which manages SignUp/SignIn toggle) without back button
+        .fullScreenCover(isPresented: $navigateToSignUp) {
+            AuthView()
         }
     }
     
@@ -168,7 +189,7 @@ struct SettingsView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(Color.primaryGreen)
                         .frame(width: 40, height: 40)
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -179,7 +200,7 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.custom("Noto Sans", size: 28))
                     .fontWeight(.black)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                 
                 Spacer()
                 
@@ -212,12 +233,12 @@ struct SettingsView: View {
                         .padding(.trailing, 4)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Your Name")
+                        Text(currentUser?.name ?? "Your Name")
                             .font(.custom("Noto Sans", size: 16))
                             .fontWeight(.medium)
                             .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                         
-                        Text("yourname@example.com")
+                        Text(currentUser?.email ?? "yourname@example.com")
                             .font(.custom("Noto Sans", size: 14))
                             .foregroundColor(Color(red: 0.404, green: 0.420, blue: 0.455))
                     }
@@ -237,7 +258,7 @@ struct SettingsView: View {
         .padding(.trailing, 16)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Personal Account Settings Section
@@ -309,7 +330,7 @@ struct SettingsView: View {
                     )
                 )
             }
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
     
@@ -332,7 +353,7 @@ struct SettingsView: View {
                 .buttonStyle(PlainButtonStyle())
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
         }
     }
     
@@ -358,7 +379,74 @@ struct SettingsView: View {
                 .buttonStyle(PlainButtonStyle())
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    // MARK: - Load User Data
+    private func loadCurrentUser() {
+        guard !isLoadingUser else { return }
+        isLoadingUser = true
+        
+        Task {
+            do {
+                let user = try await AuthService.shared.getCurrentUser()
+                await MainActor.run {
+                    currentUser = user
+                    isLoadingUser = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoadingUser = false
+                    // Silently fail - user can still use settings
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private func logout() {
+        isLoggingOut = true
+        
+        Task {
+            do {
+                try await AuthService.shared.logout()
+                await MainActor.run {
+                    isLoggingOut = false
+                    showLogoutSheet = false
+                    navigateToSignUp = true
+                }
+            } catch {
+                // Even if logout fails on server, clear local tokens
+                await MainActor.run {
+                    AuthManager.shared.clearTokens()
+                    isLoggingOut = false
+                    showLogoutSheet = false
+                    navigateToSignUp = true
+                }
+            }
+        }
+    }
+    
+    private func deleteAccount() {
+        isDeletingAccount = true
+        
+        Task {
+            do {
+                try await SettingsService.shared.deleteAccount(password: nil)
+                await MainActor.run {
+                    isDeletingAccount = false
+                    showDeleteSheet = false
+                    navigateToSignUp = true
+                }
+            } catch {
+                await MainActor.run {
+                    isDeletingAccount = false
+                    // Show error - for now just close sheet
+                    // TODO: Show error alert
+                    showDeleteSheet = false
+                }
+            }
         }
     }
 }
@@ -405,7 +493,7 @@ struct SettingsRowView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - To preview Settings page, for only developer uses
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView()

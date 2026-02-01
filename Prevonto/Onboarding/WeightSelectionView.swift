@@ -1,12 +1,13 @@
-// Onboarding page 2 out of 9 prompts user for their weight
+// Onboarding page 2 out of 10 prompts user for their weight
 import SwiftUI
 
 struct WeightSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedUnit: String = "lbs"
     @State private var selectedWeight: Int = 140
 
-    let lbRange = Array(80...300)
-    let kgRange = Array(36...136)
+    let lbRange = Array(0...500)
+    let kgRange = Array(0...227)
 
     let next: () -> Void
     let back: () -> Void
@@ -22,50 +23,67 @@ struct WeightSelectionView: View {
             VStack(spacing: 24) {
                 // Weight unit conversion between the 2 weight unit types
                 HStack(spacing: 32) {
+                    // kg converted to lbs when lbs button is selected
                     UnitButton(title: "lbs", selected: $selectedUnit) {
-                        selectedWeight = Int(Double(selectedWeight) * 2.20462)
+                        let converted = Int(Double(selectedWeight) * 2.205)
+                        selectedWeight = min(max(converted, lbRange.first ?? 0), lbRange.last ?? 500)
                     }
+                    // lbs converted to kg when kg button is selected
                     UnitButton(title: "kg", selected: $selectedUnit) {
-                        selectedWeight = Int(Double(selectedWeight) * 0.453592)
+                        let converted = Int(Double(selectedWeight) * 0.45359237)
+                        selectedWeight = min(max(converted, kgRange.first ?? 0), kgRange.last ?? 227)
                     }
                 }
 
                 // Display weight amount in current unit
-                HStack(spacing: 4) {
+                HStack(spacing: 8) {
                     Text("\(selectedWeight)")
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+                        .foregroundColor(Color.secondaryGreen)
                     Text(selectedUnit)
                         .foregroundColor(.gray)
                         .font(.title3)
                 }
 
                 // Picker for user to swipe or drag to correct weight
-                WeightPickerView(values: currentRange, selected: $selectedWeight)
+                WeightPickerView(values: currentRange, selected: $selectedWeight, unit: selectedUnit)
+                    .frame(maxHeight: .infinity)
 
                 // Next button
                 Button {
+                    dataManager.currentWeight = Double(selectedWeight)
+                    dataManager.weightUnit = selectedUnit
                     next()
                 } label: {
                     Text("Next")
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .background(Color.primaryGreen)
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved weight if any
+            if let savedWeight = dataManager.currentWeight {
+                selectedWeight = Int(savedWeight)
+            }
+            if let savedUnit = dataManager.weightUnit {
+                selectedUnit = savedUnit
             }
         }
     }
 }
 
-// Picker for user to swipe or drag to correct weight
+// Picker for user to swipe or drag to correct weights
 struct WeightPickerView: View {
     let values: [Int]
     @Binding var selected: Int
+    let unit: String // Track unit to detect when it changes
 
-    let itemWidth: CGFloat = 40
-    let spacing: CGFloat = 12
+    let itemWidth: CGFloat = 50
+    let spacing: CGFloat = 4
 
     @State private var scrollOffset: CGFloat = 0.0
     @State private var scrollViewWidth: CGFloat = 0.0
@@ -92,21 +110,22 @@ struct WeightPickerView: View {
                                             selected = val
                                         }
                                     }
-                                    .onChange(of: distance) { _ in
+                                    .onChange(of: distance) {
                                         if isSelected {
                                             selected = val
                                         }
                                     }
 
-                                VStack(spacing: 6) {
+                                VStack(spacing: 8) {
                                     Rectangle()
-                                        .frame(width: 2, height: val % 10 == 0 ? 28 : 14)
-                                        .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray.opacity(0.3))
+                                        .frame(width: 2.5, height: val % 10 == 0 ? 40 : val % 5 == 0 ? 40 : 30)
+                                        .foregroundColor(isSelected ? Color.secondaryGreen : val % 5 == 0 ? Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6) : .gray.opacity(0.3))
+                                        .padding(.top, val % 5 == 0 ? 5 : 10)
 
                                     if val % 10 == 0 {
                                         Text("\(val)")
-                                            .font(.caption)
-                                            .foregroundColor(isSelected ? Color(red: 0.39, green: 0.59, blue: 0.38) : .gray)
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(isSelected ? Color.secondaryGreen : Color(red: 36/255, green: 42/255, blue: 52/255).opacity(0.6))
                                     }
                                 }
                                 .frame(width: itemWidth)
@@ -119,28 +138,86 @@ struct WeightPickerView: View {
                     .onAppear {
                         scrollViewWidth = geo.size.width
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            proxy.scrollTo(selected, anchor: .center)
+                            if values.contains(selected) {
+                                proxy.scrollTo(selected, anchor: .center)
+                            }
+                        }
+                    }
+                    .onChange(of: unit) {
+                        // When unit changes, scroll to the converted weight value
+                        if values.contains(selected) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    proxy.scrollTo(selected, anchor: .center)
+                                }
+                            }
                         }
                     }
                 }
             }
+            .padding(.top, 16)
 
-            // Vertical indicator with caps (design only)
-            VStack(spacing: 4) {
-                Circle()
-                    .frame(width: 8, height: 8)
-                RoundedRectangle(cornerRadius: 1)
-                    .frame(width: 2, height: 50)
-                Circle()
-                    .frame(width: 8, height: 8)
+            // Vertical slider indicator on weight slider
+            VStack(spacing: 5) {
+                // Top triangle pointing down
+                RoundedTriangle()
+                    .rotation(.degrees(180))
+                    .frame(width: 10, height: 10)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .frame(width: 3, height: 60)
+                // Bottom triangle pointing up
+                RoundedTriangle()
+                    .frame(width: 10, height: 10)
             }
-            .foregroundColor(Color(red: 0.39, green: 0.59, blue: 0.38))
+            .foregroundColor(Color.secondaryGreen)
             .frame(maxWidth: .infinity, alignment: .center)
         }
-        .frame(height: 240)
+        .frame(height: 320)
     }
 }
 
+
+// Rounded triangle shape for slider marker caps of green slider mark
+struct RoundedTriangle: Shape {
+    var cornerRadius: CGFloat = 1.5
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let curveAmount: CGFloat = 2.0 // Amount of curve for the edges
+        
+        // Triangle pointing up: top point, bottom left, bottom right
+        let top = CGPoint(x: rect.midX, y: rect.minY)
+        let bottomLeft = CGPoint(x: rect.minX, y: rect.maxY)
+        let bottomRight = CGPoint(x: rect.maxX, y: rect.maxY)
+        
+        // Start from top point
+        path.move(to: top)
+        
+        // Curved edge from top to bottom left
+        let leftControl = CGPoint(
+            x: top.x + (bottomLeft.x - top.x) * 0.5 - curveAmount,
+            y: top.y + (bottomLeft.y - top.y) * 0.5 + curveAmount
+        )
+        path.addQuadCurve(to: bottomLeft, control: leftControl)
+        
+        // Curved edge from bottom left to bottom right
+        let bottomControl = CGPoint(
+            x: rect.midX,
+            y: rect.maxY + curveAmount
+        )
+        path.addQuadCurve(to: bottomRight, control: bottomControl)
+        
+        // Curved edge from bottom right back to top
+        let rightControl = CGPoint(
+            x: top.x + (bottomRight.x - top.x) * 0.5 + curveAmount,
+            y: top.y + (bottomRight.y - top.y) * 0.5 + curveAmount
+        )
+        path.addQuadCurve(to: top, control: rightControl)
+        
+        path.closeSubpath()
+        return path
+    }
+}
 
 // Weight Unit toggle selection buttons
 struct UnitButton: View {
@@ -161,7 +238,7 @@ struct UnitButton: View {
                 .padding(.horizontal, 24)
                 .padding(.vertical, 10)
                 .frame(minWidth: 80)
-                .background(selected == title ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.clear)
+                .background(selected == title ? Color.secondaryGreen : Color.clear)
                 .foregroundColor(selected == title ? .white : .gray)
                 .cornerRadius(12)
                 .shadow(color: selected == title ? Color.green.opacity(0.25) : .clear, radius: 8, x: 0, y: 4)

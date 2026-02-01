@@ -59,7 +59,7 @@ struct AppIntroView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 12, weight: .semibold))
                         }
-                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(Color.primaryGreen)
                         .font(.system(size: 16, weight: .regular))
                     }
                     .padding(.top, 24)
@@ -74,13 +74,13 @@ struct AppIntroView: View {
                     VStack(spacing: 0) {
                         Text(pages[currentPageIndex].boldTitle)
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                            .foregroundColor(Color.primaryGreen)
                             .multilineTextAlignment(.center)
                         Text(pages[currentPageIndex].italicTitle)
                             .font(.system(size: 45, weight: .light))
                             .italic()
                             .tracking(2)
-                            .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                            .foregroundColor(Color.primaryGreen)
                             .multilineTextAlignment(.center)
                     }
                     // Title moves up when subtitle appears
@@ -92,7 +92,7 @@ struct AppIntroView: View {
                         Text(pages[currentPageIndex].subtitle)
                             .font(.body)
                             .fontWeight(.light)
-                            .foregroundColor(Color(red: 0.25, green: 0.33, blue: 0.44))
+                            .foregroundColor(Color.darkGrayText)
                             .multilineTextAlignment(.center)
                             .padding(.top, 8)
                             .padding(.horizontal, 48)
@@ -123,7 +123,7 @@ struct AppIntroView: View {
                     if canInteract {
                         Text("Swipe Up for Next")
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                            .foregroundColor(Color.primaryGreen)
                             // Animated appearance of the instruction text
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
@@ -185,9 +185,9 @@ struct AppIntroView: View {
             arrowProgress = 0.0
             startSubtitleTimer()
         }
-        // Animated page transition to SignUpView page!
+        // Animated page transition to AuthView page (which shows Sign Up or Sign In)!
         .fullScreenCover(isPresented: $showContent) {
-            SignUpView()
+            AuthView()
         }
     }
 
@@ -257,7 +257,7 @@ struct AnimatedProgressArrow: View {
             Image(systemName: "arrow.up")
                 .font(.title)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                .foregroundColor(Color.primaryGreen)
                 .padding(8)
                 .mask(
                     // Mask that reveals the green arrow from bottom to top based on progress
@@ -289,7 +289,7 @@ struct VerticalProgressIndicator: View {
             ForEach(0..<totalSteps, id: \.self) { index in
                 Capsule()
                     .fill(index == currentStep
-                        ? Color(red: 0.01, green: 0.33, blue: 0.18)
+                        ? Color.primaryGreen
                         : Color.gray.opacity(0.3))
                     .frame(width: 4, height: index == currentStep ? 36 : 12)
             }

@@ -2,6 +2,8 @@
 import SwiftUI
 
 struct SignUpView: View {
+    @Binding var showSignIn: Bool
+    
     @State private var fullName = ""
     @State private var email = ""
     @State private var password = ""
@@ -11,8 +13,15 @@ struct SignUpView: View {
 
     @State private var showValidationMessage = false
     @State private var errorMessage = ""
+    @State private var isLoading = false
     
-    let testMode = true
+    @StateObject private var authManager = AuthManager.shared
+    
+    init(showSignIn: Binding<Bool> = .constant(false)) {
+        _showSignIn = showSignIn
+    }
+    
+    let testMode = false // Changed to false to use API
     
     // Supportive quotes to randomly display
     let healthQuotes = [
@@ -26,14 +35,13 @@ struct SignUpView: View {
     ]
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
+        VStack(spacing: 16) {
                 Spacer()
 
                 Text("Let’s get Started")
                     .font(.title)
                     .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                    .foregroundColor(Color.primaryGreen)
                     .padding(.bottom, 0)
 
                 // Display a randomly chosen quote
@@ -49,6 +57,7 @@ struct SignUpView: View {
                     TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
                     SecureField("Password", text: $password)
                     SecureField("Confirm Password", text: $confirmPassword)
                 }
@@ -76,17 +85,14 @@ struct SignUpView: View {
                         .padding(.horizontal)
                 }
 
-                // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
-                NavigationLink(destination: OnboardingFlowView(), isActive: $navigateToGender) {
-                    EmptyView()
-                }
 
-                // Join button to check all entered credentials are valid before then proceed to the next page!
                 // User clicks on the Join button after entering their credentials to successfully create their new acocunt!
                 Button(action: {
                     if testMode {
+                        // For quicker testing by the developer
                         navigateToGender = true
                     } else {
+                        // Check for valid credentials before user signs up for a new account
                         if fullName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty {
                             errorMessage = "Please fill in all fields."
                             showValidationMessage = true
@@ -97,18 +103,32 @@ struct SignUpView: View {
                             errorMessage = "Please accept the terms and conditions."
                             showValidationMessage = true
                         } else {
-                            showValidationMessage = false
-                            navigateToGender = true
+                            // Validate password complexity (matches API requirements)
+                            if !isValidPassword(password) {
+                                errorMessage = "Password must be at least 8 characters. Password must also include at least an uppercase letter, an lowercase letter, and a number."
+                                showValidationMessage = true
+                            } else {
+                                showValidationMessage = false
+                                registerUser()
+                            }
                         }
                     }
                 }) {
-                    Text("Join")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
-                        .cornerRadius(12)
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Join")
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.primaryGreen)
+                    .cornerRadius(12)
                 }
+                .disabled(isLoading)
 
 
                 HStack {
@@ -119,15 +139,74 @@ struct SignUpView: View {
                     Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.3))
                 }
 
-                HStack(spacing: 20) {
-                    // Placeholder for extra buttons
+                // Link to toggle to Sign In page
+                HStack {
+                    Text("Already have an account?")
+                        .foregroundColor(.gray)
+                        .font(.footnote)
+                    Button(action: {
+                        withAnimation {
+                            showSignIn = true
+                        }
+                    }) {
+                        Text("Sign In")
+                            .foregroundColor(Color.primaryGreen)
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                    }
                 }
 
                 Spacer()
             }
             .padding()
-        }.navigationViewStyle(StackNavigationViewStyle())
-            .preferredColorScheme(.light)
+            // After signing up for an account, next page that shows up is controlled by OnboardingFlowView.swift file
+            .navigationDestination(isPresented: $navigateToGender) {
+                OnboardingFlowView()
+            }
+    }
+    
+    // MARK: - Helper Functions
+    private func isValidPassword(_ password: String) -> Bool {
+        let hasDigit = password.rangeOfCharacter(from: .decimalDigits) != nil
+        let hasUpperCase = password.rangeOfCharacter(from: .uppercaseLetters) != nil
+        let hasLowerCase = password.rangeOfCharacter(from: .lowercaseLetters) != nil
+        return hasDigit && hasUpperCase && hasLowerCase && password.count >= 8
+    }
+    
+    private func registerUser() {
+        isLoading = true
+        errorMessage = ""
+        showValidationMessage = false
+        
+        Task {
+            do {
+                // Register user
+                let _ = try await AuthService.shared.register(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password,
+                    name: fullName.isEmpty ? nil : fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                
+                // Accept consent (HIPAA consent)
+                try await AuthService.shared.acceptConsent(consentType: "hipaa_consent", version: "1.0")
+                
+                // Navigate to onboarding
+                await MainActor.run {
+                    isLoading = false
+                    navigateToGender = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    if let apiError = error as? APIError {
+                        errorMessage = apiError.errorDescription ?? "Registration failed"
+                    } else {
+                        errorMessage = error.localizedDescription
+                    }
+                    showValidationMessage = true
+                }
+            }
+        }
     }
 }
 
@@ -137,12 +216,21 @@ struct CheckboxToggleStyle: ToggleStyle {
             Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
                 .resizable()
                 .frame(width: 20, height: 20)
-                .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                .foregroundColor(Color.primaryGreen)
                 .onTapGesture {
                     configuration.isOn.toggle()
                 }
 
             configuration.label
+        }
+    }
+}
+
+// To preview the Sign Up page, for only developer uses
+struct SignUpView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            SignUpView()
         }
     }
 }

@@ -1,7 +1,8 @@
-// Onboarding page 5 out of 9 prompts user for their level amount of sleep
+// Onboarding page 5 out of 10 prompts user for their level amount of sleep
 import SwiftUI
 
 struct SleepLevelSelectionView: View {
+    @StateObject private var dataManager = OnboardingDataManager.shared
     @State private var selectedLevel: Int? = nil
     
     let next: () -> Void
@@ -12,22 +13,40 @@ struct SleepLevelSelectionView: View {
         let id: Int
         let title: String
         let subtitle: String
+        let apiValue: String // API enum value
     }
 
+    // Available sleep level options user can select in this page mapped to appropriate API values
     let sleepOptions: [SleepOption] = [
-        .init(id: 1, title: "😴 Very Low", subtitle: "~0–3hr daily"),
-        .init(id: 2, title: "😪 Low", subtitle: "~3–5hr daily"),
-        .init(id: 3, title: "💤 Moderate", subtitle: "~5–8hr daily"),
-        .init(id: 4, title: "😌 High", subtitle: "~8–10hr daily"),
-        .init(id: 5, title: "🛌 Excellent", subtitle: "10+ hr daily")
+        .init(id: 1, title: "Very Low", subtitle: "~0–3 hours daily", apiValue: "poor"),
+        .init(id: 2, title: "Low", subtitle: "~3–5 hours daily", apiValue: "poor"),
+        .init(id: 3, title: "Moderate", subtitle: "~5–8 hours daily", apiValue: "fair"),
+        .init(id: 4, title: "High", subtitle: "~8–10 hours daily", apiValue: "good"),
+        .init(id: 5, title: "Excellent", subtitle: "10+ hours daily", apiValue: "excellent")
     ]
+    
+    private func mapSleepLevelToAPI(_ levelId: Int?) -> String? {
+        guard let levelId = levelId else { return nil }
+        return sleepOptions.first(where: { $0.id == levelId })?.apiValue
+    }
+    
+    private func mapAPIToSleepLevel(_ apiValue: String?) -> Int? {
+        guard let apiValue = apiValue else { return nil }
+        return sleepOptions.first(where: { $0.apiValue == apiValue })?.id
+    }
 
     var body: some View {
         OnboardingStepWrapper(step: step, title: "What is your current\nsleep level?") {
             VStack(spacing: 20) {
                 ForEach(sleepOptions) { option in
                     Button(action: {
-                        selectedLevel = option.id
+                        // Handles button selection and deselection
+                        if selectedLevel == option.id {
+                            // Lets the user deselect their selection
+                            selectedLevel = nil
+                        } else {
+                            selectedLevel = option.id
+                        }
                     }) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -49,13 +68,13 @@ struct SleepLevelSelectionView: View {
 
                                 if selectedLevel == option.id {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(Color(red: 0.01, green: 0.33, blue: 0.18))
+                                        .foregroundColor(Color.primaryGreen)
                                         .font(.system(size: 10, weight: .bold))
                                 }
                             }
                         }
                         .padding()
-                        .background(selectedLevel == option.id ? Color(red: 0.39, green: 0.59, blue: 0.38) : Color.white)
+                        .background(selectedLevel == option.id ? Color.secondaryGreen : Color.white)
                         .foregroundColor(selectedLevel == option.id ? .white : .black)
                         .cornerRadius(12)
                         .overlay(
@@ -69,16 +88,23 @@ struct SleepLevelSelectionView: View {
 
                 Button {
                     if selectedLevel != nil {
+                        dataManager.sleepLevel = mapSleepLevelToAPI(selectedLevel)
                         next()
                     }
                 } label: {
                     Text("Next")
-                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color(red: 0.01, green: 0.33, blue: 0.18))
+                        .foregroundColor(selectedLevel != nil ? .white : .gray)
+                        .background(selectedLevel != nil ? Color.primaryGreen : .gray.opacity(0.3))
                         .cornerRadius(12)
                 }
+            }
+        }
+        .onAppear {
+            // Load saved sleep level if any
+            if let savedLevel = dataManager.sleepLevel {
+                selectedLevel = mapAPIToSleepLevel(savedLevel)
             }
         }
     }

@@ -1,0 +1,1215 @@
+// Blood Pressure page allows user to see and record their blood pressure on a weekly basis.
+import SwiftUI
+import Charts
+
+// Properties of Blood Pressure data recorded from users
+struct BloodPressureRecord: Identifiable {
+    let id = UUID()
+    let date: Date
+    let systolic: Int      // in mmHg units
+    let diastolic: Int     // in mmHg units
+    let pulse: Int         // in BPM (Beats per minute) units
+}
+
+// Measurement type for chart display
+enum BloodPressureMeasurement: String, CaseIterable {
+    case sys = "SYS"
+    case dia = "DIA"
+    case pulse = "Pulse"
+    
+    var unit: String {
+        switch self {
+        case .sys, .dia:
+            return "mmHg"
+        case .pulse:
+            return "BPM"
+        }
+    }
+    
+    var chartLabel: String {
+        switch self {
+        case .sys:
+            return "SYS"
+        case .dia:
+            return "DIA"
+        case .pulse:
+            return "Pulse"
+        }
+    }
+}
+
+struct BloodPressureView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    // State for week selection
+    @State private var selectedDate: Date = Date()
+    @State private var weekStartDate: Date = Date()
+    @State private var weekEndDate: Date = Date()
+    @State private var showingStartDatePicker: Bool = false
+    @State private var showingEndDatePicker: Bool = false
+    
+    // State for measurement type selection
+    @State private var selectedMeasurement: BloodPressureMeasurement = .sys
+    @State private var showingMeasurementPicker: Bool = false
+    
+    // State for chart selection
+    @State private var selectedDataIndex: Int? = nil
+    
+    // State for Add for Today popup
+    @State private var showingAddPopup: Bool = false
+    @State private var newSystolic: String = ""
+    @State private var newDiastolic: String = ""
+    @State private var newPulse: String = ""
+    
+    // Blood Pressure data from API
+    @State private var allRecords: [BloodPressureRecord] = []
+    @State private var isLoading = false
+    @State private var isSaving = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var trendSummary: TrendSummary = .noData
+    @State private var insightMessages: [String] = []
+    
+    // Services within this app used to communicate with the API
+    private let metricsService = MetricsService.shared
+    private let analyticsService = AnalyticsService.shared
+    private let aiService = AIService.shared
+    
+    // Chart data for selected week
+    private var weeklyChartData: [(index: Int, label: String, value: Int?)] {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.startOfDay(for: weekStartDate)
+        
+        return (0..<7).map { dayOffset in
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) else {
+                return (index: dayOffset, label: "", value: nil as Int?)
+            }
+            
+            let weekdayIndex = calendar.component(.weekday, from: currentDate) - 1
+            let label = calendar.shortWeekdaySymbols[weekdayIndex]
+            
+            // Find record for this date
+            let record = allRecords.first { calendar.isDate($0.date, inSameDayAs: currentDate) }
+            
+            let value: Int?
+            if let record = record {
+                switch selectedMeasurement {
+                case .sys:
+                    value = record.systolic
+                case .dia:
+                    value = record.diastolic
+                case .pulse:
+                    value = record.pulse
+                }
+            } else {
+                value = nil
+            }
+            
+            return (index: dayOffset, label: label, value: value)
+        }
+    }
+    
+    // Weekly averages
+    private var weeklyAverageSystolic: Int {
+        let weekData = getWeekRecords()
+        guard !weekData.isEmpty else { return 0 }
+        return weekData.reduce(0) { $0 + $1.systolic } / weekData.count
+    }
+    
+    private var weeklyAverageDiastolic: Int {
+        let weekData = getWeekRecords()
+        guard !weekData.isEmpty else { return 0 }
+        return weekData.reduce(0) { $0 + $1.diastolic } / weekData.count
+    }
+    
+    private var weeklyAveragePulse: Int {
+        let weekData = getWeekRecords()
+        guard !weekData.isEmpty else { return 0 }
+        return weekData.reduce(0) { $0 + $1.pulse } / weekData.count
+    }
+    
+    private func getWeekRecords() -> [BloodPressureRecord] {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.startOfDay(for: weekStartDate)
+        let endOfWeek = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 7, to: startOfWeek)!)
+        
+        return allRecords.filter { $0.date >= startOfWeek && $0.date < endOfWeek }
+    }
+    
+    private var hasWeeklyData: Bool {
+        !getWeekRecords().isEmpty
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Header Section
+                        headerSection
+                        
+                        // Current BP + Add Button
+                        currentBPSection
+                        
+                        // Weekly Average Card (always visible, shows "No data yet" when there's no data)
+                        weeklyAverageCard
+                            .onTapGesture { unselectChartData() }
+                        
+                        // Date Navigation
+                        dateNavigationSection
+                        
+                        // Measurement Selector
+                        measurementSelector
+                        
+                        // Chart Section
+                        chartSection
+                        
+                        // Trends Section
+                        trendsSection
+                            .onTapGesture { unselectChartData() }
+                        
+                        // Insights Section
+                        insightsSection
+                            .onTapGesture { unselectChartData() }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .background(Color.white)
+                
+                // Add for Today Popup Overlay
+                if showingAddPopup {
+                    addForTodayPopup
+                }
+            }
+        }
+        .onAppear {
+            loadBloodPressureData()
+            updateWeekDates()
+            loadTrendSummary()
+            refreshAiContent()
+        }
+        .onChange(of: weekStartDate) {
+            loadTrendSummary()
+            refreshAiContent()
+        }
+        .onChange(of: weekEndDate) { 
+            loadTrendSummary()
+            refreshAiContent()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - Header Section
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Blood pressure")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .foregroundColor(.primaryGreen)
+            
+            Text("Your blood pressure must be recorded by you on a weekly basis.")
+                .font(.subheadline)
+                .foregroundColor(.darkGrayText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 15)
+        .onTapGesture { unselectChartData() }
+    }
+    
+    // MARK: - Current BP Section
+    private var currentBPSection: some View {
+        HStack {
+            Text("Current BP")
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.bold)
+                .foregroundColor(.primaryGreen)
+            
+            Spacer()
+            
+            Button(action: {
+                // Reset fields
+                newSystolic = ""
+                newDiastolic = ""
+                newPulse = ""
+                showingAddPopup = true
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Add for Today")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.primaryGreen)
+                .cornerRadius(20)
+            }
+        }
+        .padding(.bottom, 8)
+    }
+    
+    // MARK: - Weekly Average Card
+    private var weeklyAverageCard: some View {
+        VStack(spacing: 8) {
+            if hasWeeklyData {
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("\(weeklyAverageSystolic)/\(weeklyAverageDiastolic)")
+                        .font(.system(size: 42, weight: .semibold))
+                        .foregroundColor(Color.secondaryGreen)
+                    Text(" mmHg")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundColor(Color.gray)
+                }
+            } else {
+                Text("No data yet")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(Color.darkGrayText)
+            }
+            
+            Text("Weekly average")
+                .font(.custom("Noto Sans", size: 16))
+                .foregroundColor(Color.darkGrayText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.neutralShadow, radius: 4, x: 0, y: 2)
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
+        .padding(.bottom, 8)
+    }
+    
+    // MARK: - Date Navigation Section
+    private var dateNavigationSection: some View {
+        VStack(spacing: 12) {
+            // Month navigation
+            monthNavigationButtons
+            
+            // Week selector
+            weekSelector
+        }
+    }
+    
+    private var monthNavigationButtons: some View {
+        HStack {
+            Button(action: { navigateMonth(forward: false) }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+            
+            Spacer()
+            
+            Text(monthYearText)
+                .font(.custom("Noto Sans", size: 18))
+                .fontWeight(.semibold)
+                .foregroundColor(.darkGrayText)
+            
+            Spacer()
+            
+            Button(action: { navigateMonth(forward: true) }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+            }
+        }
+        .padding(.horizontal, 40)
+        .padding(.vertical, 12)
+    }
+    
+    private var weekSelector: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                weekDateButton(
+                    title: "start date",
+                    date: weekStartDate,
+                    isShowing: showingStartDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingStartDatePicker.toggle()
+                            if showingStartDatePicker { showingEndDatePicker = false }
+                        }
+                    }
+                )
+                
+                Text("to")
+                    .font(.custom("Noto Sans", size: 14))
+                    .foregroundColor(.darkGrayText)
+                
+                weekDateButton(
+                    title: "end date",
+                    date: weekEndDate,
+                    isShowing: showingEndDatePicker,
+                    action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showingEndDatePicker.toggle()
+                            if showingEndDatePicker { showingStartDatePicker = false }
+                        }
+                    }
+                )
+            }
+            .padding(.horizontal, 16)
+            
+            if showingStartDatePicker {
+                weekDatePickerView(for: $weekStartDate, isStartDate: true)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissStartDatePicker()
+                            }
+                    )
+            }
+            
+            if showingEndDatePicker {
+                weekDatePickerView(for: $weekEndDate, isStartDate: false)
+                    .background(
+                        Color.black.opacity(0.001)
+                            .onTapGesture {
+                                dismissEndDatePicker()
+                            }
+                    )
+            }
+        }
+    }
+    
+    private func dismissStartDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newEndDate = calendar.date(byAdding: .day, value: 6, to: weekStartDate) {
+                weekEndDate = newEndDate
+            }
+            showingStartDatePicker = false
+            selectedDate = weekStartDate
+        }
+    }
+    
+    private func dismissEndDatePicker() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            let calendar = Calendar.current
+            if let newStartDate = calendar.date(byAdding: .day, value: -6, to: weekEndDate) {
+                weekStartDate = newStartDate
+            }
+            showingEndDatePicker = false
+            selectedDate = weekStartDate
+        }
+    }
+    
+    private func weekDateButton(title: String, date: Date, isShowing: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: "calendar")
+                    .font(.system(size: 14))
+                    .foregroundColor(.darkGrayText)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .foregroundColor(.darkGrayText)
+                    Text(weekDateFormatter.string(from: date))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primaryGreen)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.gray, lineWidth: 0.15)
+        }
+    }
+    
+    private func weekDatePickerView(for binding: Binding<Date>, isStartDate: Bool) -> some View {
+        DatePicker(
+            "",
+            selection: binding,
+            displayedComponents: .date
+        )
+        .datePickerStyle(GraphicalDatePickerStyle())
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
+        .padding(.horizontal, 16)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
+        .onChange(of: binding.wrappedValue) { _, newDate in
+            let calendar = Calendar.current
+            if isStartDate {
+                if let newEndDate = calendar.date(byAdding: .day, value: 6, to: newDate) {
+                    weekEndDate = newEndDate
+                }
+            } else {
+                if let newStartDate = calendar.date(byAdding: .day, value: -6, to: newDate) {
+                    weekStartDate = newStartDate
+                }
+            }
+            selectedDate = weekStartDate
+        }
+    }
+    
+    // MARK: - Measurement Selector
+    private var measurementSelector: some View {
+        HStack {
+            Menu {
+                ForEach(BloodPressureMeasurement.allCases, id: \.self) { measurement in
+                    Button(action: {
+                        selectedMeasurement = measurement
+                        selectedDataIndex = nil
+                    }) {
+                        Text(measurement.rawValue)
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(selectedMeasurement.rawValue)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.darkGrayText)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12))
+                        .foregroundColor(.darkGrayText)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .cornerRadius(8)
+                .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray, lineWidth: 0.2)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
+    
+    // MARK: - Chart Section
+    private var chartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(selectedMeasurement.chartLabel)
+                .foregroundColor(.darkGrayText)
+                .font(.headline)
+            
+            bloodPressureChart
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
+        .padding(.bottom, 16)
+    }
+    
+    private var bloodPressureChart: some View {
+        Chart {
+            // Placeholder points to ensure x-axis is visible
+            ForEach(0..<7, id: \.self) { idx in
+                PointMark(x: .value("Day", idx), y: .value("Value", 0))
+                    .foregroundStyle(.clear)
+            }
+            
+            // Actual data
+            ForEach(weeklyChartData.filter { $0.value != nil }, id: \.index) { data in
+                LineMark(
+                    x: .value("Day", data.index),
+                    y: .value("Value", data.value!)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(Color.bpLineBlue)
+                
+                PointMark(
+                    x: .value("Day", data.index),
+                    y: .value("Value", data.value!)
+                )
+                .foregroundStyle(selectedDataIndex == data.index ? Color.selectionGreen : Color.bpLineBlue)
+                .symbolSize(selectedDataIndex == data.index ? 100 : 60)
+                .annotation(position: .top, alignment: .center, spacing: 4) {
+                    if selectedDataIndex == data.index {
+                        chartTooltip(value: data.value!)
+                    }
+                }
+            }
+        }
+        .frame(height: 200)
+        .chartXAxis {
+            AxisMarks(values: Array(0..<7)) { value in
+                if let idx = value.as(Int.self), idx < weeklyChartData.count {
+                    AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
+                        Text(weeklyChartData[idx].label)
+                            .font(.system(size: 12))
+                    }
+                    AxisTick(length: 12, stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) {
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                AxisValueLabel(horizontalSpacing: 16)
+            }
+        }
+        .chartXScale(domain: 0...7)
+        .chartYScale(domain: 0...220)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        handleChartTap(at: location, geometry: geometry)
+                    }
+            }
+        }
+    }
+    
+    private func chartTooltip(value: Int) -> some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                Text("\(value)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primaryGreen)
+                Text(selectedMeasurement.unit)
+                    .font(.system(size: 10))
+                    .foregroundColor(.darkGrayText)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white)
+            .cornerRadius(6)
+            .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+            
+            // Pointing triangle
+            BPPopoverArrow()
+                .fill(Color.white)
+                .frame(width: 12, height: 6)
+                .shadow(color: Color.neutralShadow, radius: 1, x: 0, y: 1)
+        }
+    }
+    
+    private func handleChartTap(at location: CGPoint, geometry: GeometryProxy) {
+        let chartWidth = geometry.size.width
+        let barWidth = chartWidth / 7
+        let tappedIndex = Int(location.x / barWidth)
+        
+        guard tappedIndex >= 0 && tappedIndex < 7 else {
+            selectedDataIndex = nil
+            return
+        }
+        
+        if selectedDataIndex == tappedIndex {
+            selectedDataIndex = nil
+        } else {
+            // Check if there's data at this index
+            if weeklyChartData[tappedIndex].value != nil {
+                selectedDataIndex = tappedIndex
+            }
+        }
+    }
+    
+    private func unselectChartData() {
+        selectedDataIndex = nil
+    }
+    
+    // MARK: - Trends Section
+    private var trendsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Trends")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            // Trend summary
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: trendSummary.iconName)
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Color.blue.opacity(0.8))
+                    .cornerRadius(20)
+                
+                Text(trendSummary.text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.darkGrayText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.bottom, 8)
+            
+            // Trends Chart
+            trendsChart
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 20)
+    }
+    
+    private var trendsChart: some View {
+        Chart {
+            // Placeholder points to ensure x-axis is always visible in Trends chart
+            ForEach(0..<7, id: \.self) { idx in
+                PointMark(x: .value("Day", idx), y: .value("Value", 0))
+                    .foregroundStyle(.clear)
+            }
+            
+            // Current line with dots in Trends Chart
+            ForEach(weeklyChartData.filter { $0.value != nil }, id: \.index) { data in
+                LineMark(
+                    x: .value("Day", data.index),
+                    y: .value("Current", data.value!),
+                    series: .value("Type", "Current")
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(Color.bpLineBlue)
+                
+                // Visible dot for each data point
+                PointMark(
+                    x: .value("Day", data.index),
+                    y: .value("Current", data.value!)
+                )
+                .foregroundStyle(Color.bpLineBlue)
+                .symbolSize(40)
+                
+                // Add "Current" label above the last data point
+                if data.index == (weeklyChartData.filter { $0.value != nil }.last?.index ?? -1) {
+                    PointMark(
+                        x: .value("Day", data.index),
+                        y: .value("Current", data.value!)
+                    )
+                    .foregroundStyle(.clear)
+                    .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                        Text("Current")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.bpLineBlue)
+                    }
+                }
+            }
+            
+            // Average line only show if there's data for that week
+            if hasWeeklyData {
+                ForEach(0..<7, id: \.self) { idx in
+                    LineMark(
+                        x: .value("Day", idx),
+                        y: .value("Avg", averageValue),
+                        series: .value("Type", "Avg")
+                    )
+                    .foregroundStyle(Color.darkGrayText.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 2]))
+                    
+                    // Add "Avg" label above the last point of average line
+                    if idx == 6 {
+                        PointMark(
+                            x: .value("Day", idx),
+                            y: .value("Avg", averageValue)
+                        )
+                        .foregroundStyle(.clear)
+                        .annotation(position: .top, alignment: .trailing, spacing: 4) {
+                            Text("Avg")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.darkGrayText)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(height: 200)
+        .chartXAxis {
+            AxisMarks(values: Array(0..<7)) { value in
+                if let idx = value.as(Int.self), idx < weeklyChartData.count {
+                    AxisValueLabel(horizontalSpacing: -5, verticalSpacing: 16) {
+                        Text(weeklyChartData[idx].label)
+                            .font(.system(size: 12))
+                    }
+                    AxisTick(length: 12, stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) {
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3, dash: [0, 0]))
+                AxisValueLabel(horizontalSpacing: 16)
+            }
+        }
+        .chartXScale(domain: 0...7)
+        .chartYScale(domain: 0...220)
+        .chartForegroundStyleScale([
+            "Current": Color.bpLineBlue,
+            "Avg": Color.darkGrayText.opacity(0.5)
+        ])
+        .chartLegend(.hidden)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 20)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.tintedShadow, radius: 4, x: 0, y: 2)
+    }
+    
+    private var averageValue: Int {
+        switch selectedMeasurement {
+        case .sys:
+            return weeklyAverageSystolic > 0 ? weeklyAverageSystolic : 110
+        case .dia:
+            return weeklyAverageDiastolic > 0 ? weeklyAverageDiastolic : 75
+        case .pulse:
+            return weeklyAveragePulse > 0 ? weeklyAveragePulse : 70
+        }
+    }
+    
+    // MARK: - Insights Section
+    private var insightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Insights")
+                .font(.custom("Noto Sans", size: 22))
+                .fontWeight(.semibold)
+                .foregroundColor(.primaryGreen)
+            
+            if hasData {
+                if insightMessages.isEmpty {
+                    Text("No insights available yet")
+                        .font(.custom("Noto Sans", size: 16))
+                        .foregroundColor(.darkGrayText)
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insightMessages.enumerated()), id: \.offset) { index, message in
+                            BPInsightRow(
+                                number: index + 1,
+                                text: message,
+                                isLast: index == insightMessages.count - 1
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text("No data available to generate insights")
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(.darkGrayText)
+                    .padding(.vertical, 12)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 30)
+    }
+    
+    private var hasData: Bool {
+        weeklyChartData.contains { $0.value != nil }
+    }
+    
+    // MARK: - Add for Today Popup
+    private var addForTodayPopup: some View {
+        ZStack {
+            // Background overlay
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    showingAddPopup = false
+                }
+            
+            // Popup content
+            VStack(spacing: 20) {
+                // Header with date and clear button
+                HStack {
+                    Text(todayDateString)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.darkGrayText)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        newSystolic = ""
+                        newDiastolic = ""
+                        newPulse = ""
+                    }) {
+                        Text("Clear")
+                            .font(.system(size: 14))
+                            .foregroundColor(.darkGrayText)
+                    }
+                }
+                
+                // Input fields
+                VStack(spacing: 16) {
+                    inputField(label: "SYS", unit: "mmHg", value: $newSystolic)
+                    inputField(label: "DIA", unit: "mmHg", value: $newDiastolic)
+                    inputField(label: "Pulse", unit: "BPM", value: $newPulse)
+                }
+                
+                // Save button
+                Button(action: saveNewReading) {
+                    if isSaving {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Save")
+                    }
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.primaryGreen)
+                .cornerRadius(10)
+            }
+            .padding(24)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, 40)
+        }
+    }
+    
+    private func inputField(label: String, unit: String, value: Binding<String>) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primaryGreen)
+                Text(unit)
+                    .font(.system(size: 12))
+                    .foregroundColor(.darkGrayText)
+            }
+            
+            Spacer()
+            
+            TextField("", text: value)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.primaryGreen)
+                .multilineTextAlignment(.center)
+                .keyboardType(.numberPad)
+                .frame(width: 80)
+                .padding(.vertical, 10)
+                .background(Color.white)
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.darkGrayText.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+    
+    private var todayDateString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM, yyyy"
+        return formatter.string(from: Date())
+    }
+    
+    // Helper function to send new user-logged blood pressure entry to API
+    private func saveNewReading() {
+        guard let sys = Int(newSystolic),
+              let dia = Int(newDiastolic),
+              let pulse = Int(newPulse) else {
+            return
+        }
+        
+        isSaving = true
+        
+        Task {
+            do {
+                let request = MetricCreateRequest.bloodPressure(
+                    systolic: sys,
+                    diastolic: dia,
+                    pulse: pulse,
+                    measuredAt: Date(),
+                    unit: "mmHg"
+                )
+                
+                let response = try await metricsService.createMetric(request)
+                
+                // Convert to BloodPressureRecord and add to list
+                if let bp = response.extractBloodPressure() {
+                    let newRecord = BloodPressureRecord(
+                        date: response.measuredAt,
+                        systolic: bp.systolic,
+                        diastolic: bp.diastolic,
+                        pulse: bp.pulse ?? 0
+                    )
+                    
+                    await MainActor.run {
+                        allRecords.append(newRecord)
+                        allRecords.sort { $0.date > $1.date } // Sort by date descending
+                        newSystolic = ""
+                        newDiastolic = ""
+                        newPulse = ""
+                        showingAddPopup = false
+                        isSaving = false
+                    }
+                    
+                    loadTrendSummary()
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // MARK: - Load Blood Pressure Data
+    private func loadBloodPressureData() {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        Task {
+            do {
+                let calendar = Calendar.current
+                let endDate = Date()
+                let startDate = calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
+                
+                let response = try await metricsService.listMetrics(
+                    metricType: .bloodPressure,
+                    startDate: startDate,
+                    endDate: endDate,
+                    pageSize: 100
+                )
+                
+                let records = response.metrics.compactMap { metric -> BloodPressureRecord? in
+                    guard let bp = metric.extractBloodPressure() else { return nil }
+                    return BloodPressureRecord(
+                        date: metric.measuredAt,
+                        systolic: bp.systolic,
+                        diastolic: bp.diastolic,
+                        pulse: bp.pulse ?? 0
+                    )
+                }
+                
+                await MainActor.run {
+                    allRecords = records.sorted { $0.date > $1.date } // Sort by date descending
+                    isLoading = false
+                    refreshAiContent()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    private var monthYearText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+    
+    private var weekDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }
+    
+    private func navigateMonth(forward: Bool) {
+        let calendar = Calendar.current
+        let value = forward ? 1 : -1
+        
+        if let newDate = calendar.date(byAdding: .month, value: value, to: selectedDate) {
+            selectedDate = newDate
+            updateWeekDates()
+        }
+    }
+    
+    private func updateWeekDates() {
+        let calendar = Calendar.current
+        if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate) {
+            weekStartDate = weekInterval.start
+            weekEndDate = calendar.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
+        }
+    }
+
+    // MARK: - Trend Summary
+    private func loadTrendSummary() {
+        let dateRange = analyticsDateRange()
+        let startDate = dateRange.start
+        let endDate = dateRange.end
+        
+        Task {
+            do {
+                let stats = try await analyticsService.getStatistics(
+                    metricType: .bloodPressure,
+                    startDate: startDate,
+                    endDate: endDate
+                )
+                let summary = TrendSummary.from(trend: stats.trend)
+                await MainActor.run {
+                    trendSummary = summary
+                }
+            } catch let error as APIError {
+                if case let .httpError(statusCode, _) = error, statusCode == 404 {
+                    await MainActor.run {
+                        trendSummary = .noData
+                    }
+                } else {
+                    await MainActor.run {
+                        trendSummary = .noData
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    trendSummary = .noData
+                }
+            }
+        }
+    }
+    
+    private func analyticsDateRange() -> (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: weekStartDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: weekEndDate))?.addingTimeInterval(-1) ?? weekEndDate
+        return (start, end)
+    }
+
+    // MARK: - AI Insights
+    private func refreshAiContent() {
+        guard hasData else {
+            insightMessages = []
+            return
+        }
+        
+        let daysBack = aiDaysBack()
+        Task {
+            do {
+                let anomalies = try await aiService.getAnomalies(metricType: .bloodPressure, daysBack: daysBack)
+                let recommendations = anomalies.compactMap { $0.recommendation }
+                
+                await MainActor.run {
+                    insightMessages = recommendations
+                }
+            } catch {
+                await MainActor.run {
+                    insightMessages = []
+                }
+            }
+        }
+    }
+    
+    private func aiDaysBack() -> Int {
+        let range = analyticsDateRange()
+        let days = Calendar.current.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        return max(1, days + 1)
+    }
+}
+
+enum TrendSummary {
+    case increasing
+    case stable
+    case decreasing
+    case noData
+    
+    var iconName: String {
+        switch self {
+        case .increasing:
+            return "chart.line.uptrend.xyaxis"
+        case .stable:
+            return "chart.line.flattrend.xyaxis"
+        case .decreasing:
+            return "chart.line.downtrend.xyaxis"
+        case .noData:
+            return "circle.slash"
+        }
+    }
+    
+    var text: String {
+        switch self {
+        case .increasing:
+            return "Your blood pressure is increasing."
+        case .stable:
+            return "Your blood pressure is stable."
+        case .decreasing:
+            return "Your blood pressure is decreasing."
+        case .noData:
+            return "There's no data within this period to identify a trend."
+        }
+    }
+    
+    static func from(trend: String?) -> TrendSummary {
+        switch trend?.lowercased() {
+        case "increasing":
+            return .increasing
+        case "decreasing":
+            return .decreasing
+        case "stable":
+            return .stable
+        default:
+            return .noData
+        }
+    }
+}
+
+// MARK: - Colors
+private extension Color {
+    static let selectionGreen = Color(red: 96/255, green: 142/255, blue: 97/255)
+    static let bpLineBlue = Color.blue.opacity(0.7)
+}
+
+// MARK: - Popover Arrow Shape
+struct BPPopoverArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Insight Row Component
+struct BPInsightRow: View {
+    let number: Int
+    let text: String
+    let isLast: Bool
+    
+    private let bulletBackgroundColor = Color(red: 240/255, green: 241/255, blue: 249/255)
+    private let numberColor = Color.primaryGreen
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                Text("\(number)")
+                    .font(.custom("Noto Sans", size: 16))
+                    .fontWeight(.semibold)
+                    .foregroundColor(numberColor)
+                    .frame(width: 32, height: 32)
+                    .background(bulletBackgroundColor)
+                    .clipShape(Circle())
+                
+                Text(text)
+                    .font(.custom("Noto Sans", size: 16))
+                    .foregroundColor(Color.darkGrayText)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            
+            if !isLast {
+                Divider()
+                    .frame(height: 1)
+                    .background(Color(red: 0.85, green: 0.85, blue: 0.85))
+            }
+        }
+    }
+}
+
+// MARK: - To preview Blood Pressure page, for only developer uses
+#Preview {
+    BloodPressureView()
+}
